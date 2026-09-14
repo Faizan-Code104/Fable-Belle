@@ -112,6 +112,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://ectoo.us",
   "https://www.ectoo.us",
+  "https://ectoo-frontend.onrender.com",
 ];
 
 app.use(
