@@ -4,9 +4,9 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
-  address: "2125 Strawberry Rd, Pasadena, TX 77502",
-  phoneDisplay: "+1 (832) 285-3511",
-  phoneHref: "+18322853511",
+  address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
+  phoneDisplay: "+1 (917) 695-2303",
+  phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
@@ -44,8 +44,8 @@ const PrivacyPolicy = () => {
       title: "1. Business Information",
       body: [
         "Ectoo is operated by:",
-        "Ectoo\n2125 Strawberry Rd\nPasadena, TX 77502\nUnited States",
-        "Email: info@ectoo.us\nPhone: +1 (832) 285-3511\nCustomer Support Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
+        "Ectoo\n1825 Dickinson Ave Ste D\nDickinson, TX 77539\nUnited States",
+        "Email: info@ectoo.us\nPhone: +1 (917) 695-2303\nCustomer Support Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
       ],
     },
     {
@@ -223,8 +223,8 @@ const PrivacyPolicy = () => {
       title: "16. Contact Us",
       body: [
         "Questions or privacy requests may be directed to:",
-        "Ectoo\n2125 Strawberry Rd\nPasadena, TX 77502\nUnited States",
-        "Email: info@ectoo.us\nPhone: +1 (832) 285-3511\nHours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
+        "Ectoo\n1825 Dickinson Ave Ste D\nDickinson, TX 77539\nUnited States",
+        "Email: info@ectoo.us\nPhone: +1 (917) 695-2303\nHours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
       ],
     },
   ];

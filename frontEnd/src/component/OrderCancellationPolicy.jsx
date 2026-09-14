@@ -10,8 +10,8 @@ import {
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
-  phoneDisplay: "+1 (832) 285-3511",
-  phoneHref: "+18322853511",
+  phoneDisplay: "+1 (917) 695-2303",
+  phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",

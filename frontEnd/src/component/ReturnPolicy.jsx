@@ -9,9 +9,9 @@ import {
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
-  address: "2125 Strawberry Rd, Pasadena, TX 77502",
-  phoneDisplay: "+1 (832) 285-3511",
-  phoneHref: "+18322853511",
+  address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
+  phoneDisplay: "+1 (917) 695-2303",
+  phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
@@ -312,8 +312,8 @@ const ReturnPolicy = () => {
               <p className="font-medium text-[#111311]">
                 {BUSINESS_INFO.businessName}
               </p>
-              <p>2125 Strawberry Rd</p>
-              <p>Pasadena, TX 77502</p>
+              <p>1825 Dickinson Ave Ste D</p>
+              <p>Dickinson, TX 77539</p>
               <p>United States</p>
             </div>
 
@@ -552,8 +552,8 @@ const ReturnPolicy = () => {
               <p className="font-medium text-[#111311]">
                 {BUSINESS_INFO.businessName}
               </p>
-              <p>2125 Strawberry Rd</p>
-              <p>Pasadena, TX 77502</p>
+              <p>1825 Dickinson Ave Ste D</p>
+              <p>Dickinson, TX 77539</p>
               <p>United States</p>
 
               <p className="pt-2">

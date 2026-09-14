@@ -8,9 +8,9 @@ import {
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
-  address: "2125 Strawberry Rd, Pasadena, TX 77502",
-  phoneDisplay: "+1 (832) 285-3511",
-  phoneHref: "+18322853511",
+  address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
+  phoneDisplay: "+1 (917) 695-2303",
+  phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
@@ -151,7 +151,7 @@ const FAQs = () => {
       category: "Returns & Refunds",
       question: "Where should I send an authorized return?",
       answer:
-        "After receiving return authorization, send the product according to our instructions to: Ectoo, 2125 Strawberry Rd, Pasadena, TX 77502, United States. Do not mail an unauthorized return.",
+        "After receiving return authorization, send the product according to our instructions to: Ectoo, 1825 Dickinson Ave Ste D, Dickinson, TX 77539, United States. Do not mail an unauthorized return.",
     },
     {
       category: "Business",
@@ -169,7 +169,7 @@ const FAQs = () => {
       category: "Support",
       question: "How can I contact customer support?",
       answer:
-        "Email: info@ectoo.us. Phone: +1 (832) 285-3511. Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time. We generally respond within one business day.",
+        "Email: info@ectoo.us. Phone: +1 (917) 695-2303. Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time. We generally respond within one business day.",
     },
   ];
 
