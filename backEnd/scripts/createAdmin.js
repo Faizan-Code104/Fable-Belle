@@ -13,12 +13,20 @@ const createAdmin = async () => {
 
     console.log("MongoDB connected successfully.");
 
-    const adminName = "Ziveline Admin";
-    const adminEmail = "admin@ziveline.com";
-    const adminPassword = "Admin@123456";
+    const adminName = process.env.ADMIN_NAME || "Ectoo Admin";
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      throw new Error(
+        "ADMIN_EMAIL and ADMIN_PASSWORD must be configured in the .env file."
+      );
+    }
+
+    const normalizedEmail = adminEmail.toLowerCase().trim();
 
     const existingUser = await User.findOne({
-      email: adminEmail.toLowerCase(),
+      email: normalizedEmail,
     });
 
     if (existingUser) {
@@ -39,7 +47,7 @@ const createAdmin = async () => {
 
     const admin = await User.create({
       name: adminName,
-      email: adminEmail.toLowerCase(),
+      email: normalizedEmail,
       password: hashedPassword,
       role: "admin",
     });
@@ -50,7 +58,6 @@ const createAdmin = async () => {
     console.log(`Name: ${admin.name}`);
     console.log(`Email: ${admin.email}`);
     console.log(`Role: ${admin.role}`);
-    console.log(`Password: ${adminPassword}`);
     console.log("=================================\n");
 
     await mongoose.connection.close();
@@ -59,7 +66,9 @@ const createAdmin = async () => {
   } catch (error) {
     console.error("\nCreate Admin Error:", error.message);
 
-    await mongoose.connection.close();
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
 
     process.exit(1);
   }

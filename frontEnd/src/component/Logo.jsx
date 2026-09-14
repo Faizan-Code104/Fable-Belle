@@ -1,6 +1,6 @@
 import React from "react";
 
-const ZivelineLogo = ({
+const EctooLogo = ({
   size = "md",
   showTagline = false,
   className = "",
@@ -31,19 +31,19 @@ const ZivelineLogo = ({
       className={`inline-flex max-w-full select-none flex-col leading-none ${className}`}
       aria-label={
         showTagline
-          ? "Ziveline — Carry Your Style"
-          : "Ziveline"
+          ? "Ectoo — Carry Your Style"
+          : "Ectoo"
       }
     >
       <span
-        className={`${currentSize.brand} whitespace-nowrap font-display text-ink`}
+        className={`${currentSize.brand} whitespace-nowrap font-display text-[#1F2D22]`}
       >
-        Ziveline
+        Ectoo
       </span>
 
       {showTagline && (
         <span
-          className={`${currentSize.tagline} mt-1 whitespace-nowrap font-semibold uppercase tracking-[0.18em] text-ink/50 sm:tracking-[0.22em]`}
+          className={`${currentSize.tagline} mt-1 whitespace-nowrap font-semibold uppercase tracking-[0.18em] text-[#5E5B57] sm:tracking-[0.22em]`}
         >
           Carry Your Style
         </span>
@@ -52,4 +52,4 @@ const ZivelineLogo = ({
   );
 };
 
-export default ZivelineLogo;
+export default EctooLogo;

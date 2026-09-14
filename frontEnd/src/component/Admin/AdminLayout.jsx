@@ -17,7 +17,7 @@ import {
   User,
 } from "lucide-react";
 
-import ZivelineLogo from "../Logo";
+import EctooLogo from "../Logo";
 
 const AdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -66,8 +66,7 @@ const AdminLayout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-[#F4F1EB] text-ink">
-      {/* ================= MOBILE OVERLAY ================= */}
-      {sidebarOpen && (
+{sidebarOpen && (
         <button
           type="button"
           aria-label="Close sidebar"
@@ -75,17 +74,14 @@ const AdminLayout = ({ children }) => {
           className="fixed inset-0 z-40 bg-ink/50 backdrop-blur-sm lg:hidden"
         />
       )}
-
-      {/* ================= SIDEBAR ================= */}
-      <aside
+<aside
         className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-line bg-paper transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Sidebar Header */}
-        <div className="flex h-20 items-center justify-between border-b border-line px-6">
+<div className="flex h-20 items-center justify-between border-b border-line px-6">
           <Link to="/admin" onClick={closeSidebar}>
-            <ZivelineLogo size="md" />
+            <EctooLogo size="md" />
           </Link>
 
           <button
@@ -96,16 +92,12 @@ const AdminLayout = ({ children }) => {
             <X size={20} />
           </button>
         </div>
-
-        {/* Admin Label */}
-        <div className="px-6 pt-7">
+<div className="px-6 pt-7">
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-ink/40">
             Administration
           </p>
         </div>
-
-        {/* Main Menu */}
-        <nav className="flex-1 px-4 py-5">
+<nav className="flex-1 px-4 py-5">
           <div className="space-y-1.5">
             {menuItems.map((item) => {
               const Icon = item.icon;
@@ -139,9 +131,7 @@ const AdminLayout = ({ children }) => {
               );
             })}
           </div>
-
-          {/* Management */}
-          <div className="mt-9">
+<div className="mt-9">
             <p className="mb-3 px-4 text-[10px] font-bold uppercase tracking-[0.25em] text-ink/40">
               Management
             </p>
@@ -171,9 +161,7 @@ const AdminLayout = ({ children }) => {
             </div>
           </div>
         </nav>
-
-        {/* Store Link */}
-        <div className="border-t border-line p-4">
+<div className="border-t border-line p-4">
           <Link
             to="/"
             onClick={closeSidebar}
@@ -182,9 +170,7 @@ const AdminLayout = ({ children }) => {
             <Store size={19} />
             <span>View Store</span>
           </Link>
-
-          {/* Admin Profile */}
-          <div className="mt-2 flex items-center gap-3 bg-[#F4F1EB] p-3">
+<div className="mt-2 flex items-center gap-3 bg-[#F4F1EB] p-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-ink text-sm font-bold text-paper">
               A
             </div>
@@ -196,14 +182,10 @@ const AdminLayout = ({ children }) => {
           </div>
         </div>
       </aside>
-
-      {/* ================= MAIN AREA ================= */}
-      <div className="lg:pl-72">
-        {/* ================= TOPBAR ================= */}
-        <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur-xl">
+<div className="lg:pl-72">
+<header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur-xl">
           <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-            {/* Left */}
-            <div className="flex items-center gap-3">
+<div className="flex items-center gap-3">
               <button
                 type="button"
                 aria-label="Open sidebar"
@@ -215,7 +197,7 @@ const AdminLayout = ({ children }) => {
 
               <div className="hidden sm:block">
                 <p className="text-xs font-medium text-ink/40">
-                  Ziveline Admin
+                  Ectoo Admin
                 </p>
 
                 <h1 className="font-display text-xl text-ink">
@@ -223,20 +205,15 @@ const AdminLayout = ({ children }) => {
                 </h1>
               </div>
             </div>
-
-            {/* Right */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Search */}
-              <button
+<div className="flex items-center gap-2 sm:gap-3">
+<button
                 type="button"
                 aria-label="Search"
                 className="flex h-10 w-10 items-center justify-center text-ink/60 transition-all hover:bg-[#F4F1EB] hover:text-ink"
               >
                 <Search size={19} />
               </button>
-
-              {/* Notifications */}
-              <button
+<button
                 type="button"
                 aria-label="Notifications"
                 className="relative flex h-10 w-10 items-center justify-center text-ink/60 transition-all hover:bg-[#F4F1EB] hover:text-ink"
@@ -245,12 +222,8 @@ const AdminLayout = ({ children }) => {
 
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-paper" />
               </button>
-
-              {/* Divider */}
-              <div className="hidden h-8 w-px bg-line sm:block" />
-
-              {/* Profile */}
-              <div className="relative">
+<div className="hidden h-8 w-px bg-line sm:block" />
+<div className="relative">
                 <button
                   type="button"
                   onClick={() => setProfileOpen((prev) => !prev)}
@@ -273,9 +246,7 @@ const AdminLayout = ({ children }) => {
                     }`}
                   />
                 </button>
-
-                {/* Profile Dropdown */}
-                {profileOpen && (
+{profileOpen && (
                   <div className="absolute right-0 top-14 w-52 border border-line bg-paper p-2 shadow-lg">
                     <button
                       type="button"
@@ -309,9 +280,7 @@ const AdminLayout = ({ children }) => {
             </div>
           </div>
         </header>
-
-        {/* ================= PAGE SECTION ================= */}
-        <main className="min-h-[calc(100vh-5rem)] p-4 sm:p-6 lg:p-8">
+<main className="min-h-[calc(100vh-5rem)] p-4 sm:p-6 lg:p-8">
           <section className="mx-auto max-w-[1600px]">{children}</section>
         </main>
       </div>

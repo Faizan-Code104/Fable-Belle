@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -8,15 +8,41 @@ import {
 } from "lucide-react";
 
 const BUSINESS_INFO = {
-  businessName: "Ziveline LLC",
+  businessName: "Ectoo",
   phoneDisplay: "+1 (832) 285-3511",
   phoneHref: "+18322853511",
-  email: "info@ziveline.com",
+  email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
 };
 
 const PaymentPolicy = () => {
+  const pageRef = useRef(null);
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "0px 0px -30px 0px",
+      }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+
   const paymentDetails = [
     {
       label: "Payment Type",
@@ -33,38 +59,88 @@ const PaymentPolicy = () => {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
-      {/* HERO */}
-      <section className="border-b border-line bg-ink px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-paper text-ink">
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(32px);
+          transition:
+            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        [data-reveal="left"] {
+          transform: translateX(-40px);
+        }
+
+        [data-reveal="right"] {
+          transform: translateX(40px);
+        }
+
+        [data-reveal="scale"] {
+          transform: scale(0.97);
+        }
+
+        [data-reveal].ectoo-visible {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+        }
+
+        .ectoo-payment-card {
+          transition:
+            transform 0.35s ease,
+            box-shadow 0.35s ease,
+            border-color 0.35s ease;
+        }
+
+        .ectoo-payment-card:hover {
+          transform: translateY(-4px);
+          border-color: rgba(31, 45, 34, 0.18);
+          box-shadow: 0 18px 48px rgba(31, 45, 34, 0.07);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
+      
+      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+        <div data-reveal="scale" className="relative mx-auto max-w-4xl text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
             <CreditCard size={24} aria-hidden="true" />
           </div>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-paper/60">
-            Ziveline
+          <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+            Ectoo
           </p>
 
-          <h1 className="mt-3 font-display text-4xl leading-tight text-paper sm:text-5xl">
+          <h1 className="mt-3 font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl">
             Payment Policy
           </h1>
 
-          <p className="mt-4 text-sm text-paper/60">
+          <p className="mt-4 text-sm text-[#5E5B57]">
             Last updated: September 11, 2026
           </p>
         </div>
       </section>
 
-      {/* PAYMENT SUMMARY */}
+      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-3xl">
-            <h2 className="font-display text-3xl leading-tight text-ink">
+            <h2 className="font-display text-3xl leading-tight text-[#111311]">
               Payment Information
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-ink/60 sm:text-[15px]">
-              Ziveline accepts online electronic payments only through the
+            <p className="mt-3 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
+              Ectoo accepts online electronic payments only through the
               payment methods displayed at checkout. Our online payment setup
               is currently being completed.
             </p>
@@ -74,13 +150,13 @@ const PaymentPolicy = () => {
             {paymentDetails.map((item) => (
               <div
                 key={item.label}
-                className="border border-line bg-[#F4F1EB] p-5 sm:p-6"
+                data-reveal className="ectoo-payment-card rounded-[20px] border border-[#E4DED7] bg-white p-5 sm:p-6"
               >
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/40">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#5E5B57]/70">
                   {item.label}
                 </p>
 
-                <p className="mt-2 text-base font-bold text-ink">
+                <p className="mt-2 text-base font-bold text-[#111311]">
                   {item.value}
                 </p>
               </div>
@@ -89,37 +165,37 @@ const PaymentPolicy = () => {
         </div>
       </section>
 
-      {/* SECURITY STRIP */}
-      <section className="bg-[#F4F1EB] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      
+      <section className="bg-[#E8E7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
         <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
-          <div className="border border-line bg-paper p-6">
-            <div className="flex h-11 w-11 items-center justify-center bg-ink text-paper">
+          <div data-reveal className="ectoo-payment-card rounded-[24px] border border-[#E4DED7] bg-white p-6 sm:p-8">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1F2D22] text-white">
               <ShieldCheck size={20} aria-hidden="true" />
             </div>
 
-            <h2 className="mt-4 font-display text-2xl text-ink">
+            <h2 className="mt-4 font-display text-2xl text-[#111311]">
               Secure Payment Processing
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-ink/60">
+            <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
               Once online payments are activated, transactions will be
               processed by an authorized third-party payment processor.
-              Ziveline will not intentionally store complete card numbers or
+              Ectoo will not intentionally store complete card numbers or
               card security codes on its own systems.
             </p>
           </div>
 
-          <div className="border border-line bg-paper p-6">
-            <div className="flex h-11 w-11 items-center justify-center bg-ink text-paper">
+          <div data-reveal className="ectoo-payment-card rounded-[24px] border border-[#E4DED7] bg-white p-6 sm:p-8">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1F2D22] text-white">
               <CircleDollarSign size={20} aria-hidden="true" />
             </div>
 
-            <h2 className="mt-4 font-display text-2xl text-ink">
+            <h2 className="mt-4 font-display text-2xl text-[#111311]">
               No Recurring Charges
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-ink/60">
-              Ziveline sells products through one-time purchases. Customers
+            <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
+              Ectoo sells products through one-time purchases. Customers
               are not automatically enrolled in recurring product
               subscriptions.
             </p>
@@ -127,17 +203,17 @@ const PaymentPolicy = () => {
         </div>
       </section>
 
-      {/* POLICY DETAILS */}
+      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-3xl space-y-10 text-sm leading-7 text-ink/60">
-          {/* ONLINE PAYMENTS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+        <div className="mx-auto max-w-3xl space-y-10 text-sm leading-7 text-[#5E5B57]">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Online Payments Only
             </h2>
 
             <p className="mt-3">
-              Ziveline accepts online electronic payments only through the
+              Ectoo accepts online electronic payments only through the
               payment methods displayed at checkout.
             </p>
 
@@ -153,14 +229,14 @@ const PaymentPolicy = () => {
             </ul>
           </section>
 
-          {/* CURRENT STATUS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Current Payment Status
             </h2>
 
             <p className="mt-3">
-              Ziveline is currently completing its secure online payment
+              Ectoo is currently completing its secure online payment
               setup.
             </p>
 
@@ -172,15 +248,15 @@ const PaymentPolicy = () => {
             </p>
           </section>
 
-          {/* CURRENCY */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Currency
             </h2>
 
             <p className="mt-3">
               All product prices and transactions are stated in{" "}
-              <strong className="text-ink">
+              <strong className="text-[#111311]">
                 United States dollars (USD)
               </strong>
               .
@@ -192,9 +268,9 @@ const PaymentPolicy = () => {
             </p>
           </section>
 
-          {/* PAYMENT PROCESSING */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Payment Processing
             </h2>
 
@@ -204,16 +280,16 @@ const PaymentPolicy = () => {
             </p>
 
             <p className="mt-3">
-              Ziveline will not intentionally store complete card numbers or
+              Ectoo will not intentionally store complete card numbers or
               card security codes on its own systems. Customers should never
               send complete card information through email, contact forms, or
               voicemail.
             </p>
           </section>
 
-          {/* AUTHORIZATION */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Authorization
             </h2>
 
@@ -230,14 +306,14 @@ const PaymentPolicy = () => {
             </p>
           </section>
 
-          {/* ONE-TIME PURCHASES */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               One-Time Purchases
             </h2>
 
             <p className="mt-3">
-              Ziveline sells products through one-time purchases. We do not
+              Ectoo sells products through one-time purchases. We do not
               automatically enroll product customers in recurring
               subscriptions.
             </p>
@@ -248,9 +324,9 @@ const PaymentPolicy = () => {
             </p>
           </section>
 
-          {/* BILLING DESCRIPTOR */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Billing Descriptor
             </h2>
 
@@ -262,13 +338,13 @@ const PaymentPolicy = () => {
 
             <p className="mt-3">
               The descriptor will identify the charge as associated with
-              Ziveline LLC or the Ziveline brand.
+              Ectoo or the Ectoo brand.
             </p>
           </section>
 
-          {/* DECLINED PAYMENTS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Declined Payments
             </h2>
 
@@ -279,13 +355,13 @@ const PaymentPolicy = () => {
             </p>
 
             <p className="mt-3">
-              Ziveline does not control issuer decline decisions.
+              Ectoo does not control issuer decline decisions.
             </p>
           </section>
 
-          {/* REFUNDS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Refunds
             </h2>
 
@@ -294,7 +370,7 @@ const PaymentPolicy = () => {
               accordance with our{" "}
               <Link
                 to="/return-policy"
-                className="font-bold text-ink underline underline-offset-2"
+                className="font-bold text-[#111311] underline underline-offset-2"
               >
                 Return and Refund Policy
               </Link>
@@ -302,9 +378,9 @@ const PaymentPolicy = () => {
             </p>
           </section>
 
-          {/* CONTACT */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal="left" className="border-b border-[#E4DED7] pb-9 last:border-0 last:pb-0">
+            <h2 className="font-display text-2xl text-[#111311]">
               Contact
             </h2>
 
@@ -313,7 +389,7 @@ const PaymentPolicy = () => {
                 Email:{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-ink underline underline-offset-2 transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.email}
                 </a>
@@ -323,7 +399,7 @@ const PaymentPolicy = () => {
                 Phone:{" "}
                 <a
                   href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-ink underline underline-offset-2 transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.phoneDisplay}
                 </a>
@@ -338,22 +414,22 @@ const PaymentPolicy = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-line px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col items-start gap-6 border border-line bg-ink p-6 text-paper sm:p-8 md:flex-row md:items-center md:justify-between md:p-10">
+      
+      <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
+        <div data-reveal="scale" className="mx-auto flex max-w-3xl flex-col items-start gap-6 rounded-[26px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between">
           <div>
             <h3 className="font-display text-2xl">
               Have a payment question?
             </h3>
 
-            <p className="mt-2 text-sm leading-6 text-paper/60">
+            <p className="mt-2 text-sm leading-6 text-white/60">
               Contact our support team for assistance.
             </p>
           </div>
 
           <Link
             to="/contact"
-            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 bg-paper px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors duration-300 hover:bg-[#EFE9DE] md:w-auto"
+            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[14px] bg-[#F1EEE8] px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white md:w-auto"
           >
             Contact Us
             <ArrowRight size={16} aria-hidden="true" />

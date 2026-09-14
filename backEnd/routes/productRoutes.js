@@ -1,6 +1,5 @@
 import express from "express";
 import multer from "multer";
-import path from "path";
 import fs from "fs";
 
 import {
@@ -31,9 +30,14 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
-    const extension = path.extname(
-      file.originalname
-    );
+    const extensionMap = {
+      "image/jpeg": ".jpg",
+      "image/jpg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+    };
+
+    const extension = extensionMap[file.mimetype];
 
     const fileName = `${Date.now()}-${Math.round(
       Math.random() * 1e9

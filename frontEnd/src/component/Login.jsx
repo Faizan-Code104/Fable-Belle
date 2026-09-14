@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../config";
 import {
   Link,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 const Login = () => {
+  const pageRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -40,6 +41,28 @@ const Login = () => {
 
   const [successMessage, setSuccessMessage] =
     useState("");
+
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleChange = (event) => {
     const {
@@ -160,12 +183,12 @@ const Login = () => {
       }
 
       localStorage.setItem(
-        "Ziveline-token",
+        "ectoo-token",
         data.token
       );
 
       localStorage.setItem(
-        "Ziveline-user",
+        "ectoo-user",
         JSON.stringify(data.user)
       );
 
@@ -194,46 +217,75 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper">
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5]"
+    >
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(32px);
+          transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
 
-      <div className="grid min-h-screen lg:grid-cols-2">
+        [data-reveal="left"] {
+          transform: translateX(-38px);
+        }
 
-        {/* =====================================
-            LEFT SIDE
-            IMAGE REMOVED - TEXT RETAINED
-        ===================================== */}
+        [data-reveal="right"] {
+          transform: translateX(38px);
+        }
 
-        <div className="relative hidden overflow-hidden bg-ink lg:flex">
+        [data-reveal].ectoo-visible {
+          opacity: 1;
+          transform: translate(0, 0);
+        }
 
-          {/* Decorative background only */}
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
+
+      <div className="grid min-h-screen lg:grid-cols-[0.92fr_1.08fr]">
+
+        
+
+        <div className="relative hidden overflow-hidden bg-[#1F2D22] lg:flex lg:m-5 lg:mr-0 lg:rounded-[30px]">
+
+          
 
           <div
-            className="pointer-events-none absolute -left-24 top-1/4 h-72 w-72 rounded-full border border-paper/5"
+            className="pointer-events-none absolute -left-24 top-1/4 h-72 w-72 rounded-full border border-white/5"
             aria-hidden="true"
           />
 
           <div
-            className="pointer-events-none absolute -bottom-32 -right-20 h-96 w-96 rounded-full border border-paper/5"
+            className="pointer-events-none absolute -bottom-32 -right-20 h-96 w-96 rounded-full border border-white/5"
             aria-hidden="true"
           />
 
-          <div className="relative z-10 flex w-full flex-col justify-between p-12 xl:p-16">
+          <div data-reveal="left" className="relative z-10 flex w-full flex-col justify-between p-12 xl:p-16 2xl:p-20">
 
-            {/* BRAND */}
+            
 
             <Link
               to="/"
-              aria-label="Ziveline home"
-              className="w-fit font-display text-3xl text-paper"
+              aria-label="Ectoo home"
+              className="w-fit font-display text-4xl text-[#F1EEE8]"
             >
-              Ziveline
+              Ectoo
             </Link>
 
-            {/* TEXT */}
+            
 
-            <div className="max-w-xl text-paper">
+            <div className="max-w-xl text-[#F1EEE8]">
 
-              <p className="mb-5 text-xs font-bold uppercase tracking-[0.3em] text-paper/60">
+              <p className="mb-5 text-xs font-bold uppercase tracking-[0.3em] text-white/55">
                 Welcome Back
               </p>
 
@@ -243,22 +295,22 @@ const Login = () => {
 
                 <br />
 
-                <span className="text-paper/60">
+                <span className="text-white/55">
                   Continue your journey.
                 </span>
 
               </h1>
 
-              <p className="mt-7 max-w-lg text-sm leading-7 text-paper/70">
+              <p className="mt-7 max-w-lg text-sm leading-7 text-white/65">
                 Sign in to access your
-                Ziveline account, view your
+                Ectoo account, view your
                 account information, and
                 check available order details.
               </p>
 
-              <div className="mt-9 flex items-center gap-3 text-sm font-semibold text-paper">
+              <div className="mt-9 flex items-center gap-3 text-sm font-semibold text-white">
 
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-paper/20 bg-paper/10">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-white/15 bg-white/5">
 
                   <Check
                     size={16}
@@ -275,42 +327,40 @@ const Login = () => {
 
             </div>
 
-            <p className="text-xs font-medium text-paper/50">
+            <p className="text-xs font-medium text-white/45">
               © {new Date().getFullYear()}{" "}
-              Ziveline. All rights reserved.
+              Ectoo. All rights reserved.
             </p>
 
           </div>
 
         </div>
 
-        {/* =====================================
-            RIGHT SIDE
-        ===================================== */}
+        
 
-        <div className="flex min-h-screen items-center justify-center px-4 py-10 sm:px-8 lg:min-h-0 lg:px-12">
+        <div className="relative flex min-h-screen items-center justify-center bg-[#FAF8F5] px-5 py-10 sm:px-8 lg:min-h-0 lg:px-14">
 
-          <div className="w-full max-w-md">
+          <div data-reveal="right" className="w-full max-w-[470px] rounded-[28px] border border-[#E4DED7] bg-white p-6 shadow-[0_28px_80px_rgba(31,45,34,0.08)] sm:p-9 lg:p-11">
 
-            {/* MOBILE LOGO */}
+            
 
-            <div className="mb-8 lg:hidden">
+            <div className="mb-9 flex items-center justify-between lg:hidden">
 
               <Link
                 to="/"
-                aria-label="Ziveline home"
-                className="font-display text-3xl text-ink"
+                aria-label="Ectoo home"
+                className="font-display text-4xl text-[#1F2D22]"
               >
-                Ziveline
+                Ectoo
               </Link>
 
             </div>
 
-            {/* HEADING */}
+            
 
-            <div className="mb-8">
+            <div className="mb-9">
 
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-bottle">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-[#9A5937]">
                 Sign In
               </p>
 
@@ -318,14 +368,14 @@ const Login = () => {
                 Welcome back
               </h1>
 
-              <p className="mt-3 text-sm leading-6 text-ink/60">
-                Sign in to your Ziveline
+              <p className="mt-3 text-sm leading-6 text-[#5E5B57]">
+                Sign in to your Ectoo
                 account to continue.
               </p>
 
             </div>
 
-            {/* SERVER ERROR */}
+            
 
             {serverError && (
               <div
@@ -336,7 +386,7 @@ const Login = () => {
               </div>
             )}
 
-            {/* SUCCESS */}
+            
 
             {successMessage && (
               <div
@@ -347,9 +397,7 @@ const Login = () => {
               </div>
             )}
 
-            {/* =====================================
-                LOGIN FORM
-            ===================================== */}
+            
 
             <form
               onSubmit={handleSubmit}
@@ -357,13 +405,13 @@ const Login = () => {
               className="space-y-5"
             >
 
-              {/* EMAIL */}
+              
 
               <div>
 
                 <label
                   htmlFor="email"
-                  className="mb-2 block text-xs font-bold text-ink/70"
+                  className="mb-2 block text-xs font-bold text-[#5E5B57]"
                 >
                   Email Address
                 </label>
@@ -373,7 +421,7 @@ const Login = () => {
                   <Mail
                     size={18}
                     aria-hidden="true"
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink/40"
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#5E5B57]/60"
                   />
 
                   <input
@@ -392,10 +440,10 @@ const Login = () => {
                         ? "email-error"
                         : undefined
                     }
-                    className={`min-h-12 w-full border bg-[#F4F1EB] py-3 pl-11 pr-4 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:bg-paper sm:text-sm ${
+                    className={`min-h-12 w-full border bg-[#FAF8F5] py-3 pl-11 pr-4 text-base text-ink outline-none transition-colors placeholder:text-[#5E5B57]/60 focus:bg-white sm:text-sm ${
                       errors.email
                         ? "border-red-400 focus:border-red-500"
-                        : "border-line focus:border-ink"
+                        : "border-[#E4DED7] focus:border-[#1F2D22]"
                     }`}
                   />
 
@@ -412,13 +460,13 @@ const Login = () => {
 
               </div>
 
-              {/* PASSWORD */}
+              
 
               <div>
 
                 <label
                   htmlFor="password"
-                  className="mb-2 block text-xs font-bold text-ink/70"
+                  className="mb-2 block text-xs font-bold text-[#5E5B57]"
                 >
                   Password
                 </label>
@@ -428,7 +476,7 @@ const Login = () => {
                   <LockKeyhole
                     size={18}
                     aria-hidden="true"
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink/40"
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#5E5B57]/60"
                   />
 
                   <input
@@ -455,10 +503,10 @@ const Login = () => {
                         ? "password-error"
                         : undefined
                     }
-                    className={`min-h-12 w-full border bg-[#F4F1EB] py-3 pl-11 pr-12 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:bg-paper sm:text-sm ${
+                    className={`min-h-12 w-full border bg-[#FAF8F5] py-3 pl-11 pr-12 text-base text-ink outline-none transition-colors placeholder:text-[#5E5B57]/60 focus:bg-white sm:text-sm ${
                       errors.password
                         ? "border-red-400 focus:border-red-500"
-                        : "border-line focus:border-ink"
+                        : "border-[#E4DED7] focus:border-[#1F2D22]"
                     }`}
                   />
 
@@ -475,7 +523,7 @@ const Login = () => {
                         ? "Hide password"
                         : "Show password"
                     }
-                    className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-ink/40 transition-colors hover:text-ink"
+                    className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-[#5E5B57]/60 transition-colors hover:text-[#111311]"
                   >
 
                     {showPassword ? (
@@ -505,7 +553,7 @@ const Login = () => {
 
               </div>
 
-              {/* REMEMBER */}
+              
 
               <div className="flex items-center">
 
@@ -518,10 +566,10 @@ const Login = () => {
                       formData.remember
                     }
                     onChange={handleChange}
-                    className="h-4 w-4 accent-bottle"
+                    className="h-4 w-4 accent-[#1F2D22]"
                   />
 
-                  <span className="text-sm text-ink/60">
+                  <span className="text-sm text-[#5E5B57]">
                     Remember me
                   </span>
 
@@ -529,12 +577,12 @@ const Login = () => {
 
               </div>
 
-              {/* SUBMIT */}
+              
 
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex min-h-12 w-full items-center justify-center gap-2 bg-ink px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-paper transition-colors duration-300 hover:bg-bottle-dark disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex min-h-[54px] w-full items-center justify-center gap-3 rounded-[12px] bg-[#1F2D22] px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#3F4C3A] hover:shadow-[0_16px_34px_rgba(31,45,34,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
               >
 
                 {loading
@@ -553,16 +601,14 @@ const Login = () => {
 
             </form>
 
-            {/* =====================================
-                CREATE ACCOUNT
-            ===================================== */}
+            
 
             <div className="my-7 flex items-center gap-4">
 
               <div className="h-px flex-1 bg-line" />
 
-              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-ink/40 sm:text-xs">
-                New to Ziveline?
+              <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-[#5E5B57]/60 sm:text-xs">
+                New to Ectoo?
               </span>
 
               <div className="h-px flex-1 bg-line" />
@@ -571,14 +617,14 @@ const Login = () => {
 
             <Link
               to="/signup"
-              className="flex min-h-12 w-full items-center justify-center border border-line bg-paper px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors hover:border-ink"
+              className="flex min-h-12 w-full items-center justify-center border border-[#E4DED7] bg-white px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors hover:border-[#1F2D22]"
             >
               Create Account
             </Link>
 
-            {/* GUEST CHECKOUT CLARIFICATION */}
+            
 
-            <p className="mt-6 text-center text-xs leading-5 text-ink/45">
+            <p className="mt-6 text-center text-xs leading-5 text-[#5E5B57]/70">
               An account is not required to
               continue as a guest during checkout.
             </p>

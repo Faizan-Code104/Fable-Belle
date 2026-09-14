@@ -13,6 +13,7 @@ export const createProduct = async (req, res) => {
       price,
       stock,
       sku,
+      brand,
       material,
       weight,
       description,
@@ -69,6 +70,7 @@ export const createProduct = async (req, res) => {
 
       // Product specifications
       sku: sku.trim(),
+      brand: brand?.trim() || "",
       material: material.trim(),
       weight: weight.trim(),
 
@@ -250,6 +252,7 @@ export const updateProduct = async (req, res) => {
       price,
       stock,
       sku,
+      brand,
       material,
       weight,
       description,
@@ -279,6 +282,10 @@ export const updateProduct = async (req, res) => {
     */
     if (sku !== undefined) {
       product.sku = sku.trim();
+    }
+
+    if (brand !== undefined) {
+      product.brand = brand.trim();
     }
 
     if (material !== undefined) {

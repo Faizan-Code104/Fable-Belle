@@ -42,7 +42,7 @@ const Dashboard = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const getToken = () => {
-    return localStorage.getItem("Ziveline-token");
+    return localStorage.getItem("ectoo-token");
   };
 
   const getHeaders = () => {
@@ -61,9 +61,7 @@ const Dashboard = () => {
     return `${SERVER_URL}${image}`;
   };
 
-  /*
-    ================= FETCH EVERYTHING =================
-  */
+  
 
   const fetchDashboardData = async () => {
     try {
@@ -108,9 +106,7 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  /*
-    ================= DATE HELPERS =================
-  */
+  
 
   const now = new Date();
 
@@ -140,9 +136,7 @@ const Dashboard = () => {
     });
   };
 
-  /*
-    ================= CORE STATS (with real month-over-month change) =================
-  */
+  
 
   const dashboardStats = useMemo(() => {
     const thisMonth = now.getMonth();
@@ -153,8 +147,6 @@ const Dashboard = () => {
     const prevYear = prevMonthDate.getFullYear();
 
     const nonCancelled = orders.filter((order) => order.status !== "Cancelled");
-
-    // Revenue
     const revenueThisMonth = nonCancelled
       .filter((order) => isInMonth(order.createdAt, thisYear, thisMonth))
       .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
@@ -167,8 +159,6 @@ const Dashboard = () => {
       (sum, order) => sum + Number(order.totalAmount || 0),
       0,
     );
-
-    // Orders
     const ordersThisMonth = orders.filter((order) =>
       isInMonth(order.createdAt, thisYear, thisMonth),
     ).length;
@@ -176,8 +166,6 @@ const Dashboard = () => {
     const ordersLastMonth = orders.filter((order) =>
       isInMonth(order.createdAt, prevYear, prevMonth),
     ).length;
-
-    // Products
     const productsThisMonth = products.filter((product) =>
       isInMonth(product.createdAt, thisYear, thisMonth),
     ).length;
@@ -185,8 +173,6 @@ const Dashboard = () => {
     const productsLastMonth = products.filter((product) =>
       isInMonth(product.createdAt, prevYear, prevMonth),
     ).length;
-
-    // Customers
     const customers = users.filter((user) => user.role !== "admin");
 
     const customersThisMonth = customers.filter((user) =>
@@ -235,9 +221,7 @@ const Dashboard = () => {
 
   const revenueChangeThisVsLast = dashboardStats[0]?.change || 0;
 
-  /*
-    ================= 12-MONTH SALES CHART (real, rolling) =================
-  */
+  
 
   const salesData = useMemo(() => {
     const months = [];
@@ -280,12 +264,9 @@ const Dashboard = () => {
         m.revenue > 0 ? 4 : 0,
       ),
     }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
-  /*
-    ================= ORDER STATUS BREAKDOWN =================
-  */
+  
 
   const statusBreakdown = useMemo(() => {
     const total = orders.length || 1;
@@ -299,7 +280,6 @@ const Dashboard = () => {
         percent: (count / total) * 100,
       };
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
   const avgOrderValue =
@@ -308,15 +288,12 @@ const Dashboard = () => {
         orders.filter((order) => order.status !== "Cancelled").length
       : 0;
 
-  /*
-    ================= RECENT ORDERS =================
-  */
+  
 
   const recentOrders = useMemo(() => {
     return [...orders]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 5);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders]);
 
   const getOrderCustomer = (order) => {
@@ -336,9 +313,7 @@ const Dashboard = () => {
     return `${items[0].name} +${items.length - 1} more`;
   };
 
-  /*
-    ================= TOP PRODUCTS (aggregated from real order items) =================
-  */
+  
 
   const productCategoryMap = useMemo(() => {
     const map = {};
@@ -348,7 +323,6 @@ const Dashboard = () => {
     });
 
     return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products]);
 
   const topProducts = useMemo(() => {
@@ -388,12 +362,9 @@ const Dashboard = () => {
           image: productDetails?.images?.[0] || "",
         };
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders, productCategoryMap]);
 
-  /*
-    ================= STYLES =================
-  */
+  
 
   const getStatusStyles = (status) => {
     switch (status) {
@@ -457,7 +428,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* ================= HEADER ================= */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink/40">
@@ -499,7 +470,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* ================= STATS ================= */}
+      {}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {dashboardStats.map((stat) => {
           const Icon = stat.icon;
@@ -542,9 +513,9 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* ================= CHART + QUICK STATS ================= */}
+      {}
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        {/* Sales Chart */}
+        {}
         <div className="border border-line bg-paper p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -587,7 +558,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Chart */}
+            {}
             <div className="mt-8">
               {salesData.every((m) => m.revenue === 0) ? (
                 <div className="flex h-64 flex-col items-center justify-center text-center">
@@ -634,7 +605,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Order Summary */}
+        {}
         <div className="border border-line bg-paper p-5 sm:p-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink/40">
@@ -689,7 +660,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* ================= RECENT ORDERS ================= */}
+      {}
       <div className="border border-line bg-paper">
         <div className="flex flex-col gap-3 border-b border-line p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
           <div>
@@ -719,7 +690,7 @@ const Dashboard = () => {
           </div>
         ) : (
           <>
-            {/* Desktop Table */}
+            {}
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[800px]">
                 <thead>
@@ -810,7 +781,7 @@ const Dashboard = () => {
               </table>
             </div>
 
-            {/* Mobile Orders */}
+            {}
             <div className="divide-y divide-line md:hidden">
               {recentOrders.map((order) => (
                 <div key={order._id} className="p-5">
@@ -865,7 +836,7 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* ================= TOP PRODUCTS ================= */}
+      {}
       <div className="border border-line bg-paper">
         <div className="flex items-center justify-between border-b border-line p-5 sm:p-6">
           <div>
@@ -933,12 +904,12 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* ================= BOTTOM CTA ================= */}
+      {}
       <div className="bg-ink p-6 text-paper sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-paper/50">
-              Ziveline Admin
+              Ectoo Admin
             </p>
 
             <h2 className="mt-2 font-display text-2xl sm:text-3xl">

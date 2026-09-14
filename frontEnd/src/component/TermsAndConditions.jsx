@@ -1,57 +1,95 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, FileText } from "lucide-react";
 
 const BUSINESS_INFO = {
-  businessName: "Ziveline LLC",
+  businessName: "Ectoo",
   address: "2125 Strawberry Rd, Pasadena, TX 77502",
   phoneDisplay: "+1 (832) 285-3511",
   phoneHref: "+18322853511",
-  email: "info@ziveline.com",
+  email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
 };
 
 const TermsAndConditions = () => {
+  const pageRef = useRef(null);
+
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.06, rootMargin: "0px 0px -20px 0px" }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
-      {/* HERO */}
-      <section className="border-b border-line bg-ink px-4 py-14 text-center sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-4xl">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-paper text-ink">
+    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(28px);
+          transition: opacity .75s cubic-bezier(.22,1,.36,1), transform .75s cubic-bezier(.22,1,.36,1);
+        }
+        [data-reveal="scale"] { transform: scale(.98); }
+        [data-reveal].ectoo-visible { opacity: 1; transform: translateY(0) scale(1); }
+        .ectoo-term-card { transition: transform .3s ease, box-shadow .3s ease; }
+        .ectoo-term-card:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(31,45,34,.05); }
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] { opacity: 1; transform: none; transition: none; }
+          .ectoo-term-card:hover { transform: none; }
+        }
+      `}</style>
+      {}
+      <section className="border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 text-center sm:px-8 sm:py-16 lg:px-12 lg:py-20">
+        <div data-reveal="scale" className="mx-auto max-w-4xl">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#1F2D22] text-white">
             <FileText size={24} aria-hidden="true" />
           </div>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-paper/60">
-            Ziveline
+          <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+            Ectoo
           </p>
 
-          <h1 className="mt-3 font-display text-4xl leading-tight text-paper sm:text-5xl">
+          <h1 className="mt-3 font-display text-5xl leading-tight text-[#111311] sm:text-6xl">
             Terms &amp; Conditions
           </h1>
 
-          <p className="mt-4 text-sm text-paper/60">
+          <p className="mt-4 text-sm text-[#5E5B57]">
             Last updated: September 11, 2026
           </p>
         </div>
       </section>
 
-      {/* TERMS CONTENT */}
+      {}
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-3xl space-y-10 text-sm leading-7 text-ink/60">
+        <div className="mx-auto max-w-4xl space-y-5 text-sm leading-7 text-[#5E5B57]">
           <p>
             These Terms and Conditions (“Terms”) govern your access to and use
-            of https://www.ziveline.com and any purchase from Ziveline LLC. By
+            of https://www.ectoo.us and any purchase from Ectoo LLC. By
             using our website or placing an order, you agree to these Terms.
           </p>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               1. Business Operator
             </h2>
 
             <p className="mt-3">
-              The website and Ziveline brand are operated by:
+              The website and Ectoo brand are operated by:
             </p>
 
             <div className="mt-3 space-y-1">
@@ -64,7 +102,7 @@ const TermsAndConditions = () => {
                 Email:{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-bold text-ink underline underline-offset-4"
+                  className="font-bold text-[#111311] underline underline-offset-4"
                 >
                   {BUSINESS_INFO.email}
                 </a>
@@ -74,7 +112,7 @@ const TermsAndConditions = () => {
                 Phone:{" "}
                 <a
                   href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-bold text-ink underline underline-offset-4"
+                  className="font-bold text-[#111311] underline underline-offset-4"
                 >
                   {BUSINESS_INFO.phoneDisplay}
                 </a>
@@ -82,8 +120,8 @@ const TermsAndConditions = () => {
             </div>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               2. Eligibility
             </h2>
 
@@ -98,13 +136,13 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               3. Products
             </h2>
 
             <p className="mt-3">
-              Ziveline sells handbags, tote bags, crossbody bags, shoulder
+              Ectoo sells handbags, tote bags, crossbody bags, shoulder
               bags, and related fashion accessories.
             </p>
 
@@ -122,8 +160,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               4. Prices and Currency
             </h2>
 
@@ -146,8 +184,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               5. Online Orders
             </h2>
 
@@ -174,13 +212,13 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               6. Payment
             </h2>
 
             <p className="mt-3">
-              Ziveline accepts online electronic payments only through the
+              Ectoo accepts online electronic payments only through the
               payment methods displayed at checkout. We do not accept Cash on
               Delivery.
             </p>
@@ -194,7 +232,7 @@ const TermsAndConditions = () => {
 
             <p className="mt-3">
               Once activated, payments will be securely processed by an
-              authorized third-party payment provider. Ziveline does not offer
+              authorized third-party payment provider. Ectoo does not offer
               subscription billing or automatically recurring product charges.
             </p>
 
@@ -205,8 +243,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               7. Fraud Prevention
             </h2>
 
@@ -229,8 +267,8 @@ const TermsAndConditions = () => {
             </ul>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               8. Shipping
             </h2>
 
@@ -254,7 +292,7 @@ const TermsAndConditions = () => {
               Complete shipping terms are provided in our{" "}
               <Link
                 to="/shipping-policy"
-                className="font-bold text-ink underline underline-offset-4"
+                className="font-bold text-[#111311] underline underline-offset-4"
               >
                 Shipping Policy
               </Link>
@@ -262,8 +300,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               9. Order Tracking
             </h2>
 
@@ -278,8 +316,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               10. Cancellations and Address Changes
             </h2>
 
@@ -300,8 +338,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               11. Returns and Refunds
             </h2>
 
@@ -324,7 +362,7 @@ const TermsAndConditions = () => {
             <p className="mt-3">
               No restocking fee is charged on an eligible return.
               Change-of-mind return shipping is the customer’s responsibility.
-              Ziveline covers reasonable return shipping for verified damaged,
+              Ectoo covers reasonable return shipping for verified damaged,
               defective, or incorrect items.
             </p>
 
@@ -332,7 +370,7 @@ const TermsAndConditions = () => {
               Complete conditions are provided in our{" "}
               <Link
                 to="/return-policy"
-                className="font-bold text-ink underline underline-offset-4"
+                className="font-bold text-[#111311] underline underline-offset-4"
               >
                 Return and Refund Policy
               </Link>
@@ -340,8 +378,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               12. Customer Accounts
             </h2>
 
@@ -365,8 +403,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               13. Acceptable Use
             </h2>
 
@@ -389,15 +427,15 @@ const TermsAndConditions = () => {
             </ul>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               14. Intellectual Property
             </h2>
 
             <p className="mt-3">
-              The Ziveline name, website design, written content, graphics,
+              The Ectoo name, website design, written content, graphics,
               logos, and original website materials are owned by or licensed to
-              Ziveline LLC and are protected by applicable intellectual-property
+              Ectoo LLC and are protected by applicable intellectual-property
               laws.
             </p>
 
@@ -408,8 +446,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               15. Third-Party Services
             </h2>
 
@@ -426,8 +464,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               16. Product Use and Care
             </h2>
 
@@ -444,8 +482,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               17. Website Availability
             </h2>
 
@@ -456,8 +494,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               18. Disclaimer
             </h2>
 
@@ -474,13 +512,13 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               19. Limitation of Liability
             </h2>
 
             <p className="mt-3">
-              To the maximum extent permitted by law, Ziveline LLC will not be
+              To the maximum extent permitted by law, Ectoo LLC will not be
               liable for indirect, incidental, special, punitive, or
               consequential damages arising from use of the website.
             </p>
@@ -493,8 +531,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               20. Indemnification
             </h2>
 
@@ -505,8 +543,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               21. Delays Outside Our Control
             </h2>
 
@@ -523,8 +561,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               22. Governing Law and Venue
             </h2>
 
@@ -546,8 +584,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               23. Severability
             </h2>
 
@@ -557,8 +595,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               24. No Waiver
             </h2>
 
@@ -568,21 +606,21 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               25. Assignment
             </h2>
 
             <p className="mt-3">
               Customers may not transfer their rights or obligations under
-              these Terms without our written consent. Ziveline may transfer
+              these Terms without our written consent. Ectoo may transfer
               these Terms in connection with a merger, acquisition, financing,
               reorganization, or sale of business assets.
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               26. Entire Agreement
             </h2>
 
@@ -594,8 +632,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               27. Changes to These Terms
             </h2>
 
@@ -611,8 +649,8 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               28. Contact
             </h2>
 
@@ -626,7 +664,7 @@ const TermsAndConditions = () => {
                 Email:{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-bold text-ink underline underline-offset-4"
+                  className="font-bold text-[#111311] underline underline-offset-4"
                 >
                   {BUSINESS_INFO.email}
                 </a>
@@ -636,7 +674,7 @@ const TermsAndConditions = () => {
                 Phone:{" "}
                 <a
                   href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-bold text-ink underline underline-offset-4"
+                  className="font-bold text-[#111311] underline underline-offset-4"
                 >
                   {BUSINESS_INFO.phoneDisplay}
                 </a>
@@ -651,22 +689,22 @@ const TermsAndConditions = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-line px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col items-start gap-6 border border-line bg-ink p-6 text-paper sm:p-8 md:flex-row md:items-center md:justify-between md:p-10">
+      {}
+      <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
+        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_20px_50px_rgba(31,45,34,0.12)] sm:p-9 md:flex-row md:items-center md:justify-between md:p-10">
           <div>
             <h3 className="font-display text-2xl">
               Have a question?
             </h3>
 
-            <p className="mt-2 text-sm leading-6 text-paper/60">
+            <p className="mt-2 text-sm leading-6 text-white/60">
               Visit our contact page for assistance.
             </p>
           </div>
 
           <Link
             to="/contact"
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-paper px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-[#EFE9DE] md:w-auto"
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[13px] bg-[#F1EEE8] px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all hover:-translate-y-0.5 hover:bg-white md:w-auto"
           >
             Contact Us
             <ArrowRight size={16} aria-hidden="true" />

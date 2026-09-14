@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -8,16 +8,39 @@ import {
 } from "lucide-react";
 
 const BUSINESS_INFO = {
-  businessName: "Ziveline LLC",
+  businessName: "Ectoo",
   address: "2125 Strawberry Rd, Pasadena, TX 77502",
   phoneDisplay: "+1 (832) 285-3511",
   phoneHref: "+18322853511",
-  email: "info@ziveline.com",
+  email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
 };
 
 const ReturnPolicy = () => {
+  const pageRef = useRef(null);
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+
   const eligible = [
     "Unused and unworn",
     "Unwashed and unaltered",
@@ -33,7 +56,7 @@ const ReturnPolicy = () => {
     "Products showing misuse, improper cleaning, or ordinary wear",
     "Products returned more than 30 days after delivery",
     "Products mailed without authorization",
-    "Products not purchased directly from Ziveline",
+    "Products not purchased directly from Ectoo",
   ];
 
   const steps = [
@@ -60,36 +83,52 @@ const ReturnPolicy = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-paper text-ink">
-      {/* HERO */}
-      <section className="border-b border-line bg-ink px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-paper text-ink">
+    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1);
+        }
+        [data-reveal="left"] { transform: translateX(-40px); }
+        [data-reveal="right"] { transform: translateX(40px); }
+        [data-reveal="scale"] { transform: scale(0.97); }
+        [data-reveal].ectoo-visible { opacity: 1; transform: translate(0,0) scale(1); }
+        .return-card { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
+        .return-card:hover { transform: translateY(-4px); box-shadow: 0 18px 48px rgba(31,45,34,.07); }
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] { opacity: 1; transform: none; transition: none; }
+        }
+      `}</style>
+      
+      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
+        <div data-reveal="scale" className="relative mx-auto max-w-4xl text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
             <RotateCcw size={24} aria-hidden="true" />
           </div>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-paper/60">
-            Ziveline
+          <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+            Ectoo
           </p>
 
-          <h1 className="mt-3 font-display text-4xl text-paper sm:text-5xl">
+          <h1 className="mt-3 font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl">
             Return &amp; Refund Policy
           </h1>
 
-          <p className="mt-4 text-sm text-paper/60">
+          <p className="mt-4 text-sm text-[#5E5B57]">
             Last updated: September 11, 2026
           </p>
         </div>
       </section>
 
-      {/* SUMMARY */}
+      
       <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="font-display text-3xl text-ink">
+        <div data-reveal className="mx-auto max-w-3xl text-center">
+          <h2 className="font-display text-3xl text-[#111311]">
             30-Day Return Window
           </h2>
 
-          <p className="mt-4 text-sm leading-7 text-ink/60">
+          <p className="mt-4 text-sm leading-7 text-[#5E5B57]">
             {BUSINESS_INFO.businessName} accepts eligible returns requested
             within 30 days of confirmed delivery. Products must meet the return
             conditions described below.
@@ -97,7 +136,7 @@ const ReturnPolicy = () => {
         </div>
 
         <div className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-2">
-          <div className="border border-emerald-200 bg-emerald-50 p-6">
+          <div data-reveal="left" className="return-card rounded-[24px] border border-emerald-200 bg-emerald-50 p-6 sm:p-7">
             <div className="flex items-center gap-2">
               <CheckCircle2
                 size={19}
@@ -123,7 +162,7 @@ const ReturnPolicy = () => {
             </ul>
           </div>
 
-          <div className="border border-red-200 bg-red-50 p-6">
+          <div data-reveal="right" className="return-card rounded-[24px] border border-red-200 bg-red-50 p-6 sm:p-7">
             <div className="flex items-center gap-2">
               <XCircle
                 size={19}
@@ -151,10 +190,10 @@ const ReturnPolicy = () => {
         </div>
       </section>
 
-      {/* RETURN STEPS */}
-      <section className="bg-[#F4F1EB] px-4 py-16 sm:px-6 lg:px-8">
+      
+      <section className="bg-[#E8E7DF] px-5 py-16 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-5xl">
-          <h2 className="font-display text-3xl text-ink">
+          <h2 className="font-display text-3xl text-[#111311]">
             How to Return an Item
           </h2>
 
@@ -162,17 +201,17 @@ const ReturnPolicy = () => {
             {steps.map((step, index) => (
               <div
                 key={step.title}
-                className="border border-line bg-paper p-5"
+                data-reveal className="return-card rounded-[22px] border border-[#E4DED7] bg-white p-5 sm:p-6"
               >
-                <div className="flex h-9 w-9 items-center justify-center bg-ink text-sm font-bold text-paper">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1F2D22] text-sm font-bold text-white">
                   {index + 1}
                 </div>
 
-                <h3 className="mt-4 text-sm font-bold text-ink">
+                <h3 className="mt-4 text-sm font-bold text-[#111311]">
                   {step.title}
                 </h3>
 
-                <p className="mt-2 text-xs leading-5 text-ink/50">
+                <p className="mt-2 text-xs leading-5 text-[#5E5B57]">
                   {step.description}
                 </p>
               </div>
@@ -181,12 +220,12 @@ const ReturnPolicy = () => {
         </div>
       </section>
 
-      {/* POLICY DETAILS */}
+      
       <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl space-y-10 text-sm leading-7 text-ink/60">
-          {/* RETURN ELIGIBILITY */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+        <div className="mx-auto max-w-4xl space-y-4 text-sm leading-7 text-[#5E5B57]">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Return Eligibility
             </h2>
 
@@ -208,9 +247,9 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* STARTING A RETURN */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Starting a Return
             </h2>
 
@@ -224,7 +263,7 @@ const ReturnPolicy = () => {
                 Email:{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-ink underline underline-offset-2 transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.email}
                 </a>
@@ -234,7 +273,7 @@ const ReturnPolicy = () => {
                 Phone:{" "}
                 <a
                   href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-ink underline underline-offset-2 transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.phoneDisplay}
                 </a>
@@ -259,9 +298,9 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* RETURN ADDRESS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Return Address
             </h2>
 
@@ -270,7 +309,7 @@ const ReturnPolicy = () => {
             </p>
 
             <div className="mt-3 space-y-1">
-              <p className="font-medium text-ink">
+              <p className="font-medium text-[#111311]">
                 {BUSINESS_INFO.businessName}
               </p>
               <p>2125 Strawberry Rd</p>
@@ -284,9 +323,9 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* CHANGE OF MIND */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Change-of-Mind Returns
             </h2>
 
@@ -301,7 +340,7 @@ const ReturnPolicy = () => {
               </li>
               <li>The return shipment should include tracking.</li>
               <li>
-                Ziveline is not responsible for a return lost before it reaches
+                Ectoo is not responsible for a return lost before it reaches
                 us.
               </li>
               <li>
@@ -310,15 +349,15 @@ const ReturnPolicy = () => {
             </ul>
           </section>
 
-          {/* DAMAGED ITEMS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Damaged, Defective, or Incorrect Products
             </h2>
 
             <p className="mt-3">
               A damaged, defective, or incorrect product should be reported
-              within <strong className="text-ink">48 hours of delivery</strong>.
+              within <strong className="text-[#111311]">48 hours of delivery</strong>.
             </p>
 
             <p className="mt-3">
@@ -333,19 +372,19 @@ const ReturnPolicy = () => {
             </ul>
 
             <p className="mt-3">
-              After verification, Ziveline will provide appropriate return
+              After verification, Ectoo will provide appropriate return
               instructions and cover reasonable return-shipping costs.
             </p>
           </section>
 
-          {/* EXCHANGES */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Exchanges
             </h2>
 
             <p className="mt-3">
-              We do <strong className="text-ink">not offer direct exchanges</strong>.
+              We do <strong className="text-[#111311]">not offer direct exchanges</strong>.
             </p>
 
             <p className="mt-3">
@@ -355,24 +394,24 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* RESTOCKING FEES */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Restocking Fees
             </h2>
 
             <p className="mt-3">
-              Ziveline does{" "}
-              <strong className="text-ink">
+              Ectoo does{" "}
+              <strong className="text-[#111311]">
                 not charge a restocking fee
               </strong>{" "}
               for an eligible return.
             </p>
           </section>
 
-          {/* NON RETURNABLE */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Non-Returnable Products
             </h2>
 
@@ -393,7 +432,7 @@ const ReturnPolicy = () => {
               </li>
               <li>Is returned more than 30 days after delivery.</li>
               <li>Was mailed without authorization.</li>
-              <li>Was not purchased directly from Ziveline.</li>
+              <li>Was not purchased directly from Ectoo.</li>
             </ul>
 
             <p className="mt-3">
@@ -402,9 +441,9 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* RETURN INSPECTION */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Return Inspection
             </h2>
 
@@ -420,20 +459,20 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* REFUND TIMING */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Refund Timing
             </h2>
 
             <p className="mt-3">
               Approved refunds are issued to the{" "}
-              <strong className="text-ink">original payment method within 5–7 business days after inspection</strong>.
+              <strong className="text-[#111311]">original payment method within 5–7 business days after inspection</strong>.
             </p>
 
             <p className="mt-3">
               The customer’s bank or card issuer may require additional time to
-              post the credit. Ziveline does not control financial-institution
+              post the credit. Ectoo does not control financial-institution
               posting times.
             </p>
 
@@ -444,9 +483,9 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* LATE REFUNDS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Late or Missing Refunds
             </h2>
 
@@ -462,7 +501,7 @@ const ReturnPolicy = () => {
                 Contact{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-ink underline underline-offset-2"
+                  className="font-medium text-[#111311] underline underline-offset-2"
                 >
                   {BUSINESS_INFO.email}
                 </a>{" "}
@@ -471,9 +510,9 @@ const ReturnPolicy = () => {
             </ol>
           </section>
 
-          {/* REFUSED ORDERS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Refused and Undeliverable Orders
             </h2>
 
@@ -489,9 +528,9 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* CHARGE QUESTIONS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Charge and Order Questions
             </h2>
 
@@ -503,14 +542,14 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          {/* CONTACT */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Contact
             </h2>
 
             <div className="mt-3 space-y-1">
-              <p className="font-medium text-ink">
+              <p className="font-medium text-[#111311]">
                 {BUSINESS_INFO.businessName}
               </p>
               <p>2125 Strawberry Rd</p>
@@ -521,7 +560,7 @@ const ReturnPolicy = () => {
                 Email:{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-ink transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.email}
                 </a>
@@ -531,7 +570,7 @@ const ReturnPolicy = () => {
                 Phone:{" "}
                 <a
                   href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-ink transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.phoneDisplay}
                 </a>
@@ -546,22 +585,22 @@ const ReturnPolicy = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-line px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col items-center gap-5 border border-line bg-ink p-10 text-center text-paper sm:flex-row sm:justify-between sm:text-left">
+      
+      <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 lg:px-12">
+        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-center gap-6 rounded-[28px] bg-[#1F2D22] p-8 text-center text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:flex-row sm:justify-between sm:p-10 sm:text-left">
           <div>
             <h3 className="font-display text-2xl">
               Need to start a return?
             </h3>
 
-            <p className="mt-1 text-sm text-paper/60">
+            <p className="mt-1 text-sm text-white/60">
               Contact our support team before mailing your return.
             </p>
           </div>
 
           <Link
             to="/contact"
-            className="inline-flex shrink-0 items-center gap-2 bg-paper px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors duration-300 hover:bg-[#EFE9DE]"
+            className="inline-flex shrink-0 items-center gap-2 rounded-[14px] bg-[#F1EEE8] px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
           >
             Contact Support
             <ArrowRight size={16} aria-hidden="true" />

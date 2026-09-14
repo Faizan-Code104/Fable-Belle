@@ -22,10 +22,10 @@ export const sendContactMessage = async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: `"Ziveline Website" <${process.env.SMTP_FROM}>`,
+      from: `"Ectoo Website" <${process.env.SMTP_FROM}>`,
       to: process.env.CONTACT_RECEIVER_EMAIL,
       replyTo: email,
-      subject: `[Ziveline Contact] ${subject}`,
+      subject: `[Ectoo Contact] ${subject}`,
       text: `
 Name: ${name}
 Email: ${email}
@@ -40,7 +40,7 @@ ${message}
       message: "Your message has been sent successfully.",
     });
   } catch (error) {
-    console.error("Contact form error:", error.message);
+    console.error("Ectoo contact form error:", error.message);
 
     return res.status(500).json({
       success: false,

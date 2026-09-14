@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -7,24 +7,25 @@ import {
 } from "lucide-react";
 
 const BUSINESS_INFO = {
-  businessName: "Ziveline LLC",
+  businessName: "Ectoo",
   address: "2125 Strawberry Rd, Pasadena, TX 77502",
   phoneDisplay: "+1 (832) 285-3511",
   phoneHref: "+18322853511",
-  email: "info@ziveline.com",
+  email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
 };
 
 const FAQs = () => {
+  const pageRef = useRef(null);
   const [openIndex, setOpenIndex] = useState(0);
 
   const faqs = [
     {
       category: "Business",
-      question: "Who operates Ziveline?",
+      question: "Who operates Ectoo?",
       answer:
-        "Ziveline is operated by Ziveline LLC, a Texas limited liability company.",
+        "Ectoo is operated by Ectoo, a Texas limited liability company.",
     },
     {
       category: "Product Information",
@@ -42,13 +43,13 @@ const FAQs = () => {
       category: "Orders & Payment",
       question: "Do you accept online payments?",
       answer:
-        "Ziveline accepts online electronic payments only through methods displayed at checkout. Payment processing is currently being set up and will become available after an authorized payment provider is activated.",
+        "Ectoo accepts online electronic payments only through methods displayed at checkout. Payment processing is currently being set up and will become available after an authorized payment provider is activated.",
     },
     {
       category: "Orders & Payment",
       question: "Do you offer Cash on Delivery?",
       answer:
-        "No. Ziveline does not accept Cash on Delivery.",
+        "No. Ectoo does not accept Cash on Delivery.",
     },
     {
       category: "Orders & Payment",
@@ -60,7 +61,7 @@ const FAQs = () => {
       category: "Orders & Payment",
       question: "What will appear on my card statement?",
       answer:
-        "After online payments are activated, the exact processor-approved billing descriptor will be displayed at checkout or in the order confirmation. It will identify the transaction as associated with Ziveline LLC or Ziveline.",
+        "After online payments are activated, the exact processor-approved billing descriptor will be displayed at checkout or in the order confirmation. It will identify the transaction as associated with Ectoo.",
     },
     {
       category: "Shipping",
@@ -96,7 +97,7 @@ const FAQs = () => {
       category: "Shipping",
       question: "Can I change my shipping address?",
       answer:
-        "Contact info@ziveline.com immediately. Address changes are available only before shipment and cannot be guaranteed after fulfillment begins.",
+        "Contact info@ectoo.us immediately. Address changes are available only before shipment and cannot be guaranteed after fulfillment begins.",
     },
     {
       category: "Orders & Payment",
@@ -126,13 +127,13 @@ const FAQs = () => {
       category: "Returns & Refunds",
       question: "Who pays for return shipping?",
       answer:
-        "For a change-of-mind return, the customer pays return shipping. For a verified damaged, defective, or incorrect product, Ziveline covers reasonable return-shipping costs.",
+        "For a change-of-mind return, the customer pays return shipping. For a verified damaged, defective, or incorrect product, Ectoo covers reasonable return-shipping costs.",
     },
     {
       category: "Returns & Refunds",
       question: "What if my order arrives damaged or incorrect?",
       answer:
-        "Contact info@ziveline.com within 48 hours of delivery. Include the order number and clear photographs of the item, packaging, and shipping label.",
+        "Contact info@ectoo.us within 48 hours of delivery. Include the order number and clear photographs of the item, packaging, and shipping label.",
     },
     {
       category: "Returns & Refunds",
@@ -150,27 +151,52 @@ const FAQs = () => {
       category: "Returns & Refunds",
       question: "Where should I send an authorized return?",
       answer:
-        "After receiving return authorization, send the product according to our instructions to: Ziveline LLC, 2125 Strawberry Rd, Pasadena, TX 77502, United States. Do not mail an unauthorized return.",
+        "After receiving return authorization, send the product according to our instructions to: Ectoo, 2125 Strawberry Rd, Pasadena, TX 77502, United States. Do not mail an unauthorized return.",
     },
     {
       category: "Business",
       question: "Where is your inventory stored?",
       answer:
-        "Ziveline fulfills customer orders from inventory held for sale by the business. Our published address is a business mailing and authorized return address and is not presented as a walk-in retail store.",
+        "Ectoo fulfills customer orders from inventory held for sale by the business. Our published address is a business mailing and authorized return address and is not presented as a walk-in retail store.",
     },
     {
       category: "Business",
       question: "Can I shop at the Pasadena address?",
       answer:
-        "No walk-in retail shopping or customer pickup is offered unless Ziveline confirms an appointment or pickup option in writing.",
+        "No walk-in retail shopping or customer pickup is offered unless Ectoo confirms an appointment or pickup option in writing.",
     },
     {
       category: "Support",
       question: "How can I contact customer support?",
       answer:
-        "Email: info@ziveline.com. Phone: +1 (832) 285-3511. Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time. We generally respond within one business day.",
+        "Email: info@ectoo.us. Phone: +1 (832) 285-3511. Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time. We generally respond within one business day.",
     },
   ];
+
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "0px 0px -30px 0px",
+      }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
 
   const toggleFaq = (index) => {
     setOpenIndex((current) =>
@@ -179,35 +205,68 @@ const FAQs = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
-      {/* HERO */}
-      <section className="border-b border-line bg-ink px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-paper text-ink sm:h-16 sm:w-16">
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(34px);
+          transition:
+            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        [data-reveal="left"] {
+          transform: translateX(-40px);
+        }
+
+        [data-reveal="scale"] {
+          transform: scale(0.97);
+        }
+
+        [data-reveal].ectoo-visible {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
+      
+      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+        <div data-reveal="scale" className="mx-auto max-w-4xl text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#1F2D22] text-white sm:h-16 sm:w-16">
             <HelpCircle
               size={24}
               aria-hidden="true"
             />
           </div>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-paper/60 sm:tracking-[0.25em]">
-            Ziveline
+          <p className="mt-6 text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+            Ectoo
           </p>
 
-          <h1 className="mt-3 font-display text-3xl leading-tight text-paper sm:text-4xl md:text-5xl">
+          <h1 className="mt-3 font-display text-4xl leading-tight sm:text-5xl md:text-6xl">
             Frequently Asked Questions
           </h1>
 
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-paper/70 sm:text-base">
-            Find helpful information about Ziveline, orders, payments,
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#5E5B57] sm:text-base">
+            Find helpful information about Ectoo, orders, payments,
             shipping, returns, refunds, and customer support.
           </p>
         </div>
       </section>
 
-      {/* FAQ LIST */}
-      <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-3xl divide-y divide-line">
+      
+      <section className="px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
+        <div className="mx-auto max-w-4xl space-y-3">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
 
@@ -217,7 +276,7 @@ const FAQs = () => {
             return (
               <div
                 key={faq.question}
-                className="py-5 sm:py-6"
+                data-reveal className="overflow-hidden rounded-[16px] border border-[#E4DED7] bg-white px-5 py-4 transition-all duration-300 hover:border-[#1F2D22]/20 sm:px-6 sm:py-5"
               >
                 <button
                   id={buttonId}
@@ -228,11 +287,11 @@ const FAQs = () => {
                   className="flex min-h-12 w-full items-start justify-between gap-4 text-left"
                 >
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-bottle sm:text-xs">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#9A5937]">
                       {faq.category}
                     </p>
 
-                    <h2 className="mt-1.5 pr-2 text-base font-bold leading-6 text-ink sm:text-lg">
+                    <h2 className="mt-1.5 pr-2 font-display text-xl leading-6 text-[#111311] sm:text-2xl">
                       {faq.question}
                     </h2>
                   </div>
@@ -240,7 +299,7 @@ const FAQs = () => {
                   <ChevronDown
                     size={20}
                     aria-hidden="true"
-                    className={`mt-1 shrink-0 text-ink/40 transition-transform duration-300 ${
+                    className={`mt-1 shrink-0 text-[#1F2D22]/45 transition-transform duration-300 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -252,7 +311,7 @@ const FAQs = () => {
                     role="region"
                     aria-labelledby={buttonId}
                   >
-                    <p className="mt-3 max-w-2xl pr-1 whitespace-pre-line text-sm leading-7 text-ink/60 sm:pr-8">
+                    <p className="mt-3 max-w-2xl pr-1 whitespace-pre-line text-sm leading-7 text-[#5E5B57] sm:pr-8">
                       {faq.answer}
                     </p>
                   </div>
@@ -263,20 +322,20 @@ const FAQs = () => {
         </div>
       </section>
 
-      {/* SUPPORT CTA */}
-      <section className="border-t border-line px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 border border-line bg-ink p-6 text-center text-paper sm:p-8 md:flex-row md:justify-between md:text-left lg:p-10">
+      
+      <section className="border-t border-[#E4DED7] bg-[#E4E5DD] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
+        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-center gap-6 rounded-[22px] bg-[#1F2D22] p-7 text-center text-white sm:p-9 md:flex-row md:justify-between md:text-left">
           <div className="min-w-0">
             <h2 className="font-display text-2xl sm:text-3xl">
               Still have questions?
             </h2>
 
-            <p className="mt-2 text-sm leading-6 text-paper/60">
+            <p className="mt-2 text-sm leading-6 text-white/60">
               Contact {BUSINESS_INFO.businessName} if you need
               additional information.
             </p>
 
-            <p className="mt-2 text-xs leading-5 text-paper/50">
+            <p className="mt-2 text-xs leading-5 text-white/45">
               {BUSINESS_INFO.email} · {BUSINESS_INFO.phoneDisplay}
               <br />
               {BUSINESS_INFO.businessDays} · {BUSINESS_INFO.supportHours}
@@ -285,7 +344,7 @@ const FAQs = () => {
 
           <Link
             to="/contact"
-            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 bg-paper px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors duration-300 hover:bg-[#EFE9DE] sm:w-auto"
+            className="group inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[6px] bg-[#F1EEE8] px-6 py-3.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-1 hover:bg-white sm:w-auto"
           >
             Contact Support
 

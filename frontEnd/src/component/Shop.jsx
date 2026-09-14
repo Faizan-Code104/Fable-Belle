@@ -1,6 +1,7 @@
 import React, {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -23,6 +24,7 @@ import { useCart } from "../component/CartContext";
 import { API_BASE_URL } from "../config";
 
 const Shop = () => {
+  const pageRef = useRef(null);
   const { addToCart } = useCart();
   const [searchParams] = useSearchParams();
 
@@ -45,9 +47,7 @@ const Shop = () => {
   const [showFilters, setShowFilters] =
     useState(false);
 
-  /* =========================================
-     FETCH PRODUCTS
-  ========================================= */
+  
 
   useEffect(() => {
     let isMounted = true;
@@ -104,9 +104,7 @@ const Shop = () => {
     };
   }, []);
 
-  /* =========================================
-     SYNC CATEGORY WITH URL
-  ========================================= */
+  
 
   useEffect(() => {
     setActiveCategory(
@@ -114,9 +112,7 @@ const Shop = () => {
     );
   }, [categoryFromUrl]);
 
-  /* =========================================
-     CATEGORIES
-  ========================================= */
+  
 
   const categories = useMemo(() => {
     const databaseCategories = products
@@ -129,9 +125,7 @@ const Shop = () => {
     ];
   }, [products]);
 
-  /* =========================================
-     IMAGE URL
-  ========================================= */
+  
 
   const getImageUrl = (image) => {
     if (
@@ -151,9 +145,7 @@ const Shop = () => {
     return `${API_BASE_URL}${image}`;
   };
 
-  /* =========================================
-     PRICE
-  ========================================= */
+  
 
   const formatPrice = (price) => {
     const value = Number(price);
@@ -165,9 +157,7 @@ const Shop = () => {
     return `$${value.toFixed(2)}`;
   };
 
-  /* =========================================
-     ADD TO CART
-  ========================================= */
+  
 
   const handleAddToCart = (product) => {
     if (
@@ -186,9 +176,7 @@ const Shop = () => {
     });
   };
 
-  /* =========================================
-     FILTER / SEARCH / SORT
-  ========================================= */
+  
 
   const filteredProducts = useMemo(() => {
     const search = searchQuery
@@ -279,9 +267,29 @@ const Shop = () => {
     sortBy,
   ]);
 
-  /* =========================================
-     CATEGORY CHANGE
-  ========================================= */
+  
+
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, [loading, filteredProducts?.length]);
 
   const handleCategoryChange = (
     category
@@ -291,31 +299,46 @@ const Shop = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
+    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity .75s cubic-bezier(.22,1,.36,1), transform .75s cubic-bezier(.22,1,.36,1);
+        }
+        [data-reveal="left"] { transform: translateX(-38px); }
+        [data-reveal="right"] { transform: translateX(38px); }
+        [data-reveal="scale"] { transform: scale(.97); }
+        [data-reveal].ectoo-visible { opacity: 1; transform: translate(0,0) scale(1); }
+        .ectoo-product { transition: transform .35s ease; }
+        .ectoo-product:hover { transform: translateY(-5px); }
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] { opacity: 1; transform: none; transition: none; }
+          .ectoo-product:hover { transform: none; }
+        }
+      `}</style>
 
-      {/* =========================================
-          SHOP HERO
-      ========================================= */}
+      
 
-      <section className="bg-ink px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-7xl">
+      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-20 lg:px-12 lg:py-20">
+        <div data-reveal="scale" className="relative mx-auto max-w-7xl">
 
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-paper/60 sm:tracking-[0.25em]">
-            Ziveline Collection
+          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+            Ectoo Collection
           </p>
 
           <div className="mt-4 flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
 
             <div className="max-w-3xl">
 
-              <h1 className="font-display text-4xl leading-[1.08] text-paper sm:text-5xl lg:text-6xl">
+              <h1 className="font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl lg:text-7xl">
                 Find your
-                <span className="block text-paper/60">
+                <span className="block text-[#3F4C3A]">
                   everyday carry.
                 </span>
               </h1>
 
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-paper/70 sm:mt-6 sm:text-base">
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-[#5E5B57] sm:mt-6 sm:text-base">
                 Explore handbags designed for
                 everyday use, practical
                 organization, and modern style.
@@ -323,7 +346,7 @@ const Shop = () => {
 
             </div>
 
-            <div className="flex items-center gap-3 text-paper">
+            <div className="flex items-center gap-3 rounded-full border border-[#1F2D22]/10 bg-white/60 px-5 py-3 text-[#1F2D22]">
 
               <ShoppingBag
                 size={22}
@@ -344,17 +367,15 @@ const Shop = () => {
         </div>
       </section>
 
-      {/* =========================================
-          CONTROLS
-      ========================================= */}
+      
 
-      <section className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur">
+      <section className="sticky top-0 z-30 border-b border-[#E4DED7] bg-[#FAF8F5]/95 backdrop-blur-xl">
 
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-            {/* DESKTOP CATEGORIES */}
+            
 
             <div className="hidden max-w-full items-center gap-2 overflow-x-auto lg:flex">
 
@@ -374,10 +395,10 @@ const Shop = () => {
                         )
                       }
                       aria-pressed={selected}
-                      className={`min-h-11 whitespace-nowrap border px-5 py-2.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                      className={`min-h-11 whitespace-nowrap rounded-full border px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-all ${
                         selected
-                          ? "border-ink bg-ink text-paper"
-                          : "border-line bg-paper text-ink/60 hover:border-ink hover:text-ink"
+                          ? "border-[#1F2D22] bg-[#1F2D22] text-white"
+                          : "border-[#E4DED7] bg-white text-[#5E5B57] hover:border-[#1F2D22] hover:text-[#111311]"
                       }`}
                     >
                       {category}
@@ -388,7 +409,7 @@ const Shop = () => {
 
             </div>
 
-            {/* SEARCH / SORT */}
+            
 
             <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
 
@@ -397,7 +418,7 @@ const Shop = () => {
                 <Search
                   size={17}
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink/40"
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#5E5B57]/70"
                 />
 
                 <label
@@ -417,7 +438,7 @@ const Shop = () => {
                     )
                   }
                   placeholder="Search products..."
-                  className="min-h-12 w-full border border-line bg-[#F4F1EB] py-3 pl-11 pr-11 text-base text-ink outline-none transition-colors placeholder:text-ink/40 focus:border-ink focus:bg-paper sm:text-sm"
+                  className="min-h-12 w-full rounded-[14px] border border-[#E4DED7] bg-white py-3 pl-11 pr-11 text-base text-[#111311] outline-none transition-all placeholder:text-[#5E5B57]/60 focus:border-[#1F2D22] focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] sm:text-sm"
                 />
 
                 {searchQuery && (
@@ -427,7 +448,7 @@ const Shop = () => {
                       setSearchQuery("")
                     }
                     aria-label="Clear search"
-                    className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-ink/40 transition-colors hover:text-ink"
+                    className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-[#5E5B57]/70 transition-colors hover:text-[#111311]"
                   >
                     <X
                       size={16}
@@ -443,7 +464,7 @@ const Shop = () => {
                 <ArrowDownUp
                   size={16}
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink/50"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#5E5B57]"
                 />
 
                 <label
@@ -461,7 +482,7 @@ const Shop = () => {
                       event.target.value
                     )
                   }
-                  className="min-h-12 w-full appearance-none border border-line bg-paper py-3 pl-9 pr-9 text-xs font-semibold text-ink outline-none transition-colors hover:border-ink focus:border-ink"
+                  className="min-h-12 w-full appearance-none rounded-[14px] border border-[#E4DED7] bg-white py-3 pl-9 pr-9 text-xs font-semibold text-[#111311] outline-none transition-colors hover:border-[#1F2D22] focus:border-[#1F2D22]"
                 >
                   <option value="newest">
                     Newest
@@ -483,14 +504,14 @@ const Shop = () => {
                 <ChevronDown
                   size={15}
                   aria-hidden="true"
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink/40"
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#5E5B57]/70"
                 />
 
               </div>
 
             </div>
 
-            {/* MOBILE CATEGORY BUTTON */}
+            
 
             <button
               type="button"
@@ -501,7 +522,7 @@ const Shop = () => {
               }
               aria-expanded={showFilters}
               aria-controls="mobile-shop-categories"
-              className="flex min-h-12 w-full items-center justify-center gap-2 bg-ink px-5 text-xs font-semibold uppercase tracking-wide text-paper lg:hidden"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#1F2D22] px-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white lg:hidden"
             >
               <SlidersHorizontal
                 size={16}
@@ -513,12 +534,12 @@ const Shop = () => {
 
           </div>
 
-          {/* MOBILE CATEGORIES */}
+          
 
           {showFilters && (
             <div
               id="mobile-shop-categories"
-              className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4 lg:hidden"
+              className="mt-4 flex flex-wrap gap-2 border-t border-[#E4DED7] pt-4 lg:hidden"
             >
               {categories.map(
                 (category) => {
@@ -538,8 +559,8 @@ const Shop = () => {
                       aria-pressed={selected}
                       className={`min-h-11 border px-4 py-2 text-xs font-semibold uppercase tracking-wide ${
                         selected
-                          ? "border-ink bg-ink text-paper"
-                          : "border-line bg-paper text-ink/60"
+                          ? "border-[#1F2D22] bg-[#1F2D22] text-white"
+                          : "border-[#E4DED7] bg-white text-[#5E5B57]"
                       }`}
                     >
                       {category}
@@ -553,24 +574,22 @@ const Shop = () => {
         </div>
       </section>
 
-      {/* =========================================
-          PRODUCTS
-      ========================================= */}
+      
 
       <section className="px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
 
         <div className="mx-auto max-w-7xl">
 
-          {/* RESULT HEADER */}
+          
 
           <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
 
             <p
-              className="text-sm text-ink/60"
+              className="text-sm text-[#5E5B57]"
               aria-live="polite"
             >
               Showing{" "}
-              <span className="font-bold text-ink">
+              <span className="font-bold text-[#111311]">
                 {filteredProducts.length}
               </span>{" "}
               {filteredProducts.length === 1
@@ -584,7 +603,7 @@ const Shop = () => {
                 onClick={() =>
                   setActiveCategory("All")
                 }
-                className="min-h-11 px-2 text-xs font-semibold text-ink/60 underline underline-offset-4 hover:text-ink"
+                className="min-h-11 px-2 text-xs font-semibold text-[#5E5B57] underline underline-offset-4 hover:text-[#111311]"
               >
                 Clear category
               </button>
@@ -592,7 +611,7 @@ const Shop = () => {
 
           </div>
 
-          {/* LOADING */}
+          
 
           {loading && (
             <div
@@ -602,11 +621,11 @@ const Shop = () => {
               <div className="text-center">
 
                 <div
-                  className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-line border-t-ink"
+                  className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#E4DED7] border-t-[#1F2D22]"
                   aria-hidden="true"
                 />
 
-                <p className="mt-5 text-sm font-medium text-ink/60">
+                <p className="mt-5 text-sm font-medium text-[#5E5B57]">
                   Loading products...
                 </p>
 
@@ -614,12 +633,12 @@ const Shop = () => {
             </div>
           )}
 
-          {/* ERROR */}
+          
 
           {!loading && fetchError && (
             <div
               role="alert"
-              className="border border-red-200 bg-red-50 px-5 py-14 text-center sm:px-6 sm:py-16"
+              className="rounded-[26px] border border-red-200 bg-red-50 px-5 py-14 text-center sm:px-6 sm:py-16"
             >
 
               <div className="mx-auto flex h-16 w-16 items-center justify-center bg-red-100 text-red-600">
@@ -629,11 +648,11 @@ const Shop = () => {
                 />
               </div>
 
-              <h2 className="mt-6 font-display text-3xl text-ink">
+              <h2 className="mt-6 font-display text-3xl text-[#111311]">
                 Unable to load products
               </h2>
 
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink/60">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#5E5B57]">
                 {fetchError}
               </p>
 
@@ -642,7 +661,7 @@ const Shop = () => {
                 onClick={() =>
                   window.location.reload()
                 }
-                className="mt-6 min-h-12 bg-ink px-6 py-3 text-xs font-semibold uppercase tracking-wider text-paper transition-colors hover:bg-bottle-dark"
+                className="mt-6 min-h-12 bg-[#1F2D22] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-[#3F4C3A]"
               >
                 Try Again
               </button>
@@ -650,12 +669,12 @@ const Shop = () => {
             </div>
           )}
 
-          {/* PRODUCT GRID */}
+          
 
           {!loading &&
             !fetchError &&
             filteredProducts.length > 0 && (
-              <div className="grid grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 
                 {filteredProducts.map(
                   (product) => {
@@ -680,12 +699,12 @@ const Shop = () => {
                     return (
                       <article
                         key={productId}
-                        className="group min-w-0"
+                        data-reveal className="ectoo-product group min-w-0 overflow-hidden rounded-[22px] border border-[#E4DED7] bg-white p-3 shadow-[0_10px_30px_rgba(31,45,34,0.035)]"
                       >
 
-                        {/* PRODUCT IMAGE */}
+                        
 
-                        <div className="relative aspect-square overflow-hidden bg-[#F4F1EB]">
+                        <div className="relative aspect-square overflow-hidden rounded-[17px] bg-[#F5F1EC]">
 
                           <Link
                             to={`/shop/${productId}`}
@@ -698,13 +717,13 @@ const Shop = () => {
                                 src={image}
                                 alt={
                                   product?.name ||
-                                  "Ziveline handbag"
+                                  "Ectoo handbag"
                                 }
                                 loading="lazy"
                                 className="h-full w-full object-cover object-center transition-transform duration-500 motion-safe:group-hover:scale-[1.02]"
                               />
                             ) : (
-                              <div className="flex h-full w-full items-center justify-center text-ink/25">
+                              <div className="flex h-full w-full items-center justify-center text-[#5E5B57]/40">
                                 <ImageOff
                                   size={30}
                                   aria-hidden="true"
@@ -714,7 +733,7 @@ const Shop = () => {
 
                           </Link>
 
-                          {/* STATUS BADGE */}
+                          
 
                           {product?.status &&
                             product.status !==
@@ -723,7 +742,7 @@ const Shop = () => {
                                 className={`absolute left-3 top-3 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
                                   outOfStock
                                     ? "bg-red-600 text-white"
-                                    : "bg-[#F4F1EB] text-ink"
+                                    : "bg-[#F5F1EC] text-[#111311]"
                                 }`}
                               >
                                 {
@@ -734,12 +753,12 @@ const Shop = () => {
 
                         </div>
 
-                        {/* PRODUCT INFO */}
+                        
 
-                        <div className="mt-4 min-w-0">
+                        <div className="min-w-0 px-1 pb-1 pt-4">
 
                           {product?.category && (
-                            <p className="truncate text-[10px] font-bold uppercase tracking-wider text-ink/40">
+                            <p className="truncate text-[10px] font-bold uppercase tracking-wider text-[#5E5B57]/70">
                               {
                                 product.category
                               }
@@ -750,7 +769,7 @@ const Shop = () => {
                             to={`/shop/${productId}`}
                             className="block"
                           >
-                            <h2 className="mt-1 line-clamp-2 break-words text-sm font-bold leading-5 text-ink transition-colors hover:text-ink/65">
+                            <h2 className="mt-1 line-clamp-2 break-words text-sm font-bold leading-5 text-[#111311] transition-colors hover:text-[#3F4C3A]">
                               {product?.name ||
                                 "Product"}
                             </h2>
@@ -758,13 +777,13 @@ const Shop = () => {
 
                           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
 
-                            <span className="text-sm font-bold text-ink">
+                            <span className="text-sm font-bold text-[#111311]">
                               {formatPrice(
                                 product?.price
                               )}
                             </span>
 
-                            <span className="text-xs font-medium text-ink/45">
+                            <span className="text-xs font-medium text-[#5E5B57]/80">
                               {outOfStock
                                 ? "Out of Stock"
                                 : "In Stock"}
@@ -772,7 +791,7 @@ const Shop = () => {
 
                           </div>
 
-                          {/* ADD TO CART - ALWAYS ACCESSIBLE */}
+                          
 
                           <button
                             type="button"
@@ -782,10 +801,10 @@ const Shop = () => {
                                 product
                               )
                             }
-                            className={`mt-4 flex min-h-12 w-full items-center justify-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-paper transition-colors ${
+                            className={`mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[13px] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.13em] text-white transition-all ${
                               outOfStock
-                                ? "cursor-not-allowed bg-ink/40"
-                                : "bg-ink hover:bg-bottle-dark"
+                                ? "cursor-not-allowed bg-[#1F2D22]/40"
+                                : "bg-[#1F2D22] hover:bg-[#3F4C3A]"
                             }`}
                           >
                             <ShoppingBag
@@ -808,25 +827,25 @@ const Shop = () => {
               </div>
             )}
 
-          {/* NO PRODUCTS */}
+          
 
           {!loading &&
             !fetchError &&
             filteredProducts.length === 0 && (
-              <div className="border border-line bg-[#F4F1EB] px-5 py-16 text-center sm:px-6 sm:py-20">
+              <div className="rounded-[26px] border border-[#E4DED7] bg-[#F5F1EC] px-5 py-16 text-center sm:px-6 sm:py-20">
 
-                <div className="mx-auto flex h-16 w-16 items-center justify-center bg-ink text-paper">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center bg-[#1F2D22] text-white">
                   <Search
                     size={25}
                     aria-hidden="true"
                   />
                 </div>
 
-                <h2 className="mt-6 font-display text-3xl text-ink">
+                <h2 className="mt-6 font-display text-3xl text-[#111311]">
                   No products found
                 </h2>
 
-                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-ink/60">
+                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#5E5B57]">
                   We couldn't find a product
                   matching your search or selected
                   category. Try another keyword or
@@ -841,7 +860,7 @@ const Shop = () => {
                       "All"
                     );
                   }}
-                  className="mt-6 min-h-12 bg-ink px-6 py-3 text-xs font-semibold uppercase tracking-wider text-paper transition-colors hover:bg-bottle-dark"
+                  className="mt-6 min-h-12 bg-[#1F2D22] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-[#3F4C3A]"
                 >
                   View All Products
                 </button>
@@ -852,23 +871,21 @@ const Shop = () => {
         </div>
       </section>
 
-      {/* =========================================
-          BOTTOM CTA
-      ========================================= */}
+      
 
       <section className="px-4 pb-14 sm:px-6 sm:pb-16 lg:px-8 lg:pb-24">
 
-        <div className="mx-auto max-w-7xl bg-ink px-5 py-12 text-center sm:px-12 sm:py-14 lg:py-20">
+        <div data-reveal="scale" className="mx-auto max-w-7xl rounded-[30px] bg-[#1F2D22] px-5 py-12 text-center shadow-[0_22px_55px_rgba(31,45,34,0.12)] sm:px-12 sm:py-14 lg:py-20">
 
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-paper/60">
-            Ziveline
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/60">
+            Ectoo
           </p>
 
-          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl leading-tight text-paper sm:text-4xl lg:text-5xl">
+          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl leading-tight text-white sm:text-4xl lg:text-5xl">
             Find a bag for your everyday routine.
           </h2>
 
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-paper/70">
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/70">
             Explore available styles and review
             each product page for its current
             details and specifications.

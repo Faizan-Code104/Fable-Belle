@@ -1,12 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
   ArrowUpRight,
-  BriefcaseBusiness,
-  Luggage,
-  ShoppingBag,
-  Sparkles,
 } from "lucide-react";
 
 import { API_BASE_URL } from "../config";
@@ -14,41 +10,29 @@ import { API_BASE_URL } from "../config";
 const Category = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const pageRef = useRef(null);
 
   const categoryConfig = [
     {
       id: 1,
       name: "Shoulder Bags",
-      description:
-        "Versatile shoulder bags selected for everyday use, with practical carrying options and easy-to-style designs.",
-      image: "/Shoulder Bags.png",
-      icon: ShoppingBag,
+      image: "/Shoulder Bag.png",
     },
     {
       id: 2,
       name: "Handbags",
-      description:
-        "Everyday handbags selected to combine practical storage with modern, easy-to-style silhouettes.",
       image: "/Handbags.png",
-      icon: BriefcaseBusiness,
     },
     {
       id: 3,
       name: "Tote Bags",
-      description:
-        "Roomy tote bags suited to everyday routines, work essentials, shopping, and daily carrying needs.",
       image: "/Tote Bags.png",
-      icon: Luggage,
     },
     {
       id: 4,
       name: "Crossbody Bags",
-      description:
-        "Compact crossbody bags designed for hands-free carrying and convenient everyday use.",
       image: "/Crossbody Bags.png",
-      icon: Sparkles,
     },
-    
   ];
 
   useEffect(() => {
@@ -72,11 +56,7 @@ const Category = () => {
           Array.isArray(data.products) ? data.products : []
         );
       } catch (error) {
-        console.error(
-          "Category Products Fetch Error:",
-          error
-        );
-
+        console.error("Category Products Fetch Error:", error);
         setProducts([]);
       } finally {
         setLoading(false);
@@ -89,7 +69,6 @@ const Category = () => {
   const categories = useMemo(() => {
     return categoryConfig.map((category) => ({
       ...category,
-
       products: products.filter(
         (product) =>
           product.category?.toLowerCase() ===
@@ -98,219 +77,225 @@ const Category = () => {
     }));
   }, [products]);
 
+  useEffect(() => {
+    const elements =
+      pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -35px 0px",
+      }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, [loading, categories.length]);
+
   const createShopLink = (categoryName) => {
-    return `/shop?category=${encodeURIComponent(
-      categoryName
-    )}`;
+    return `/shop?category=${encodeURIComponent(categoryName)}`;
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
-      {/* ================= HERO ================= */}
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(24px);
+          transition:
+            opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+        }
 
-      <section className="bg-ink px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
-        <div className="mx-auto max-w-7xl">
-          <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-paper/60 sm:tracking-[0.25em]">
-              Ziveline Categories
-            </p>
+        [data-reveal="left"] {
+          transform: translateX(-28px);
+        }
 
-            <h1 className="mt-5 font-display text-4xl leading-[1.05] text-paper sm:text-6xl lg:text-7xl">
-              Find your
+        [data-reveal="right"] {
+          transform: translateX(28px);
+        }
 
-              <span className="block text-paper/60">
-                perfect carry.
-              </span>
-            </h1>
+        [data-reveal].ectoo-visible {
+          opacity: 1;
+          transform: translate(0, 0);
+        }
+@media (prefers-reduced-motion: reduce) {
+          [data-reveal] {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
 
-            <p className="mt-6 max-w-2xl text-sm leading-7 text-paper/70 sm:text-base">
-              Explore our handbag categories and find a
-              style that suits your everyday needs and
-              personal preferences.
-            </p>
-          </div>
-        </div>
-      </section>
+          *,
+          *::before,
+          *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
 
-      {/* ============== CATEGORY INTRO ============== */}
+      <section className="px-5 pt-10 sm:px-8 sm:pt-14 lg:px-12 lg:pt-16">
+        <div className="mx-auto max-w-[1450px] overflow-hidden rounded-[32px] bg-[#EEE7DF]">
+          <div className="grid gap-10 px-6 py-12 sm:px-10 sm:py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-end lg:px-14 lg:py-16 xl:px-16">
+            <div data-reveal="left">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.32em] text-[#9A5937]">
+                Ectoo Collection
+              </p>
 
-      <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-bottle">
-              Explore Collections
-            </p>
+              <h1 className="mt-4 max-w-3xl font-display text-5xl leading-[0.95] tracking-[-0.03em] sm:text-6xl lg:text-[74px]">
+                Choose the shape
+                <span className="block text-[#3F4C3A]">that fits your day.</span>
+              </h1>
+            </div>
 
-            <h2 className="mt-3 font-display text-3xl text-ink sm:text-5xl">
-              Shop by category
-            </h2>
-          </div>
+            <div data-reveal="right" className="lg:justify-self-end">
+              <p className="max-w-lg text-sm leading-7 text-[#5E5B57] sm:text-base">
+                Browse Ectoo bags by silhouette and move straight into the styles you want to see.
+              </p>
 
-          <p className="max-w-md text-sm leading-6 text-ink/60">
-            Browse Ziveline handbag categories and compare
-            available styles, features, and product details.
-          </p>
-        </div>
-      </section>
-
-      {/* ================= LOADING ================= */}
-
-      {loading && (
-        <section className="px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8">
-          <div className="mx-auto max-w-7xl text-center">
-            <div className="inline-flex items-center gap-3 border border-line px-5 py-3 text-sm font-medium text-ink/70">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-ink" />
-
-              Loading categories...
+              <Link
+                to="/shop"
+                className="mt-6 inline-flex items-center gap-3 rounded-full bg-[#1F2D22] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white transition-colors duration-200 hover:bg-[#3F4C3A]"
+              >
+                Shop All Bags
+                <ArrowRight size={14} />
+              </Link>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
-      {/* ============== CATEGORY GRID ============== */}
+      <section className="px-5 py-12 sm:px-8 sm:py-14 lg:px-12 lg:py-16">
+        <div className="mx-auto max-w-[1450px]">
+          <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div data-reveal>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#9A5937]">
+                Browse Categories
+              </p>
+              <h2 className="mt-2 font-display text-4xl leading-none sm:text-5xl">
+                Shop by style.
+              </h2>
+            </div>
 
-      {!loading && (
-        <section className="px-4 pb-16 sm:px-6 sm:pb-20 lg:px-8 lg:pb-28">
-          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2">
-            {categories.map((category) => {
-              const Icon = category.icon;
+            {!loading && (
+              <p
+                data-reveal
+                className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#7A756F]"
+              >
+                {categories.reduce((total, category) => total + category.products, 0)} products available
+              </p>
+            )}
+          </div>
 
-              return (
+          {loading ? (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((item) => (
+                <div
+                  key={item}
+                  className="min-h-[420px] animate-pulse rounded-[22px] border border-[#E4DED7] bg-white"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {categories.map((category) => (
                 <Link
                   key={category.id}
                   to={createShopLink(category.name)}
-                  className="group relative aspect-[4/5] w-full overflow-hidden bg-ink"
+                  data-reveal
+                  className="relative min-h-[420px] overflow-hidden rounded-[22px] border border-[#E4DED7] bg-white"
                 >
-                  {/* CATEGORY IMAGE */}
+                  <div className="absolute inset-x-0 top-0 h-[78%] bg-[#F5F1EC]" />
 
                   <img
                     src={category.image}
                     alt={`${category.name} collection`}
                     loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
+                    className="absolute left-1/2 top-[39%] h-[58%] w-[74%] -translate-x-1/2 -translate-y-1/2 object-contain object-center"
                   />
 
-                  {/* DARK OVERLAY */}
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/45 to-transparent transition-all duration-500 group-hover:via-ink/55" />
-
-                  {/* ICON */}
-
-                  <div className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center border border-paper/20 bg-ink/25 text-paper backdrop-blur-md sm:left-6 sm:top-6 sm:h-12 sm:w-12">
-                    <Icon size={20} />
+                  <div className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-[#DCD5CD] bg-white text-[#1F2D22]">
+                    <ArrowUpRight size={16} strokeWidth={1.6} />
                   </div>
 
-                  {/* TOP ARROW */}
+                  <div className="absolute inset-x-0 bottom-0 border-t border-[#E4DED7] bg-white px-5 py-5">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <h3 className="font-display text-[28px] leading-none text-[#1F2D22]">
+                          {category.name}
+                        </h3>
+                        <p className="mt-2 text-[9px] font-semibold uppercase tracking-[0.15em] text-[#77716A]">
+                          {category.products} {category.products === 1 ? "Product" : "Products"}
+                        </p>
+                      </div>
 
-                  <div className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-paper text-ink transition-all duration-500 group-hover:rotate-45 sm:right-6 sm:top-6 sm:h-11 sm:w-11">
-                    <ArrowUpRight size={18} />
-                  </div>
-
-                  {/* CONTENT */}
-
-                  <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7 lg:p-9">
-                    <div className="flex items-center gap-2">
-                      <span className="h-px w-8 bg-paper/50" />
-
-                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-paper/70">
-                        {category.products}{" "}
-                        {category.products === 1
-                          ? "Product"
-                          : "Products"}
+                      <span className="pb-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#1F2D22]">
+                        View
                       </span>
-                    </div>
-
-                    <h3 className="mt-4 font-display text-3xl text-paper sm:text-4xl">
-                      {category.name}
-                    </h3>
-
-                    <p className="mt-3 max-w-lg text-sm leading-6 text-paper/75">
-                      {category.description}
-                    </p>
-
-                    <div className="mt-5 inline-flex min-h-11 items-center gap-2 text-xs font-semibold uppercase tracking-wider text-paper sm:mt-6">
-                      Explore Collection
-
-                      <ArrowRight
-                        size={15}
-                        className="transition-transform duration-300 group-hover:translate-x-1"
-                      />
                     </div>
                   </div>
                 </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* =========== QUICK CATEGORY NAVIGATION =========== */}
-
-      <section className="border-y border-line bg-[#F4F1EB] px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-bottle sm:tracking-[0.2em]">
-              Looking For Something Specific?
-            </p>
-
-            <h2 className="mt-3 font-display text-3xl text-ink sm:text-5xl">
-              Explore all products
-            </h2>
-          </div>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-2 sm:mt-10 sm:gap-3">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={createShopLink(category.name)}
-                className="group inline-flex min-h-11 items-center gap-2 border border-line bg-paper px-4 py-3 text-xs font-semibold text-ink transition-all duration-300 hover:border-ink hover:bg-ink hover:text-paper sm:px-5 sm:text-sm"
-              >
-                {category.name}
-
-                <span className="text-xs font-medium text-ink/50 group-hover:text-paper/60">
-                  ({category.products})
-                </span>
-
-                <ArrowRight
-                  size={15}
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ================= BRAND CTA ================= */}
-
-      <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
-        <div className="mx-auto max-w-5xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-ink text-paper">
-            <ShoppingBag size={23} />
+      <section className="px-5 pb-16 sm:px-8 sm:pb-20 lg:px-12 lg:pb-24">
+        <div
+          data-reveal
+          className="mx-auto grid max-w-[1450px] overflow-hidden rounded-[28px] border border-[#DCE0D7] bg-[#E4E5DD] lg:grid-cols-[0.85fr_1.15fr]"
+        >
+          <div className="px-7 py-10 sm:px-10 lg:px-12 lg:py-12">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#9A5937]">
+              Quick Access
+            </p>
+            <h2 className="mt-3 max-w-md font-display text-4xl leading-[1.02] sm:text-5xl">
+              Go directly to the silhouette you want.
+            </h2>
           </div>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-bottle">
-            Ziveline
-          </p>
+          <div className="border-t border-[#CDD3C8] bg-[#F7F6F2] p-5 lg:border-l lg:border-t-0 lg:p-6">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  to={createShopLink(category.name)}
+                  className="flex min-h-[72px] items-center justify-between rounded-[16px] border border-[#E2DED8] bg-white px-5"
+                >
+                  <div>
+                    <p className="font-display text-2xl leading-none text-[#1F2D22]">
+                      {category.name}
+                    </p>
+                    <p className="mt-1.5 text-[8px] font-semibold uppercase tracking-[0.15em] text-[#827D77]">
+                      {category.products} items
+                    </p>
+                  </div>
 
-          <h2 className="mt-4 font-display text-3xl text-ink sm:text-5xl">
-            Explore the Ziveline collection.
-          </h2>
-
-          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-ink/60 sm:text-base">
-            Explore Ziveline handbag categories and review
-            the available styles, features, and product
-            details to find an option that suits your needs.
-          </p>
-
-          <Link
-            to="/shop"
-            className="mt-8 inline-flex min-h-11 items-center justify-center gap-2 bg-ink px-7 py-3.5 text-xs font-semibold uppercase tracking-wider text-paper transition-colors hover:bg-bottle-dark"
-          >
-            Shop All Bags
-
-            <ArrowRight size={15} />
-          </Link>
+                  <ArrowRight
+                    size={15}
+                    className="text-[#1F2D22]"
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </div>

@@ -36,7 +36,7 @@ const Users = () => {
   const roleOptions = ["All", "Customer", "Admin"];
 
   const getToken = () => {
-    return localStorage.getItem("Ziveline-token");
+    return localStorage.getItem("ectoo-token");
   };
 
   const getHeaders = () => {
@@ -80,11 +80,7 @@ const Users = () => {
     });
   };
 
-  /*
-    ================= FETCH USERS + ORDERS =================
-    Orders are fetched too so real order count and total
-    spend per customer can be computed — no fake numbers.
-  */
+  
 
   const fetchData = async () => {
     try {
@@ -122,10 +118,7 @@ const Users = () => {
     fetchData();
   }, []);
 
-  /*
-    ================= PER-USER ORDER STATS =================
-    Computed from the real orders list — not stored/fake data.
-  */
+  
 
   const getUserStats = (userId) => {
     const userOrders = orders.filter((order) => order.user?._id === userId);
@@ -140,9 +133,7 @@ const Users = () => {
     };
   };
 
-  /*
-    ================= FILTER + SORT =================
-  */
+  
 
   const filteredUsers = useMemo(() => {
     let result = users.map((user) => ({
@@ -182,12 +173,9 @@ const Users = () => {
     }
 
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users, orders, searchTerm, roleFilter, sortBy]);
 
-  /*
-    ================= STATS =================
-  */
+  
 
   const totalUsers = users.length;
 
@@ -213,11 +201,11 @@ const Users = () => {
   return (
     <section className="min-h-screen bg-[#F4F1EB] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1600px]">
-        {/* Header */}
+        {}
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.28em] text-ink/40">
-              Ziveline Admin
+              Ectoo Admin
             </p>
 
             <h1 className="font-display text-3xl text-ink sm:text-4xl">
@@ -225,7 +213,7 @@ const Users = () => {
             </h1>
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-ink/50">
-              Everyone registered on Ziveline, with real order activity.
+              Everyone registered on Ectoo, with real order activity.
             </p>
           </div>
 
@@ -250,7 +238,7 @@ const Users = () => {
           </div>
         </div>
 
-        {/* Error */}
+        {}
         {errorMessage && (
           <div className="mb-5 flex items-center justify-between gap-4  border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
             <span>{errorMessage}</span>
@@ -261,7 +249,7 @@ const Users = () => {
           </div>
         )}
 
-        {/* Stats */}
+        {}
         <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className=" border border-line bg-paper p-5 ">
             <div className="flex items-start justify-between">
@@ -346,7 +334,7 @@ const Users = () => {
           </div>
         </div>
 
-        {/* Filters */}
+        {}
         <div className="mb-5  border border-line bg-paper p-4  sm:p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="relative w-full xl:max-w-md">
@@ -431,7 +419,7 @@ const Users = () => {
           )}
         </div>
 
-        {/* Loading */}
+        {}
         {loading ? (
           <div className="flex flex-col items-center justify-center  border border-line bg-paper px-6 py-24 ">
             <Loader2 size={32} className="animate-spin text-ink" />
@@ -442,7 +430,7 @@ const Users = () => {
           </div>
         ) : (
           <>
-            {/* Desktop Table */}
+            {}
             <div className="hidden overflow-hidden  border border-line bg-paper  lg:block">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px]">
@@ -565,7 +553,7 @@ const Users = () => {
               )}
             </div>
 
-            {/* Mobile Cards */}
+            {}
             <div className="space-y-4 lg:hidden">
               {filteredUsers.map((user) => (
                 <div
@@ -661,7 +649,7 @@ const Users = () => {
         )}
       </div>
 
-      {/* View User Modal */}
+      {}
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4 py-6 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto  bg-paper ">
@@ -686,7 +674,7 @@ const Users = () => {
             </div>
 
             <div className="space-y-6 p-5 sm:p-7">
-              {/* Profile */}
+              {}
               <div className=" bg-ink p-6 text-paper">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                   <div className="flex h-20 w-20 shrink-0 items-center justify-center  bg-paper text-xl font-black text-ink">
@@ -715,7 +703,7 @@ const Users = () => {
                 </div>
               </div>
 
-              {/* Contact */}
+              {}
               <div className=" border border-line p-5">
                 <h3 className="mb-4 text-sm font-black text-ink">
                   Account Information
@@ -756,7 +744,7 @@ const Users = () => {
                 </div>
               </div>
 
-              {/* Stats */}
+              {}
               <div className="grid grid-cols-2 gap-4">
                 <div className=" bg-[#F4F1EB] p-4">
                   <ShoppingBag size={17} className="text-ink/50" />

@@ -90,7 +90,7 @@ const Products = () => {
   const featuredOptions = ["All", "Featured", "Not Featured"];
 
   const getToken = () => {
-    return localStorage.getItem("Ziveline-token");
+    return localStorage.getItem("ectoo-token");
   };
 
   const getHeaders = () => {
@@ -117,9 +117,7 @@ const Products = () => {
     return `${SERVER_URL}${image}`;
   };
 
-  /*
-    ================= FETCH PRODUCTS =================
-  */
+  
 
   const fetchProducts = async () => {
     try {
@@ -148,9 +146,7 @@ const Products = () => {
     fetchProducts();
   }, []);
 
-  /*
-    ================= FILTER + SORT =================
-  */
+  
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((product) => {
@@ -210,9 +206,7 @@ const Products = () => {
     sortBy,
   ]);
 
-  /*
-    ================= SUMMARY =================
-  */
+  
 
   const totalProducts = products.length;
 
@@ -228,9 +222,7 @@ const Products = () => {
     (product) => product.isFeatured === true,
   ).length;
 
-  /*
-    ================= INPUT =================
-  */
+  
 
   const handleInputChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -250,14 +242,10 @@ const Products = () => {
     setErrorMessage("");
   };
 
-  /*
-    ================= IMAGE =================
-  */
+  
 
   const handleImageChange = (event) => {
     const selectedFiles = Array.from(event.target.files || []);
-
-    // Reset the input so selecting the same file again re-triggers onChange
     event.target.value = "";
 
     if (selectedFiles.length === 0) return;
@@ -333,9 +321,7 @@ const Products = () => {
     );
   };
 
-  /*
-    ================= VALIDATION =================
-  */
+  
 
   const validateForm = () => {
     const newErrors = {};
@@ -381,9 +367,7 @@ const Products = () => {
     return newErrors;
   };
 
-  /*
-    ================= ADD PRODUCT =================
-  */
+  
 
   const handleAddProduct = async (event) => {
     event.preventDefault();
@@ -487,9 +471,7 @@ const Products = () => {
     }
   };
 
-  /*
-    ================= DELETE PRODUCT =================
-  */
+  
 
   const handleDeleteProduct = async () => {
     if (!deleteProduct) return;
@@ -543,9 +525,7 @@ const Products = () => {
     }
   };
 
-  /*
-    ================= VIEW PRODUCT =================
-  */
+  
 
   const handleViewProduct = (product) => {
     console.log("View Product:", product);
@@ -553,9 +533,7 @@ const Products = () => {
     setOpenMenu(null);
   };
 
-  /*
-    ================= EDIT PRODUCT =================
-  */
+  
 
   const handleEditProduct = (product) => {
     console.log("Edit Product:", product);
@@ -563,9 +541,7 @@ const Products = () => {
     setOpenMenu(null);
   };
 
-  /*
-    ================= HELPERS =================
-  */
+  
 
   const getStatusStyles = (status) => {
     if (status === "Active") {
@@ -605,13 +581,11 @@ const Products = () => {
     resetForm();
   };
 
-  /*
-    ================= RENDER =================
-  */
+  
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
+      {}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
@@ -624,7 +598,7 @@ const Products = () => {
           </h1>
 
           <p className="mt-1 text-sm text-ink/50">
-            Manage your Ziveline products, inventory and featured pieces.
+            Manage your Ectoo products, inventory and featured pieces.
           </p>
         </div>
 
@@ -650,7 +624,7 @@ const Products = () => {
         </div>
       </div>
 
-      {/* SUCCESS */}
+      {}
 
       {successMessage && (
         <div className=" border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
@@ -658,7 +632,7 @@ const Products = () => {
         </div>
       )}
 
-      {/* ERROR */}
+      {}
 
       {errorMessage && (
         <div className="flex items-center justify-between gap-4  border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
@@ -670,7 +644,7 @@ const Products = () => {
         </div>
       )}
 
-      {/* SUMMARY */}
+      {}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className=" border border-line bg-paper p-5 ">
@@ -738,7 +712,7 @@ const Products = () => {
         </div>
       </div>
 
-      {/* FILTER BAR */}
+      {}
 
       <div className=" border border-line bg-paper p-4  sm:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -850,7 +824,7 @@ const Products = () => {
         </div>
       </div>
 
-      {/* PRODUCTS */}
+      {}
 
       <div className="overflow-hidden  border border-line bg-paper ">
         <div className="flex items-center justify-between border-b border-line p-5 sm:p-6">
@@ -875,7 +849,7 @@ const Products = () => {
           </div>
         ) : filteredProducts.length > 0 ? (
           <>
-            {/* DESKTOP */}
+            {}
 
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[1100px]">
@@ -942,7 +916,7 @@ const Products = () => {
                               </p>
 
                               <p className="mt-1 text-xs text-ink/40">
-                                SKU-BG-
+                                SKU-EC-
                                 {String(productId).slice(-6)}
                               </p>
                             </div>
@@ -1047,7 +1021,7 @@ const Products = () => {
               </table>
             </div>
 
-            {/* MOBILE */}
+            {}
 
             <div className="divide-y divide-line lg:hidden">
               {filteredProducts.map((product) => {
@@ -1185,7 +1159,7 @@ const Products = () => {
         )}
       </div>
 
-      {/* ADD PRODUCT MODAL */}
+      {}
 
       {showAddModal && (
         <div className="fixed inset-0 z-[100] overflow-y-auto bg-ink/60 px-4 py-6 backdrop-blur-sm">
@@ -1212,7 +1186,7 @@ const Products = () => {
             </div>
 
             <form onSubmit={handleAddProduct} className="space-y-5 p-6 sm:p-7">
-              {/* PRODUCT NAME */}
+              {}
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink/50">
@@ -1237,7 +1211,7 @@ const Products = () => {
                 )}
               </div>
 
-              {/* CATEGORY + PRICE */}
+              {}
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
@@ -1298,7 +1272,7 @@ const Products = () => {
                 </div>
               </div>
 
-              {/* STOCK */}
+              {}
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink/50">
@@ -1322,14 +1296,14 @@ const Products = () => {
                 )}
               </div>
 
-              {/* SKU + MATERIAL + WEIGHT */}
+              {}
               <div className="grid gap-5 sm:grid-cols-2">
-                <div><label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink/50">SKU</label><input type="text" name="sku" value={formData.sku} onChange={handleInputChange} placeholder="ZIV-NCSB-001" className={`h-12 w-full border ${errors.sku ? "border-red-300" : "border-line"} bg-paper px-4 text-sm font-medium text-ink outline-none focus:border-ink`} />{errors.sku && <p className="mt-1.5 text-xs font-semibold text-red-500">{errors.sku}</p>}</div>
+                <div><label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink/50">SKU</label><input type="text" name="sku" value={formData.sku} onChange={handleInputChange} placeholder="ECT-NCSB-001" className={`h-12 w-full border ${errors.sku ? "border-red-300" : "border-line"} bg-paper px-4 text-sm font-medium text-ink outline-none focus:border-ink`} />{errors.sku && <p className="mt-1.5 text-xs font-semibold text-red-500">{errors.sku}</p>}</div>
                 <div><label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink/50">Material</label><input type="text" name="material" value={formData.material} onChange={handleInputChange} placeholder="e.g. Genuine Leather" className={`h-12 w-full border ${errors.material ? "border-red-300" : "border-line"} bg-paper px-4 text-sm font-medium text-ink outline-none focus:border-ink`} />{errors.material && <p className="mt-1.5 text-xs font-semibold text-red-500">{errors.material}</p>}</div>
               </div>
               <div><label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink/50">Weight</label><input type="text" name="weight" value={formData.weight} onChange={handleInputChange} placeholder="e.g. 0.65 kg" className={`h-12 w-full border ${errors.weight ? "border-red-300" : "border-line"} bg-paper px-4 text-sm font-medium text-ink outline-none focus:border-ink`} />{errors.weight && <p className="mt-1.5 text-xs font-semibold text-red-500">{errors.weight}</p>}</div>
 
-              {/* FEATURED */}
+              {}
 
               <div
                 className={` border p-4 transition-all ${
@@ -1368,7 +1342,7 @@ const Products = () => {
                 </label>
               </div>
 
-              {/* IMAGES (up to 4 — first one is the main image) */}
+              {}
 
               <div>
                 <div className="mb-2 flex items-center justify-between">
@@ -1382,7 +1356,7 @@ const Products = () => {
                 </div>
 
                 <div className="grid grid-cols-4 gap-3">
-                  {/* Main image slot (first uploaded image) */}
+                  {}
                   <div
                     className={`relative col-span-4 aspect-video overflow-hidden  border-2 sm:col-span-2 ${
                       imagePreviews[0]
@@ -1430,7 +1404,7 @@ const Products = () => {
                     )}
                   </div>
 
-                  {/* 3 thumbnail slots */}
+                  {}
                   {[1, 2, 3].map((slotIndex) => {
                     const preview = imagePreviews[slotIndex];
 
@@ -1493,7 +1467,7 @@ const Products = () => {
                 )}
               </div>
 
-              {/* DESCRIPTION */}
+              {}
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-ink/50">
@@ -1516,7 +1490,7 @@ const Products = () => {
                 )}
               </div>
 
-              {/* BUTTONS */}
+              {}
 
               <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
                 <button
@@ -1551,7 +1525,7 @@ const Products = () => {
         </div>
       )}
 
-      {/* DELETE MODAL */}
+      {}
 
       {deleteProduct && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-ink/60 p-4 backdrop-blur-sm">

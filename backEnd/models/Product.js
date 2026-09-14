@@ -34,27 +34,35 @@ const productSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+
     sku: {
-  type: String,
-  required: true,
-  trim: true,
-  unique: true,
-  uppercase: true,
-},
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+      uppercase: true,
+    },
 
-material: {
-  type: String,
-  required: true,
-  trim: true,
-  maxlength: 150,
-},
+    brand: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 150,
+    },
 
-weight: {
-  type: String,
-  required: true,
-  trim: true,
-  maxlength: 100,
-},
+    material: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 150,
+    },
+
+    weight: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
+    },
 
     description: {
       type: String,
@@ -77,7 +85,7 @@ weight: {
       },
     },
 
-    // ⭐ Featured product
+    // Featured product
     isFeatured: {
       type: Boolean,
       default: false,

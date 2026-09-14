@@ -2,8 +2,8 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 const AdminRoute = ({ children }) => {
-  const token = localStorage.getItem("Ziveline-token");
-  const savedUser = localStorage.getItem("Ziveline-user");
+  const token = localStorage.getItem("ectoo-token");
+  const savedUser = localStorage.getItem("ectoo-user");
 
   if (!token || !savedUser) {
     return <Navigate to="/login" replace />;
@@ -18,8 +18,8 @@ const AdminRoute = ({ children }) => {
 
     return children;
   } catch {
-    localStorage.removeItem("Ziveline-token");
-    localStorage.removeItem("Ziveline-user");
+    localStorage.removeItem("ectoo-token");
+    localStorage.removeItem("ectoo-user");
 
     return <Navigate to="/login" replace />;
   }

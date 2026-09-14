@@ -5,7 +5,6 @@ import { CartProvider } from "./component/CartContext";
 import ScrollToTop from "./component/ScrollToTop";
 import AdminRoute from "./component/AdminRoute";
 
-// User Components
 import Layout from "./component/Layout";
 import Home from "./component/Home";
 import Shop from "./component/Shop";
@@ -23,13 +22,10 @@ import ReturnPolicy from "./component/ReturnPolicy";
 import PrivacyPolicy from "./component/PrivacyPolicy";
 import FAQs from "./component/FAQs";
 import TermsAndConditions from "./component/TermsAndConditions";
-
-// New Policy Pages
 import PaymentPolicy from "./component/PaymentPolicy";
 import OrderCancellationPolicy from "./component/OrderCancellationPolicy";
 import CookiePolicy from "./component/CookiePolicy";
 
-// Admin Components
 import AdminLayout from "./component/Admin/AdminLayout";
 import Dashboard from "./component/Admin/Dashboard";
 import Products from "./component/Admin/Products";
@@ -43,15 +39,9 @@ const App = () => {
 
       <CartProvider>
         <Routes>
-          {/* ==================== AUTH ROUTES ==================== */}
-
           <Route path="/login" element={<Login />} />
-
           <Route path="/signup" element={<Signup />} />
 
-          {/* ==================== MAIN WEBSITE ==================== */}
-
-          {/* Home */}
           <Route
             path="/"
             element={
@@ -61,7 +51,6 @@ const App = () => {
             }
           />
 
-          {/* Shop */}
           <Route
             path="/shop"
             element={
@@ -71,7 +60,6 @@ const App = () => {
             }
           />
 
-          {/* Product Details */}
           <Route
             path="/shop/:id"
             element={
@@ -81,7 +69,6 @@ const App = () => {
             }
           />
 
-          {/* Categories */}
           <Route
             path="/categories"
             element={
@@ -91,7 +78,6 @@ const App = () => {
             }
           />
 
-          {/* About */}
           <Route
             path="/about"
             element={
@@ -101,7 +87,6 @@ const App = () => {
             }
           />
 
-          {/* Contact */}
           <Route
             path="/contact"
             element={
@@ -111,7 +96,6 @@ const App = () => {
             }
           />
 
-          {/* Cart */}
           <Route
             path="/cart"
             element={
@@ -121,7 +105,6 @@ const App = () => {
             }
           />
 
-          {/* Checkout */}
           <Route
             path="/checkout"
             element={
@@ -131,7 +114,6 @@ const App = () => {
             }
           />
 
-          {/* Order Tracking */}
           <Route
             path="/track-order"
             element={
@@ -141,9 +123,6 @@ const App = () => {
             }
           />
 
-          {/* ==================== POLICY PAGES ==================== */}
-
-          {/* Shipping Policy */}
           <Route
             path="/shipping-policy"
             element={
@@ -153,7 +132,6 @@ const App = () => {
             }
           />
 
-          {/* Return & Refund Policy */}
           <Route
             path="/return-policy"
             element={
@@ -163,7 +141,6 @@ const App = () => {
             }
           />
 
-          {/* Privacy Policy */}
           <Route
             path="/privacy-policy"
             element={
@@ -173,7 +150,6 @@ const App = () => {
             }
           />
 
-          {/* Payment Policy */}
           <Route
             path="/payment-policy"
             element={
@@ -183,7 +159,6 @@ const App = () => {
             }
           />
 
-          {/* Order Cancellation Policy */}
           <Route
             path="/order-cancellation-policy"
             element={
@@ -193,7 +168,6 @@ const App = () => {
             }
           />
 
-          {/* Cookie Policy */}
           <Route
             path="/cookie-policy"
             element={
@@ -203,7 +177,6 @@ const App = () => {
             }
           />
 
-          {/* FAQs */}
           <Route
             path="/faqs"
             element={
@@ -213,7 +186,6 @@ const App = () => {
             }
           />
 
-          {/* Terms & Conditions */}
           <Route
             path="/terms-and-conditions"
             element={
@@ -223,9 +195,6 @@ const App = () => {
             }
           />
 
-          {/* ==================== ADMIN ROUTES ==================== */}
-
-          {/* Admin Dashboard */}
           <Route
             path="/admin"
             element={
@@ -237,7 +206,6 @@ const App = () => {
             }
           />
 
-          {/* Admin Dashboard - Alternative URL */}
           <Route
             path="/admin/dashboard"
             element={
@@ -249,7 +217,6 @@ const App = () => {
             }
           />
 
-          {/* Admin Products */}
           <Route
             path="/admin/products"
             element={
@@ -261,7 +228,6 @@ const App = () => {
             }
           />
 
-          {/* Admin Orders */}
           <Route
             path="/admin/orders"
             element={
@@ -273,7 +239,6 @@ const App = () => {
             }
           />
 
-          {/* Admin Users */}
           <Route
             path="/admin/users"
             element={
@@ -285,28 +250,30 @@ const App = () => {
             }
           />
 
-          {/* ==================== 404 ==================== */}
-
           <Route
             path="*"
             element={
-              <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-                <div className="text-center">
-                  <p className="text-sm font-bold uppercase tracking-[0.25em] text-slate-400">
-                    Ziveline
+              <div className="flex min-h-screen items-center justify-center bg-[#FAF8F5] px-5">
+                <div className="w-full max-w-xl rounded-[30px] border border-[#E4DED7] bg-white px-6 py-14 text-center shadow-[0_20px_55px_rgba(31,45,34,0.06)] sm:px-10 sm:py-16">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+                    Ectoo
                   </p>
 
-                  <h1 className="mt-3 text-7xl font-black tracking-tight text-slate-950">
+                  <h1 className="mt-4 font-display text-7xl leading-none text-[#1F2D22] sm:text-8xl">
                     404
                   </h1>
 
-                  <p className="mt-3 text-slate-500">
-                    The page you're looking for doesn't exist.
+                  <h2 className="mt-5 font-display text-3xl text-[#111311]">
+                    Page not found
+                  </h2>
+
+                  <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#5E5B57]">
+                    The page you&apos;re looking for doesn&apos;t exist or may have been moved.
                   </p>
 
                   <Link
                     to="/"
-                    className="mt-7 inline-flex rounded-full bg-slate-950 px-7 py-3.5 text-sm font-bold text-white transition-all duration-300 hover:-translate-y-1 hover:bg-slate-800"
+                    className="mt-8 inline-flex min-h-12 items-center justify-center rounded-[14px] bg-[#1F2D22] px-7 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#3F4C3A]"
                   >
                     Back to Home
                   </Link>

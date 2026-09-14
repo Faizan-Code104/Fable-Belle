@@ -3,13 +3,13 @@ import Product from "../models/Product.js";
 
 /*
   Generate a unique, human-friendly order number.
-  Example: BG-48213076
+  Example: EC-48213076123
 */
 const generateOrderNumber = () => {
   const timestampPart = Date.now().toString().slice(-8);
   const randomPart = Math.floor(100 + Math.random() * 900);
 
-  return `ZV-${timestampPart}${randomPart}`;
+  return `EC-${timestampPart}${randomPart}`;
 };
 
 /*
@@ -50,10 +50,6 @@ export const createOrder = async (req, res) => {
       }
     }
 
-    /*
-      Fetch every product fresh from the database and
-      validate stock BEFORE changing anything.
-    */
     const orderItems = [];
     let subtotal = 0;
 
@@ -63,7 +59,7 @@ export const createOrder = async (req, res) => {
       if (!product) {
         return res.status(404).json({
           success: false,
-          message: `A product in your cart is no longer available.`,
+          message: "A product in your cart is no longer available.",
         });
       }
 
@@ -98,11 +94,6 @@ export const createOrder = async (req, res) => {
     const discount = 0;
     const totalAmount = subtotal + shipping - discount;
 
-    /*
-      All items validated — now deduct stock.
-      Product's pre-save hook automatically recalculates
-      Active / Low Stock / Out of Stock status.
-    */
     for (const orderItem of orderItems) {
       const product = await Product.findById(orderItem.product);
 
@@ -113,7 +104,7 @@ export const createOrder = async (req, res) => {
 
     const order = await Order.create({
       orderNumber: generateOrderNumber(),
-     user: req.user?._id || null,
+      user: req.user?._id || null,
       items: orderItems,
       shippingAddress,
       paymentMethod: "COD",
@@ -139,10 +130,6 @@ export const createOrder = async (req, res) => {
   }
 };
 
-/*
-  GET MY ORDERS
-  Logged-in user's own order history.
-*/
 export const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }).sort({
@@ -164,10 +151,6 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-/*
-  TRACK ORDER BY ORDER NUMBER
-  Public — used by the order tracking page.
-*/
 export const trackOrder = async (req, res) => {
   try {
     const { orderNumber } = req.params;
@@ -195,9 +178,6 @@ export const trackOrder = async (req, res) => {
   }
 };
 
-/*
-  GET ALL ORDERS (ADMIN)
-*/
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -219,9 +199,6 @@ export const getAllOrders = async (req, res) => {
   }
 };
 
-/*
-  UPDATE ORDER STATUS (ADMIN)
-*/
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;

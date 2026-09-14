@@ -14,21 +14,34 @@ import adminMiddleware from "../middleware/adminmiddleware.js";
 const router = express.Router();
 
 /*
-  IMPORTANT:
-  Specific routes must come BEFORE /:id-style routes
+  CREATE ORDER
+  Guest checkout is allowed.
 */
+router.post("/", createOrder);
 
-router.post("/", (req, res, next) => {
-  console.log("✅ GUEST ORDER ROUTE REACHED");
-  next();
-}, createOrder);
-
+/*
+  GET LOGGED-IN USER'S ORDERS
+*/
 router.get("/mine", authMiddleware, getMyOrders);
 
+/*
+  PUBLIC ORDER TRACKING
+*/
 router.get("/track/:orderNumber", trackOrder);
 
-router.get("/", authMiddleware, adminMiddleware, getAllOrders);
+/*
+  GET ALL ORDERS - ADMIN ONLY
+*/
+router.get(
+  "/",
+  authMiddleware,
+  adminMiddleware,
+  getAllOrders
+);
 
+/*
+  UPDATE ORDER STATUS - ADMIN ONLY
+*/
 router.put(
   "/:id/status",
   authMiddleware,

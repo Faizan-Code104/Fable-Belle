@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -9,16 +9,39 @@ import {
 } from "lucide-react";
 
 const BUSINESS_INFO = {
-  businessName: "Ziveline LLC",
+  businessName: "Ectoo",
   address: "2125 Strawberry Rd, Pasadena, TX 77502",
   phoneDisplay: "+1 (832) 285-3511",
   phoneHref: "+18322853511",
-  email: "info@ziveline.com",
+  email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
 };
 
 const ShippingPolicy = () => {
+  const pageRef = useRef(null);
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+
   const shippingDetails = [
     {
       label: "Shipping Area",
@@ -62,39 +85,55 @@ const ShippingPolicy = () => {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
-      {/* HERO */}
-      <section className="border-b border-line bg-ink px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-paper text-ink">
+    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1);
+        }
+        [data-reveal="left"] { transform: translateX(-40px); }
+        [data-reveal="right"] { transform: translateX(40px); }
+        [data-reveal="scale"] { transform: scale(.97); }
+        [data-reveal].ectoo-visible { opacity: 1; transform: translate(0,0) scale(1); }
+        .shipping-card { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
+        .shipping-card:hover { transform: translateY(-4px); box-shadow: 0 18px 48px rgba(31,45,34,.07); border-color: rgba(31,45,34,.18); }
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] { opacity: 1; transform: none; transition: none; }
+        }
+      `}</style>
+      
+      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+        <div data-reveal="scale" className="relative mx-auto max-w-4xl text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
             <Truck size={24} aria-hidden="true" />
           </div>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-paper/60">
-            Ziveline
+          <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+            Ectoo
           </p>
 
-          <h1 className="mt-3 font-display text-4xl leading-tight text-paper sm:text-5xl">
+          <h1 className="mt-3 font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl">
             Shipping Policy
           </h1>
 
-          <p className="mt-4 text-sm text-paper/60">
+          <p className="mt-4 text-sm text-[#5E5B57]">
             Last updated: September 11, 2026
           </p>
         </div>
       </section>
 
-      {/* SHIPPING SUMMARY */}
+      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-3xl">
-            <h2 className="font-display text-3xl leading-tight text-ink">
+            <h2 className="font-display text-3xl leading-tight text-[#111311]">
               Shipping Information
             </h2>
 
-            <p className="mt-3 text-sm leading-7 text-ink/60 sm:text-[15px]">
+            <p className="mt-3 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
               This Shipping Policy applies to physical products purchased from{" "}
-              {BUSINESS_INFO.businessName} through https://www.ziveline.com.
+              {BUSINESS_INFO.businessName} through https://www.ectoo.us.
             </p>
           </div>
 
@@ -102,35 +141,35 @@ const ShippingPolicy = () => {
             {shippingDetails.map((item) => (
               <div
                 key={item.label}
-                className="border border-line bg-[#F4F1EB] p-5 sm:p-6"
+                data-reveal className="shipping-card rounded-[20px] border border-[#E4DED7] bg-white p-5 sm:p-6"
               >
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/40">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#5E5B57]/70">
                   {item.label}
                 </p>
 
-                <p className="mt-2 text-base font-bold text-ink">
+                <p className="mt-2 text-base font-bold text-[#111311]">
                   {item.value}
                 </p>
               </div>
             ))}
           </div>
 
-          <p className="mt-5 text-xs leading-5 text-ink/45">
+          <p className="mt-5 text-xs leading-5 text-[#5E5B57]/80">
             Estimated total time from order acceptance to delivery is generally
             4–9 business days. Delivery estimates are not guaranteed.
           </p>
         </div>
       </section>
 
-      {/* SHIPPING PROCESS */}
-      <section className="bg-[#F4F1EB] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      
+      <section className="bg-[#E8E7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-bottle">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9A5937]">
               Order Journey
             </p>
 
-            <h2 className="mt-2 font-display text-3xl leading-tight text-ink">
+            <h2 className="mt-2 font-display text-3xl leading-tight text-[#111311]">
               How Shipping Works
             </h2>
           </div>
@@ -142,23 +181,23 @@ const ShippingPolicy = () => {
               return (
                 <div
                   key={step.title}
-                  className="border border-line bg-paper p-5"
+                  data-reveal className="shipping-card rounded-[22px] border border-[#E4DED7] bg-white p-5 sm:p-6"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-ink text-paper">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#1F2D22] text-white">
                       <Icon size={17} aria-hidden="true" />
                     </div>
 
-                    <span className="text-xs font-bold text-ink/40">
+                    <span className="text-xs font-bold text-[#5E5B57]/70">
                       Step {index + 1}
                     </span>
                   </div>
 
-                  <h3 className="mt-4 text-sm font-bold text-ink">
+                  <h3 className="mt-4 text-sm font-bold text-[#111311]">
                     {step.title}
                   </h3>
 
-                  <p className="mt-2 text-xs leading-5 text-ink/55">
+                  <p className="mt-2 text-xs leading-5 text-[#5E5B57]">
                     {step.description}
                   </p>
                 </div>
@@ -168,12 +207,12 @@ const ShippingPolicy = () => {
         </div>
       </section>
 
-      {/* POLICY DETAILS */}
+      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-3xl space-y-10 text-sm leading-7 text-ink/60">
-          {/* SHIPPING AREA */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+        <div className="mx-auto max-w-4xl space-y-4 text-sm leading-7 text-[#5E5B57]">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Shipping Area
             </h2>
 
@@ -188,14 +227,14 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* SHIPPING COST */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Shipping Cost
             </h2>
 
             <p className="mt-3">
-              Ziveline provides <strong className="text-ink">free standard shipping</strong>{" "}
+              Ectoo provides <strong className="text-[#111311]">free standard shipping</strong>{" "}
               on eligible orders within our published U.S. shipping area.
             </p>
 
@@ -206,15 +245,15 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* ORDER PROCESSING */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Order Processing
             </h2>
 
             <p className="mt-3">
               Orders are normally processed within{" "}
-              <strong className="text-ink">1–2 business days</strong> after
+              <strong className="text-[#111311]">1–2 business days</strong> after
               payment authorization and order acceptance.
             </p>
 
@@ -231,20 +270,20 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* ESTIMATED DELIVERY */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Estimated Delivery
             </h2>
 
             <p className="mt-3">
               After processing, standard delivery normally takes{" "}
-              <strong className="text-ink">3–7 business days</strong>.
+              <strong className="text-[#111311]">3–7 business days</strong>.
             </p>
 
             <p className="mt-3">
               The estimated total period from order acceptance to delivery is
-              generally <strong className="text-ink">4–9 business days</strong>.
+              generally <strong className="text-[#111311]">4–9 business days</strong>.
             </p>
 
             <p className="mt-3">
@@ -260,9 +299,9 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* SHIPPING METHOD */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Shipping Method
             </h2>
 
@@ -279,9 +318,9 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* ADDRESS ACCURACY */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Address Accuracy
             </h2>
 
@@ -294,7 +333,7 @@ const ShippingPolicy = () => {
               Contact{" "}
               <a
                 href={`mailto:${BUSINESS_INFO.email}`}
-                className="font-bold text-ink underline underline-offset-2"
+                className="font-bold text-[#111311] underline underline-offset-2"
               >
                 {BUSINESS_INFO.email}
               </a>{" "}
@@ -304,14 +343,14 @@ const ShippingPolicy = () => {
             </p>
 
             <p className="mt-3">
-              Ziveline is not responsible for delays or failed delivery caused
+              Ectoo is not responsible for delays or failed delivery caused
               by incorrect or incomplete information supplied by the customer.
             </p>
           </section>
 
-          {/* TRACKING */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Tracking
             </h2>
 
@@ -328,10 +367,10 @@ const ShippingPolicy = () => {
             </p>
 
             <p className="mt-3">
-              You can also use your Ziveline order number on our{" "}
+              You can also use your Ectoo order number on our{" "}
               <Link
                 to="/track-order"
-                className="font-bold text-ink underline underline-offset-2"
+                className="font-bold text-[#111311] underline underline-offset-2"
               >
                 Order Tracking page
               </Link>
@@ -339,9 +378,9 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* LOST PACKAGES */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Lost Packages
             </h2>
 
@@ -350,7 +389,7 @@ const ShippingPolicy = () => {
               appears lost, contact us at{" "}
               <a
                 href={`mailto:${BUSINESS_INFO.email}`}
-                className="font-bold text-ink underline underline-offset-2"
+                className="font-bold text-[#111311] underline underline-offset-2"
               >
                 {BUSINESS_INFO.email}
               </a>{" "}
@@ -364,16 +403,16 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* DAMAGED PACKAGES */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Damaged Packages
             </h2>
 
             <p className="mt-3">
               If a package arrives visibly damaged, photograph the package and
               product and contact us within{" "}
-              <strong className="text-ink">48 hours of delivery</strong>.
+              <strong className="text-[#111311]">48 hours of delivery</strong>.
             </p>
 
             <p className="mt-3">
@@ -382,9 +421,9 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* REFUSED OR UNDELIVERABLE */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Refused or Undeliverable Packages
             </h2>
 
@@ -402,9 +441,9 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* SPLIT SHIPMENTS */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Split Shipments
             </h2>
 
@@ -415,9 +454,9 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          {/* CONTACT */}
-          <section>
-            <h2 className="font-display text-2xl text-ink">
+          
+          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+            <h2 className="font-display text-2xl text-[#111311]">
               Contact
             </h2>
 
@@ -431,7 +470,7 @@ const ShippingPolicy = () => {
                 Email:{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-bold text-ink underline underline-offset-2"
+                  className="font-bold text-[#111311] underline underline-offset-2"
                 >
                   {BUSINESS_INFO.email}
                 </a>
@@ -441,7 +480,7 @@ const ShippingPolicy = () => {
                 Phone:{" "}
                 <a
                   href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-bold text-ink underline underline-offset-2"
+                  className="font-bold text-[#111311] underline underline-offset-2"
                 >
                   {BUSINESS_INFO.phoneDisplay}
                 </a>
@@ -456,22 +495,22 @@ const ShippingPolicy = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-line px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col items-start gap-6 border border-line bg-ink p-6 text-paper sm:p-8 md:flex-row md:items-center md:justify-between md:p-10">
+      
+      <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
+        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between">
           <div>
             <h3 className="font-display text-2xl">
               Already submitted an order?
             </h3>
 
-            <p className="mt-2 text-sm leading-6 text-paper/60">
+            <p className="mt-2 text-sm leading-6 text-white/60">
               Check the latest available status using your order number.
             </p>
           </div>
 
           <Link
             to="/track-order"
-            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 bg-paper px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors duration-300 hover:bg-[#EFE9DE] md:w-auto"
+            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[14px] bg-[#F1EEE8] px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white md:w-auto"
           >
             Track Order
             <ArrowRight size={16} aria-hidden="true" />

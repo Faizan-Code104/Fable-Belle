@@ -1,25 +1,51 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 
 const BUSINESS_INFO = {
-  businessName: "Ziveline LLC",
+  businessName: "Ectoo",
   address: "2125 Strawberry Rd, Pasadena, TX 77502",
   phoneDisplay: "+1 (832) 285-3511",
   phoneHref: "+18322853511",
-  email: "info@ziveline.com",
+  email: "info@ectoo.us",
   businessDays: "Monday – Friday",
   supportHours: "9:00 AM – 5:00 PM Central Time",
 };
 
 const PrivacyPolicy = () => {
+  const pageRef = useRef(null);
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.08,
+        rootMargin: "0px 0px -25px 0px",
+      }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, []);
+
   const sections = [
     {
       title: "1. Business Information",
       body: [
-        "Ziveline is operated by:",
-        "Ziveline LLC\n2125 Strawberry Rd\nPasadena, TX 77502\nUnited States",
-        "Email: info@ziveline.com\nPhone: +1 (832) 285-3511\nCustomer Support Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
+        "Ectoo is operated by:",
+        "Ectoo\n2125 Strawberry Rd\nPasadena, TX 77502\nUnited States",
+        "Email: info@ectoo.us\nPhone: +1 (832) 285-3511\nCustomer Support Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
       ],
     },
     {
@@ -40,8 +66,8 @@ const PrivacyPolicy = () => {
     {
       title: "3. Payment Information",
       body: [
-        "Ziveline is currently completing its online payment setup and does not accept Cash on Delivery.",
-        "When online payment processing is activated, payments will be handled by an authorized third-party payment processor. Ziveline will not intentionally store complete payment-card numbers or card security codes on its own systems.",
+        "Ectoo is currently completing its online payment setup and does not accept Cash on Delivery.",
+        "When online payment processing is activated, payments will be handled by an authorized third-party payment processor. Ectoo will not intentionally store complete payment-card numbers or card security codes on its own systems.",
         "Payment processors may collect and process payment information under their own privacy and security policies.",
       ],
     },
@@ -88,7 +114,7 @@ const PrivacyPolicy = () => {
       afterBullets: [
         "When required by law, subpoena, court order, or lawful government request.",
         "To investigate suspected fraud, security incidents, or violations of our policies.",
-        "To protect the rights, safety, and property of Ziveline, our customers, or others.",
+        "To protect the rights, safety, and property of Ectoo, our customers, or others.",
         "In connection with a merger, financing, acquisition, reorganization, or sale of business assets.",
       ],
     },
@@ -96,7 +122,7 @@ const PrivacyPolicy = () => {
       title: "6. Sale and Sharing of Personal Information",
       body: [
         "We do not sell personal information for money.",
-        "Certain analytics or advertising technologies, if enabled, may be treated as “sharing” or targeted advertising under some state privacy laws. Where legally required, eligible consumers may request to opt out by contacting info@ziveline.com.",
+        "Certain analytics or advertising technologies, if enabled, may be treated as “sharing” or targeted advertising under some state privacy laws. Where legally required, eligible consumers may request to opt out by contacting info@ectoo.us.",
       ],
     },
     {
@@ -119,7 +145,7 @@ const PrivacyPolicy = () => {
     {
       title: "8. Marketing Communications",
       body: [
-        "Customers may unsubscribe from promotional emails by using the unsubscribe link included in the message or by contacting info@ziveline.com.",
+        "Customers may unsubscribe from promotional emails by using the unsubscribe link included in the message or by contacting info@ectoo.us.",
         "Transactional communications concerning an order, delivery, return, security issue, or account are not promotional and may still be sent when necessary.",
         "We do not send promotional text messages without the recipient’s appropriate consent. Consent to marketing is not a condition of purchase.",
       ],
@@ -164,7 +190,7 @@ const PrivacyPolicy = () => {
         "Not receive unlawful discriminatory treatment for exercising privacy rights.",
       ],
       after: [
-        "To submit a request, email info@ziveline.com with the subject “Privacy Request.”",
+        "To submit a request, email info@ectoo.us with the subject “Privacy Request.”",
         "We may need to verify your identity before completing a request. An authorized agent may submit a request when permitted by law and after providing appropriate authorization.",
       ],
     },
@@ -184,7 +210,7 @@ const PrivacyPolicy = () => {
     {
       title: "14. United States Operations",
       body: [
-        "Ziveline operates in the United States. Information may be processed and stored in the United States, where privacy laws may differ from those in other jurisdictions.",
+        "Ectoo operates in the United States. Information may be processed and stored in the United States, where privacy laws may differ from those in other jurisdictions.",
       ],
     },
     {
@@ -197,50 +223,92 @@ const PrivacyPolicy = () => {
       title: "16. Contact Us",
       body: [
         "Questions or privacy requests may be directed to:",
-        "Ziveline LLC\n2125 Strawberry Rd\nPasadena, TX 77502\nUnited States",
-        "Email: info@ziveline.com\nPhone: +1 (832) 285-3511\nHours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
+        "Ectoo\n2125 Strawberry Rd\nPasadena, TX 77502\nUnited States",
+        "Email: info@ectoo.us\nPhone: +1 (832) 285-3511\nHours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
       ],
     },
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-paper text-ink">
-      {/* HERO */}
-      <section className="border-b border-line bg-ink px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center bg-paper text-ink">
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(30px);
+          transition:
+            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        [data-reveal="scale"] {
+          transform: scale(0.97);
+        }
+
+        [data-reveal].ectoo-visible {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+
+        .privacy-section {
+          transition:
+            transform 0.3s ease,
+            border-color 0.3s ease,
+            box-shadow 0.3s ease;
+        }
+
+        .privacy-section:hover {
+          transform: translateY(-2px);
+          border-color: rgba(31, 45, 34, 0.18);
+          box-shadow: 0 14px 38px rgba(31, 45, 34, 0.05);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
+      
+      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
+        <div data-reveal="scale" className="relative mx-auto max-w-4xl text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
             <ShieldCheck size={24} aria-hidden="true" />
           </div>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[0.25em] text-paper/60">
-            Ziveline
+          <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+            Ectoo
           </p>
 
-          <h1 className="mt-3 font-display text-4xl leading-tight text-paper sm:text-5xl">
+          <h1 className="mt-3 font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl">
             Privacy Policy
           </h1>
 
-          <p className="mt-4 text-sm text-paper/60">
+          <p className="mt-4 text-sm text-[#5E5B57]">
             Last updated: September 11, 2026
           </p>
         </div>
       </section>
 
-      {/* INTRO + POLICY */}
+      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          <p className="text-sm leading-7 text-ink/60 sm:text-base">
-            Ziveline LLC (“Ziveline,” “we,” “us,” or “our”) respects your
+        <div className="mx-auto max-w-4xl">
+          <p data-reveal className="rounded-[24px] border border-[#E4DED7] bg-white p-6 text-sm leading-7 text-[#5E5B57] shadow-[0_14px_40px_rgba(31,45,34,0.04)] sm:p-8 sm:text-base">
+            Ectoo (“Ectoo,” “we,” “us,” or “our”) respects your
             privacy. This Privacy Policy explains how we collect, use,
             disclose, retain, and protect personal information when you visit
-            https://www.ziveline.com, create an account, communicate with us,
+            https://www.ectoo.us, create an account, communicate with us,
             or purchase our products.
           </p>
 
-          <div className="mt-10 space-y-9 sm:mt-12 sm:space-y-10">
+          <div className="mt-6 grid gap-4 sm:mt-8">
             {sections.map((section) => (
-              <section key={section.title}>
-                <h2 className="font-display text-2xl leading-tight text-ink">
+              <section data-reveal key={section.title} className="privacy-section rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+                <h2 className="font-display text-2xl leading-tight text-[#111311]">
                   {section.title}
                 </h2>
 
@@ -248,14 +316,14 @@ const PrivacyPolicy = () => {
                   {section.body?.map((paragraph, index) => (
                     <p
                       key={`${section.title}-body-${index}`}
-                      className="whitespace-pre-line text-sm leading-7 text-ink/60 sm:text-[15px]"
+                      className="whitespace-pre-line text-sm leading-7 text-[#5E5B57] sm:text-[15px]"
                     >
                       {paragraph}
                     </p>
                   ))}
 
                   {section.bullets && (
-                    <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-ink/60 sm:text-[15px]">
+                    <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
                       {section.bullets.map((item, index) => (
                         <li key={`${section.title}-bullet-${index}`}>
                           {item}
@@ -267,14 +335,14 @@ const PrivacyPolicy = () => {
                   {section.after?.map((paragraph, index) => (
                     <p
                       key={`${section.title}-after-${index}`}
-                      className="whitespace-pre-line text-sm leading-7 text-ink/60 sm:text-[15px]"
+                      className="whitespace-pre-line text-sm leading-7 text-[#5E5B57] sm:text-[15px]"
                     >
                       {paragraph}
                     </p>
                   ))}
 
                   {section.afterBullets && (
-                    <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-ink/60 sm:text-[15px]">
+                    <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
                       {section.afterBullets.map((item, index) => (
                         <li key={`${section.title}-after-bullet-${index}`}>
                           {item}
@@ -287,19 +355,19 @@ const PrivacyPolicy = () => {
             ))}
           </div>
 
-          {/* CONTACT NOTE */}
-          <div className="mt-12 border border-line bg-[#F4F1EB] p-5 sm:p-6">
-            <h2 className="font-display text-xl text-ink">
+          
+          <div data-reveal="scale" className="mt-8 rounded-[24px] border border-[#E4DED7] bg-[#E8E7DF] p-6 sm:p-8">
+            <h2 className="font-display text-xl text-[#111311]">
               Privacy Questions or Requests
             </h2>
 
-            <p className="mt-2 text-sm leading-7 text-ink/60">
+            <p className="mt-2 text-sm leading-7 text-[#5E5B57]">
               If you have a question about this Privacy Policy or want to make
               a privacy-related request, you can contact{" "}
               {BUSINESS_INFO.businessName} using the details below.
             </p>
 
-            <div className="mt-4 space-y-1 text-sm leading-6 text-ink/60">
+            <div className="mt-4 space-y-1 text-sm leading-6 text-[#5E5B57]">
               <p>{BUSINESS_INFO.businessName}</p>
               <p>{BUSINESS_INFO.address}</p>
 
@@ -307,7 +375,7 @@ const PrivacyPolicy = () => {
                 Email:{" "}
                 <a
                   href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-ink transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.email}
                 </a>
@@ -317,7 +385,7 @@ const PrivacyPolicy = () => {
                 Phone:{" "}
                 <a
                   href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-ink transition-opacity hover:opacity-70"
+                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
                 >
                   {BUSINESS_INFO.phoneDisplay}
                 </a>
@@ -332,22 +400,22 @@ const PrivacyPolicy = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-line px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto flex max-w-3xl flex-col items-start gap-6 border border-line bg-ink p-6 text-paper sm:p-8 md:flex-row md:items-center md:justify-between md:p-10">
+      
+      <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
+        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between">
           <div>
             <h3 className="font-display text-2xl">
               Questions about your information?
             </h3>
 
-            <p className="mt-2 text-sm leading-6 text-paper/60">
+            <p className="mt-2 text-sm leading-6 text-white/60">
               Contact us if you have a privacy-related question or request.
             </p>
           </div>
 
           <Link
             to="/contact"
-            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 bg-paper px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors duration-300 hover:bg-[#EFE9DE] md:w-auto"
+            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[14px] bg-[#F1EEE8] px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white md:w-auto"
           >
             Contact Us
             <ArrowRight size={16} aria-hidden="true" />

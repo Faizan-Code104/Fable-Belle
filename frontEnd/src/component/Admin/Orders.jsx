@@ -50,7 +50,7 @@ const Orders = () => {
   ];
 
   const getToken = () => {
-    return localStorage.getItem("Ziveline-token");
+    return localStorage.getItem("ectoo-token");
   };
 
   const getHeaders = () => {
@@ -109,9 +109,7 @@ const Orders = () => {
     });
   };
 
-  /*
-    ================= FETCH ORDERS =================
-  */
+  
 
   const fetchOrders = async () => {
     try {
@@ -142,9 +140,7 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
-  /*
-    ================= STYLES =================
-  */
+  
 
   const getStatusClasses = (status) => {
     const styles = {
@@ -172,9 +168,7 @@ const Orders = () => {
     return <Icon size={14} />;
   };
 
-  /*
-    ================= FILTER + SORT =================
-  */
+  
 
   const filteredOrders = useMemo(() => {
     let result = [...orders];
@@ -213,9 +207,7 @@ const Orders = () => {
     return result;
   }, [orders, searchTerm, statusFilter, sortBy]);
 
-  /*
-    ================= STATS =================
-  */
+  
 
   const totalRevenue = orders
     .filter((order) => order.status !== "Cancelled")
@@ -233,9 +225,7 @@ const Orders = () => {
     (order) => order.status === "Delivered",
   ).length;
 
-  /*
-    ================= STATUS UPDATE =================
-  */
+  
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
@@ -288,11 +278,11 @@ const Orders = () => {
   return (
     <section className="min-h-screen bg-[#F4F1EB] px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1600px]">
-        {/* Header */}
+        {}
         <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.28em] text-ink/40">
-              Ziveline Admin
+              Ectoo Admin
             </p>
 
             <h1 className="font-display text-3xl text-ink sm:text-4xl">
@@ -325,7 +315,7 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* Error */}
+        {}
         {errorMessage && (
           <div className="mb-5 flex items-center justify-between gap-4 border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
             <span>{errorMessage}</span>
@@ -336,7 +326,7 @@ const Orders = () => {
           </div>
         )}
 
-        {/* Stats */}
+        {}
         <div className="mb-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="border border-line bg-paper p-5">
             <div className="flex items-start justify-between">
@@ -419,7 +409,7 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* Filters */}
+        {}
         <div className="mb-5 border border-line bg-paper p-4 sm:p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="relative w-full xl:max-w-md">
@@ -509,7 +499,7 @@ const Orders = () => {
           )}
         </div>
 
-        {/* Loading */}
+        {}
         {loading ? (
           <div className="flex flex-col items-center justify-center border border-line bg-paper px-6 py-24">
             <Loader2 size={32} className="animate-spin text-ink" />
@@ -520,7 +510,7 @@ const Orders = () => {
           </div>
         ) : (
           <>
-            {/* Desktop Table */}
+            {}
             <div className="hidden overflow-hidden border border-line bg-paper lg:block">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1000px]">
@@ -674,7 +664,7 @@ const Orders = () => {
               )}
             </div>
 
-            {/* Mobile Cards */}
+            {}
             <div className="space-y-4 lg:hidden">
               {filteredOrders.map((order) => (
                 <div
@@ -776,7 +766,7 @@ const Orders = () => {
         )}
       </div>
 
-      {/* View Order Modal */}
+      {}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 px-4 py-6 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto border border-line bg-paper">
@@ -801,7 +791,7 @@ const Orders = () => {
             </div>
 
             <div className="space-y-6 p-5 sm:p-7">
-              {/* Status */}
+              {}
               <div className="bg-[#F4F1EB] p-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -847,7 +837,7 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Customer + Shipping */}
+              {}
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="border border-line p-5">
                   <div className="mb-4 flex items-center gap-2">
@@ -888,7 +878,7 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Order Info */}
+              {}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="bg-[#F4F1EB] p-4">
                   <CalendarDays size={17} className="text-ink/50" />
@@ -927,7 +917,7 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Products */}
+              {}
               <div className="border border-line p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <ShoppingBag size={17} className="text-ink/50" />

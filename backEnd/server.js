@@ -51,9 +51,10 @@ app.use(
           "'self'",
           "http://localhost:5000",
           "http://localhost:5173",
-          "https://www.ziveline.com",
-          "https://ziveline.com",
-          "https://api.ziveline.com",
+          "http://localhost:3000",
+          "https://ectoo.us",
+          "https://www.ectoo.us",
+          "https://api.ectoo.us",
         ],
 
         objectSrc: ["'none'"],
@@ -109,8 +110,8 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://ziveline.com",
-  "https://www.ziveline.com",
+  "https://ectoo.us",
+  "https://www.ectoo.us",
 ];
 
 app.use(
@@ -171,7 +172,7 @@ app.use(
     setHeaders: (res) => {
       /*
        * Product images are intentionally allowed
-       * to load from the Ziveline frontend domain.
+       * to load from the Ectoo frontend domain.
        */
       res.setHeader(
         "Cross-Origin-Resource-Policy",
@@ -213,7 +214,7 @@ app.use("/api/orders", orderRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
-    message: "Ziveline Backend is running",
+    message: "Ectoo Backend is running",
   });
 });
 
@@ -259,6 +260,6 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(
-    `Ziveline Backend running on port ${PORT}`
+    `Ectoo Backend running on port ${PORT}`
   );
 });

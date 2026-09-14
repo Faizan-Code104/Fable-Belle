@@ -1,18 +1,17 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Search,
-  Package,
-  Truck,
-  CheckCircle2,
-  Clock3,
-  MapPin,
-  CalendarDays,
   ArrowRight,
-  Copy,
+  CalendarDays,
   Check,
+  CheckCircle2,
   CircleDot,
-  Loader2,
+  Copy,
   ImageOff,
+  Loader2,
+  MapPin,
+  Package,
+  Search,
+  Truck,
   XCircle,
 } from "lucide-react";
 
@@ -26,19 +25,42 @@ const STATUS_STEPS = [
 ];
 
 const OrderTracking = () => {
+  const pageRef = useRef(null);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [error, setError] = useState("");
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+
+    if (!elements?.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("ectoo-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -30px 0px",
+      }
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, [order]);
+
   const getImageUrl = (image) => {
     if (!image) return "";
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
+    if (image.startsWith("http://") || image.startsWith("https://")) {
       return image;
     }
 
@@ -82,9 +104,7 @@ const OrderTracking = () => {
       setLoading(true);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/orders/track/${encodeURIComponent(
-          value
-        )}`
+        `${API_BASE_URL}/api/orders/track/${encodeURIComponent(value)}`
       );
 
       let data = {};
@@ -133,67 +153,155 @@ const OrderTracking = () => {
       `Order Support - ${order?.orderNumber || ""}`
     );
 
-    window.location.href = `mailto:info@ziveline.com?subject=${subject}`;
+    window.location.href = `mailto:info@ectoo.us?subject=${subject}`;
   };
 
   const isCancelled = order?.status === "Cancelled";
 
   const currentStepIndex = order
-    ? STATUS_STEPS.findIndex(
-        (step) => step.key === order.status
-      )
+    ? STATUS_STEPS.findIndex((step) => step.key === order.status)
     : -1;
 
   return (
-    <section className="min-h-screen bg-[#F4F1EB]">
-      {/* Hero */}
-      <div className="relative overflow-hidden bg-ink">
-        <img
-          src="/order tracking.png"
-          alt="Track Your Order"
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
-        />
+    <main
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
+      <style>{`
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(34px);
+          transition:
+            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
 
-        <div className="absolute inset-0 bg-black/50" />
+        [data-reveal="left"] {
+          transform: translateX(-42px);
+        }
 
-        <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center bg-paper text-ink">
-              <Truck size={30} />
+        [data-reveal="right"] {
+          transform: translateX(42px);
+        }
+
+        [data-reveal="scale"] {
+          transform: scale(0.96);
+        }
+
+        [data-reveal].ectoo-visible {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+        }
+
+        .ectoo-lift {
+          transition:
+            transform 0.35s ease,
+            box-shadow 0.35s ease,
+            border-color 0.35s ease;
+        }
+
+        .ectoo-lift:hover {
+          transform: translateY(-5px);
+          border-color: rgba(31, 45, 34, 0.2);
+          box-shadow: 0 20px 55px rgba(31, 45, 34, 0.08);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          [data-reveal] {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
+        }
+      `}</style>
+
+      <section className="relative isolate overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF]">
+        <div className="absolute left-0 top-0 h-full w-full">
+          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full border border-[#1F2D22]/10" />
+          <div className="absolute -left-10 -top-10 h-48 w-48 rounded-full border border-[#1F2D22]/10" />
+          <div className="absolute right-[-120px] top-[-80px] h-80 w-80 rounded-full bg-[#E4E5DD]" />
+          <div className="absolute bottom-[-100px] right-[12%] h-60 w-60 rounded-full border border-[#9A5937]/20" />
+        </div>
+
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-12 lg:py-24">
+          <div data-reveal="left" className="flex items-center">
+            <div className="max-w-2xl">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#9A5937]">
+                Ectoo Order Care
+              </p>
+
+              <h1 className="mt-5 max-w-xl font-display text-5xl leading-[0.95] sm:text-6xl lg:text-7xl">
+                Follow your order from checkout to delivery.
+              </h1>
+
+              <p className="mt-6 max-w-xl text-sm leading-7 text-[#5E5B57] sm:text-base">
+                Enter your order number below to view the latest status available
+                for your purchase.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium text-[#5E5B57]">
+                <span className="rounded-full border border-[#1F2D22]/10 bg-white/55 px-4 py-2">
+                  Live order status
+                </span>
+                <span className="rounded-full border border-[#1F2D22]/10 bg-white/55 px-4 py-2">
+                  Delivery progress
+                </span>
+                <span className="rounded-full border border-[#1F2D22]/10 bg-white/55 px-4 py-2">
+                  Order details
+                </span>
+              </div>
             </div>
+          </div>
 
-            <p className="mt-6 text-xs font-bold uppercase tracking-[0.3em] text-paper/60">
-              Ziveline Delivery
-            </p>
+          <div data-reveal="right" className="relative">
+            <div className="relative min-h-[430px] overflow-hidden rounded-[34px] bg-[#1F2D22] p-5 shadow-[0_28px_80px_rgba(31,45,34,0.16)] sm:p-7">
+              <img
+                src="/order tracking.png"
+                alt="Track Your Order"
+                className="absolute inset-0 h-full w-full object-cover opacity-30"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1F2D22] via-[#1F2D22]/65 to-[#1F2D22]/10" />
 
-            <h1 className="mt-4 font-display text-4xl text-paper sm:text-5xl lg:text-6xl">
-              Track Your Order
-            </h1>
+              <div className="relative flex min-h-[376px] flex-col justify-between">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white backdrop-blur">
+                  <Truck size={24} />
+                </div>
 
-            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-paper/70 sm:text-base">
-              Enter your order number to see its current
-              status.
-            </p>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/50">
+                    Simple tracking
+                  </p>
+                  <h2 className="mt-3 max-w-xs font-display text-4xl leading-tight text-white">
+                    One number. One clear view of your order.
+                  </h2>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Tracking Search */}
-      <div className="relative mx-auto -mt-8 max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="border border-line bg-paper p-5 shadow-lg sm:p-7">
-          <form onSubmit={handleTrackOrder}>
-            <label
-              htmlFor="trackingNumber"
-              className="mb-3 block text-sm font-bold text-ink"
-            >
-              Order Number
-            </label>
+      <section className="relative z-10 mx-auto -mt-6 max-w-7xl px-5 sm:px-8 lg:px-12">
+        <div
+          data-reveal="scale"
+          className="rounded-[28px] border border-[#E4DED7] bg-white p-5 shadow-[0_24px_70px_rgba(31,45,34,0.08)] sm:p-7 lg:p-8"
+        >
+          <form
+            onSubmit={handleTrackOrder}
+            className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end"
+          >
+            <div>
+              <label
+                htmlFor="trackingNumber"
+                className="mb-3 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5E5B57]"
+              >
+                Order Number
+              </label>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <div className="relative flex-1">
+              <div className="relative">
                 <Package
-                  size={19}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-ink/40"
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5E5B57]/70"
                 />
 
                 <input
@@ -204,113 +312,174 @@ const OrderTracking = () => {
                     setTrackingNumber(event.target.value);
                     setError("");
                   }}
-                  placeholder="Enter your order number"
-                  className={`h-14 w-full border bg-[#F4F1EB] pl-12 pr-4 text-sm font-medium text-ink outline-none transition-all placeholder:text-ink/40 focus:bg-paper ${
+                  placeholder="Example: EC-123456"
+                  className={`h-14 w-full rounded-[16px] border bg-[#FAF8F5] pl-12 pr-4 text-sm font-medium outline-none transition-all placeholder:text-[#5E5B57]/50 focus:bg-white focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] ${
                     error
                       ? "border-red-300 focus:border-red-500"
-                      : "border-line focus:border-ink"
+                      : "border-[#E4DED7] focus:border-[#1F2D22]"
                   }`}
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex h-14 items-center justify-center gap-2 bg-ink px-7 text-xs font-semibold uppercase tracking-wider text-paper transition-colors duration-300 hover:bg-bottle-dark disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? (
-                  <>
-                    <Loader2
-                      size={18}
-                      className="animate-spin"
-                    />
-                    Searching...
-                  </>
-                ) : (
-                  <>
-                    <Search size={18} />
-                    Track Order
-                  </>
-                )}
-              </button>
+              {error && (
+                <p className="mt-3 text-sm font-semibold text-red-600">
+                  {error}
+                </p>
+              )}
             </div>
 
-            {error && (
-              <p className="mt-3 text-sm font-semibold text-red-600">
-                {error}
-              </p>
-            )}
-
-            <p className="mt-4 text-xs leading-5 text-ink/40">
-              If you have an existing order, enter the
-              order number provided with your order
-              confirmation.
-            </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-[16px] bg-[#1F2D22] px-8 text-[10px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_14px_30px_rgba(31,45,34,0.15)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#3F4C3A] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={17} className="animate-spin" />
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search size={17} />
+                  Track Order
+                </>
+              )}
+            </button>
           </form>
         </div>
-      </div>
+      </section>
 
-      {/* Results */}
-      {order && (
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-          {/* Status Header */}
-          <div className="border border-line bg-paper">
-            <div className="border-b border-line p-6 sm:p-8">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span
-                      className={`px-3 py-1.5 text-xs font-bold ${
-                        isCancelled
-                          ? "bg-red-50 text-red-700"
-                          : "bg-emerald-50 text-emerald-700"
-                      }`}
-                    >
-                      {order.status}
-                    </span>
+      {!order && !error && !loading && (
+        <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
+          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+            <div data-reveal="left" className="flex items-center">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#9A5937]">
+                  How it works
+                </p>
+                <h2 className="mt-4 max-w-sm font-display text-4xl leading-tight sm:text-5xl">
+                  A quieter, clearer way to check your order.
+                </h2>
+                <p className="mt-5 max-w-md text-sm leading-7 text-[#5E5B57]">
+                  Use the order number from your confirmation and we’ll show the
+                  latest status stored for your order.
+                </p>
+              </div>
+            </div>
 
-                    <span className="text-sm font-medium text-ink/40">
-                      {order.orderNumber}
-                    </span>
+            <div data-reveal="right" className="grid gap-4 sm:grid-cols-3">
+              {[
+                {
+                  icon: Package,
+                  number: "01",
+                  title: "Enter your order",
+                  description:
+                    "Use the order number from your existing order confirmation.",
+                },
+                {
+                  icon: Truck,
+                  number: "02",
+                  title: "View the progress",
+                  description:
+                    "See the current order stage and the latest available update.",
+                },
+                {
+                  icon: CheckCircle2,
+                  number: "03",
+                  title: "Need more help?",
+                  description:
+                    "Contact support if anything about your order needs attention.",
+                },
+              ].map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <div
+                    key={item.number}
+                    className="ectoo-lift rounded-[24px] border border-[#E4DED7] bg-white p-6"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
+                        <Icon size={19} />
+                      </div>
+                      <span className="font-display text-2xl text-[#1F2D22]/20">
+                        {item.number}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-7 font-display text-2xl leading-tight">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-3 text-sm leading-6 text-[#5E5B57]">
+                      {item.description}
+                    </p>
                   </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
-                  <h2 className="mt-4 font-display text-3xl text-ink">
-                    {isCancelled
-                      ? "This order was cancelled"
-                      : order.status === "Delivered"
-                      ? "Your order has been delivered"
-                      : "Your order is in progress"}
-                  </h2>
+      {order && (
+        <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
+          <div
+            data-reveal="scale"
+            className="overflow-hidden rounded-[30px] border border-[#E4DED7] bg-white shadow-[0_20px_60px_rgba(31,45,34,0.05)]"
+          >
+            <div className="grid gap-0 lg:grid-cols-[1.3fr_0.7fr]">
+              <div className="p-6 sm:p-8 lg:p-10">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span
+                    className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] ${
+                      isCancelled
+                        ? "bg-red-50 text-red-700"
+                        : "bg-[#E8E7DF] text-[#1F2D22]"
+                    }`}
+                  >
+                    {order.status}
+                  </span>
 
-                  <p className="mt-2 text-sm leading-6 text-ink/60">
-                    Placed on{" "}
-                    <span className="font-bold text-ink">
-                      {formatDateTime(order.createdAt)}
-                    </span>
-                  </p>
+                  <span className="text-xs font-medium text-[#5E5B57]">
+                    {order.orderNumber}
+                  </span>
                 </div>
 
-                <div className="bg-[#F4F1EB] p-4 sm:min-w-[260px]">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink/40">
+                <h2 className="mt-5 max-w-xl font-display text-4xl leading-tight sm:text-5xl">
+                  {isCancelled
+                    ? "This order was cancelled"
+                    : order.status === "Delivered"
+                    ? "Your order has been delivered"
+                    : "Your order is moving forward"}
+                </h2>
+
+                <p className="mt-4 text-sm text-[#5E5B57]">
+                  Placed on{" "}
+                  <span className="font-semibold text-[#111311]">
+                    {formatDateTime(order.createdAt)}
+                  </span>
+                </p>
+              </div>
+
+              <div className="flex flex-col justify-between border-t border-[#E4DED7] bg-[#EEE7DF] p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
                     Order Number
                   </p>
 
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <span className="break-all text-sm font-bold text-ink">
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="break-all font-display text-2xl">
                       {order.orderNumber}
                     </span>
 
                     <button
                       type="button"
                       onClick={handleCopyTracking}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center bg-paper text-ink/60 transition hover:bg-ink hover:text-paper"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#1F2D22] transition hover:bg-[#1F2D22] hover:text-white"
                       aria-label="Copy order number"
                     >
-                      {copied ? (
-                        <Check size={16} />
-                      ) : (
-                        <Copy size={16} />
-                      )}
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
 
@@ -320,56 +489,52 @@ const OrderTracking = () => {
                     </p>
                   )}
                 </div>
+
+                <div className="mt-8 flex items-center gap-3 border-t border-[#1F2D22]/10 pt-5 text-sm text-[#5E5B57]">
+                  <Clock3 size={16} />
+                  Latest update: {formatDateTime(order.updatedAt)}
+                </div>
               </div>
             </div>
 
-            {/* Quick Details */}
-            <div className="grid grid-cols-1 divide-y divide-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-              <div className="flex items-center gap-4 p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-[#F4F1EB] text-ink/70">
-                  <Package size={20} />
+            <div className="grid gap-px bg-[#E4DED7] sm:grid-cols-3">
+              <div className="flex items-center gap-4 bg-white p-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
+                  <Package size={19} />
                 </div>
-
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/40">
-                    Order Status
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#5E5B57]">
+                    Status
                   </p>
-
-                  <p className="mt-1 text-sm font-bold text-ink">
+                  <p className="mt-1 text-sm font-semibold">
                     {order.status || "Processing"}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-[#F4F1EB] text-ink/70">
-                  <MapPin size={20} />
+              <div className="flex items-center gap-4 bg-white p-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
+                  <MapPin size={19} />
                 </div>
-
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/40">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#5E5B57]">
                     Destination
                   </p>
-
-                  <p className="mt-1 text-sm font-bold text-ink">
-                    {getDestination(
-                      order.shippingAddress
-                    )}
+                  <p className="mt-1 text-sm font-semibold">
+                    {getDestination(order.shippingAddress)}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-[#F4F1EB] text-ink/70">
-                  <CalendarDays size={20} />
+              <div className="flex items-center gap-4 bg-white p-6">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
+                  <CalendarDays size={19} />
                 </div>
-
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-ink/40">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#5E5B57]">
                     Last Updated
                   </p>
-
-                  <p className="mt-1 text-sm font-bold text-ink">
+                  <p className="mt-1 text-sm font-semibold">
                     {formatDateTime(order.updatedAt)}
                   </p>
                 </div>
@@ -377,331 +542,184 @@ const OrderTracking = () => {
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-            {/* Timeline */}
-            <div className="lg:col-span-2">
-              <div className="border border-line bg-paper p-6 sm:p-8">
-                <div className="mb-8">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-bottle">
-                    Shipment Progress
-                  </p>
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+            <div data-reveal="left">
+              <div className="rounded-[28px] border border-[#E4DED7] bg-white p-6 sm:p-8">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#9A5937]">
+                  Shipment Progress
+                </p>
 
-                  <h3 className="mt-2 font-display text-2xl text-ink">
-                    Order Timeline
-                  </h3>
-                </div>
+                <h3 className="mt-3 font-display text-3xl">Order Timeline</h3>
 
-                {isCancelled ? (
-                  <div className="flex items-start gap-5 bg-red-50 p-5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-600 text-white">
-                      <XCircle size={20} />
+                <div className="mt-8">
+                  {isCancelled ? (
+                    <div className="flex items-start gap-4 rounded-[20px] bg-red-50 p-5">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-600 text-white">
+                        <XCircle size={20} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-red-700">
+                          Order Cancelled
+                        </h4>
+                        <p className="mt-1 text-sm leading-6 text-red-600">
+                          This order was cancelled and will not be delivered.
+                          Contact support if you believe this is a mistake.
+                        </p>
+                      </div>
                     </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {STATUS_STEPS.map((step, index) => {
+                        const Icon = step.icon;
+                        const completed = index <= currentStepIndex;
+                        const isCurrent = index === currentStepIndex;
 
-                    <div>
-                      <h4 className="text-sm font-bold text-red-700">
-                        Order Cancelled
-                      </h4>
-
-                      <p className="mt-1 text-sm leading-6 text-red-600">
-                        This order was cancelled and will
-                        not be delivered. Contact support
-                        if you believe this is a mistake.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    {STATUS_STEPS.map((step, index) => {
-                      const Icon = step.icon;
-                      const isLast =
-                        index ===
-                        STATUS_STEPS.length - 1;
-
-                      const completed =
-                        index <= currentStepIndex;
-
-                      const isCurrent =
-                        index === currentStepIndex;
-
-                      return (
-                        <div
-                          key={step.key}
-                          className="relative flex gap-5"
-                        >
-                          {!isLast && (
-                            <div
-                              className={`absolute left-[22px] top-12 h-[calc(100%-24px)] w-px ${
-                                completed
-                                  ? "bg-ink"
-                                  : "bg-line"
-                              }`}
-                            />
-                          )}
-
+                        return (
                           <div
-                            className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-4 border-paper ${
+                            key={step.key}
+                            className={`grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[20px] border p-4 sm:p-5 ${
                               isCurrent
-                                ? "bg-bottle text-paper"
+                                ? "border-[#1F2D22]/20 bg-[#E8E7DF]"
                                 : completed
-                                ? "bg-ink text-paper"
-                                : "bg-[#F4F1EB] text-ink/40"
+                                ? "border-[#E4DED7] bg-[#FAF8F5]"
+                                : "border-[#E4DED7] bg-white"
                             }`}
                           >
-                            <Icon size={17} />
-                          </div>
+                            <div
+                              className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+                                completed
+                                  ? "bg-[#1F2D22] text-white"
+                                  : "bg-[#F1EEE8] text-[#5E5B57]"
+                              }`}
+                            >
+                              <Icon size={18} />
+                            </div>
 
-                          <div
-                            className={`flex-1 ${
-                              !isLast ? "pb-9" : ""
-                            }`}
-                          >
-                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
                               <div className="flex items-center gap-2">
-                                <h4
-                                  className={`text-sm font-bold ${
-                                    isCurrent
-                                      ? "text-ink"
-                                      : completed
-                                      ? "text-ink/80"
-                                      : "text-ink/40"
-                                  }`}
-                                >
+                                <h4 className="text-sm font-semibold">
                                   {step.title}
                                 </h4>
-
                                 {isCurrent && (
-                                  <span className="bg-[#F4F1EB] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-ink/70">
+                                  <span className="rounded-full bg-white px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-[#1F2D22]">
                                     Current
                                   </span>
                                 )}
                               </div>
-
-                              {index === 0 && (
-                                <span className="text-xs font-semibold text-ink/40">
-                                  {formatDateTime(
-                                    order.createdAt
-                                  )}
-                                </span>
-                              )}
-
-                              {isCurrent &&
-                                index !== 0 && (
-                                  <span className="text-xs font-semibold text-ink/40">
-                                    {formatDateTime(
-                                      order.updatedAt
-                                    )}
-                                  </span>
-                                )}
+                              <p className="mt-1 text-xs text-[#5E5B57]">
+                                {completed ? "Completed" : "Not reached yet"}
+                              </p>
                             </div>
 
-                            <p
-                              className={`mt-1 max-w-xl text-sm leading-6 ${
-                                completed
-                                  ? "text-ink/60"
-                                  : "text-ink/40"
-                              }`}
-                            >
-                              {completed
-                                ? "Completed"
-                                : "Not reached yet"}
-                            </p>
+                            <span className="hidden text-xs font-medium text-[#5E5B57] sm:block">
+                              {index === 0
+                                ? formatDateTime(order.createdAt)
+                                : isCurrent
+                                ? formatDateTime(order.updatedAt)
+                                : ""}
+                            </span>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-8">
-              {/* Order Items */}
-              <div className="border border-line bg-paper p-6">
+            <div data-reveal="right" className="space-y-6">
+              <div className="rounded-[28px] border border-[#E4DED7] bg-white p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink/40">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
                       Your Purchase
                     </p>
-
-                    <h3 className="mt-2 font-display text-xl text-ink">
-                      Order Items
-                    </h3>
+                    <h3 className="mt-2 font-display text-2xl">Order Items</h3>
                   </div>
 
-                  <div className="flex h-10 w-10 items-center justify-center bg-[#F4F1EB] text-ink/70">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
                     <Package size={18} />
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-4">
-                  {(order.items || []).map(
-                    (item, index) => (
-                      <div
-                        key={`${item.product}-${index}`}
-                        className="flex gap-4 bg-[#F4F1EB] p-3"
-                      >
-                        {item.image ? (
-                          <img
-                            src={getImageUrl(
-                              item.image
-                            )}
-                            alt={item.name}
-                            className="h-20 w-20 shrink-0 object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-20 w-20 shrink-0 items-center justify-center bg-line text-ink/40">
-                            <ImageOff size={20} />
-                          </div>
-                        )}
+                <div className="mt-6 space-y-3">
+                  {(order.items || []).map((item, index) => (
+                    <div
+                      key={`${item.product}-${index}`}
+                      className="flex gap-4 rounded-[18px] bg-[#FAF8F5] p-3"
+                    >
+                      {item.image ? (
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.name}
+                          className="h-20 w-20 shrink-0 rounded-[14px] object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[14px] bg-[#E8E7DF] text-[#5E5B57]">
+                          <ImageOff size={20} />
+                        </div>
+                      )}
 
-                        <div className="min-w-0 flex-1">
-                          <h4 className="line-clamp-2 text-sm font-bold text-ink">
-                            {item.name}
-                          </h4>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="line-clamp-2 text-sm font-semibold">
+                          {item.name}
+                        </h4>
 
-                          <div className="mt-2 flex items-center justify-between">
-                            <span className="text-xs font-semibold text-ink/50">
-                              Qty: {item.quantity}
-                            </span>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-xs text-[#5E5B57]">
+                            Qty: {item.quantity}
+                          </span>
 
-                            <span className="text-sm font-bold text-ink">
-                              $
-                              {Number(
-                                item.price
-                              ).toFixed(2)}
-                            </span>
-                          </div>
+                          <span className="text-sm font-semibold">
+                            ${Number(item.price).toFixed(2)}
+                          </span>
                         </div>
                       </div>
-                    )
-                  )}
+                    </div>
+                  ))}
                 </div>
 
-                <div className="mt-5 flex items-center justify-between border-t border-line pt-5">
-                  <span className="text-sm font-bold text-ink/60">
+                <div className="mt-5 flex items-center justify-between border-t border-[#E4DED7] pt-5">
+                  <span className="text-sm font-medium text-[#5E5B57]">
                     Total
                   </span>
-
-                  <span className="font-display text-lg text-ink">
-                    $
-                    {Number(
-                      order.totalAmount
-                    ).toFixed(2)}
+                  <span className="font-display text-2xl">
+                    ${Number(order.totalAmount).toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              {/* Delivery Information */}
-              <div className="bg-ink p-6 text-paper">
-                <div className="flex h-11 w-11 items-center justify-center bg-paper/10">
-                  <Truck size={21} />
-                </div>
-
-                <h3 className="mt-5 font-display text-xl">
-                  Delivery Information
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-paper/70">
-                  Follow this page for the latest status
-                  available for your order.
-                </p>
-
-                <div className="mt-6 flex items-center gap-2 text-sm font-bold text-paper">
-                  <CircleDot size={15} />
-                  Status Updates
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom CTA */}
-          <div className="mt-8 border border-line bg-paper p-6 sm:p-8">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-bottle">
-                  Need Assistance?
-                </p>
-
-                <h3 className="mt-2 font-display text-2xl text-ink">
-                  Something not looking right?
-                </h3>
-
-                <p className="mt-2 text-sm text-ink/60">
-                  Our support team is here to help with
-                  your order.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleContactSupport}
-                className="inline-flex items-center justify-center gap-2 bg-ink px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-paper transition-colors duration-300 hover:bg-bottle-dark"
-              >
-                Contact Support
-                <ArrowRight size={17} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!order && !error && !loading && (
-        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {[
-              {
-                icon: Package,
-                title: "Enter Order Number",
-                description:
-                  "Enter the order number from your existing order confirmation.",
-              },
-              {
-                icon: Truck,
-                title: "Follow Progress",
-                description:
-                  "See the current stage of your order.",
-              },
-              {
-                icon: CheckCircle2,
-                title: "30-Day Returns",
-                description:
-                  "Eligible items may be returned within 30 days of confirmed delivery.",
-              },
-            ].map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <div
-                  key={item.title}
-                  className="border border-line bg-paper p-6 text-center"
-                >
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center bg-[#F4F1EB] text-ink/70">
-                    <Icon size={21} />
+              <div className="relative overflow-hidden rounded-[28px] bg-[#1F2D22] p-7 text-white">
+                <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full border border-white/10" />
+                <div className="relative">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+                    <CircleDot size={18} />
                   </div>
 
-                  <h3 className="mt-5 text-base font-bold text-ink">
-                    {item.title}
+                  <h3 className="mt-5 font-display text-2xl">
+                    Need assistance?
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-ink/60">
-                    {item.description}
+                  <p className="mt-3 text-sm leading-6 text-white/60">
+                    If anything about your order looks incorrect, our support team
+                    can help.
                   </p>
-                </div>
-              );
-            })}
-          </div>
 
-          <div className="mt-8 flex items-center justify-center gap-2 text-center text-xs font-semibold text-ink/40">
-            <Clock3 size={14} />
-            Status updates as soon as our team updates
-            your order.
+                  <button
+                    type="button"
+                    onClick={handleContactSupport}
+                    className="mt-6 inline-flex items-center justify-center gap-2 rounded-[14px] bg-[#F1EEE8] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
+                  >
+                    Contact Support
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       )}
-    </section>
+    </main>
   );
 };
 
