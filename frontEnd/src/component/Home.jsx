@@ -15,7 +15,6 @@ import {
   Gem,
   ImageOff,
   Leaf,
-  Mail,
   PackageCheck,
   ShoppingBag,
   Truck,
@@ -30,7 +29,6 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [email, setEmail] = useState("");
   const pageRef = useRef(null);
 
   /* =========================================================
@@ -161,19 +159,6 @@ const Home = () => {
       .slice(0, 10);
   }, [products]);
 
-  /* =========================================================
-     NEWSLETTER
-  ========================================================= */
-
-  const handleNewsletter = (e) => {
-    e.preventDefault();
-
-    if (!email.trim()) {
-      return;
-    }
-
-    setEmail("");
-  };
 
   return (
     <div
@@ -786,67 +771,58 @@ const Home = () => {
 
           {/* LEFT */}
 
-          <div data-reveal="left" className="flex items-center px-6 py-14 sm:px-10 lg:px-16 xl:px-20">
+        <div
+  data-reveal="left"
+  className="flex items-center px-6 py-14 sm:px-10 lg:px-16 xl:px-20"
+>
+  <div className="w-full max-w-xl">
 
-            <div className="w-full max-w-xl">
+    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
+      The Ectoo Philosophy
+    </p>
 
-              <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-                Stay Connected
-              </p>
+    <h2 className="mt-3 font-display text-3xl leading-tight sm:text-4xl lg:text-[44px]">
+      Style Made For
+      <br />
+      Everyday Moments
+    </h2>
 
-              <h2 className="mt-3 font-display text-3xl sm:text-4xl lg:text-[44px]">
-                Be Part Of Our Journey
-              </h2>
+    <p className="mt-5 max-w-lg text-sm leading-7 text-[#5E5B57]">
+      At Ectoo, we believe the right bag should feel as good as it
+      looks. Our collection brings together modern design, practical
+      details, and versatile style for your everyday routine.
+    </p>
 
-              <p className="mt-3 text-sm leading-6 text-[#5E5B57]">
-                Get updates on new arrivals,
-                collections, and Ectoo style
-                inspiration.
-              </p>
+    <div className="mt-7 flex flex-wrap items-center gap-3">
 
-              <form
-                onSubmit={handleNewsletter}
-                className="mt-7 flex max-w-lg overflow-hidden rounded-[5px] bg-white"
-              >
+      <Link
+        to="/about"
+        className="home-cta group inline-flex h-12 items-center justify-center gap-3 rounded-[5px] bg-[#1F2D22] px-7 text-[10px] font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-300 hover:bg-[#3F4C3A]"
+      >
+        Our Story
 
-                <div className="relative flex-1">
+        <ArrowRight
+          size={13}
+          className="home-arrow transition-transform duration-300 group-hover:translate-x-1"
+        />
+      </Link>
 
-                  <Mail
-                    size={16}
-                    strokeWidth={1.6}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5E5B57]"
-                  />
+      <Link
+        to="/shop"
+        className="group inline-flex h-12 items-center justify-center gap-3 rounded-[5px] border border-[#1F2D22] px-7 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#1F2D22] transition-all duration-300 hover:bg-[#1F2D22] hover:text-white"
+      >
+        Explore Collection
 
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) =>
-                      setEmail(e.target.value)
-                    }
-                    placeholder="Your email address"
-                    aria-label="Email address"
-                    className="h-12 w-full bg-transparent pl-11 pr-4 text-[11px] outline-none placeholder:text-[#5E5B57]/60"
-                  />
+        <ArrowRight
+          size={13}
+          className="transition-transform duration-300 group-hover:translate-x-1"
+        />
+      </Link>
 
-                </div>
+    </div>
 
-                <button
-                  type="submit"
-                  className="home-cta group flex min-w-[125px] items-center justify-center gap-2 bg-[#1F2D22] px-5 text-[10px] font-semibold text-white transition-colors duration-300 hover:bg-[#3F4C3A]"
-                >
-                  Subscribe
-
-                  <ArrowRight
-                    size={13}
-                    className="home-arrow transition-transform duration-300 group-hover:translate-x-1"
-                  />
-                </button>
-
-              </form>
-
-            </div>
-
-          </div>
+  </div>
+</div>
 
           {/* RIGHT IMAGE */}
 

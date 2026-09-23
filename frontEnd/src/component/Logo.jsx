@@ -7,19 +7,19 @@ const EctooLogo = ({
 }) => {
   const sizes = {
     sm: {
-      brand: "text-xl",
+      logo: "h-8",
       tagline: "text-[9px]",
     },
     md: {
-      brand: "text-2xl",
+      logo: "h-10",
       tagline: "text-[10px]",
     },
     lg: {
-      brand: "text-3xl",
+      logo: "h-12",
       tagline: "text-xs",
     },
     xl: {
-      brand: "text-4xl",
+      logo: "h-16",
       tagline: "text-sm",
     },
   };
@@ -28,18 +28,18 @@ const EctooLogo = ({
 
   return (
     <div
-      className={`inline-flex max-w-full select-none flex-col leading-none ${className}`}
+      className={`inline-flex max-w-full select-none flex-col items-start ${className}`}
       aria-label={
         showTagline
           ? "Ectoo — Carry Your Style"
           : "Ectoo"
       }
     >
-      <span
-        className={`${currentSize.brand} whitespace-nowrap font-display text-[#1F2D22]`}
-      >
-        Ectoo
-      </span>
+      <img
+        src="/ECTOO LOGO.png"
+        alt="ECTOO"
+        className={`${currentSize.logo} w-auto max-w-full object-contain`}
+      />
 
       {showTagline && (
         <span

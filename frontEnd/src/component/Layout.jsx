@@ -28,37 +28,38 @@ import {
 } from "lucide-react";
 
 import { useCart } from "../component/CartContext";
+import EctooLogo from "../component/Logo.jsx";
 
 const BUSINESS_INFO = {
   businessName:
     import.meta.env.VITE_BUSINESS_NAME || "Ectoo",
 
   email:
-    import.meta.env.VITE_SUPPORT_EMAIL || "",
+    import.meta.env.VITE_SUPPORT_EMAIL || "info@ectoo.us",
 
   phoneDisplay:
-    import.meta.env.VITE_SUPPORT_PHONE_DISPLAY || "",
+    import.meta.env.VITE_SUPPORT_PHONE_DISPLAY || "+1 (917) 695-2303",
 
   phoneHref:
-    import.meta.env.VITE_SUPPORT_PHONE_HREF || "",
+    import.meta.env.VITE_SUPPORT_PHONE_HREF || "+19176952303",
 
   addressLine1:
-    import.meta.env.VITE_BUSINESS_ADDRESS_1 || "",
+    import.meta.env.VITE_BUSINESS_ADDRESS_1 || "1825 Dickinson Ave Ste D",
 
   addressLine2:
-    import.meta.env.VITE_BUSINESS_ADDRESS_2 || "",
+    import.meta.env.VITE_BUSINESS_ADDRESS_2 || "Dickinson, TX 77539",
 
   country:
-    import.meta.env.VITE_BUSINESS_COUNTRY || "",
+    import.meta.env.VITE_BUSINESS_COUNTRY || "United States",
 
   businessDays:
-    import.meta.env.VITE_SUPPORT_DAYS || "",
+    import.meta.env.VITE_SUPPORT_DAYS || "Monday – Friday",
 
   supportHours:
-    import.meta.env.VITE_SUPPORT_HOURS || "",
+    import.meta.env.VITE_SUPPORT_HOURS || "9:00 AM – 5:00 PM",
 
   timeZone:
-    import.meta.env.VITE_SUPPORT_TIMEZONE || "",
+    import.meta.env.VITE_SUPPORT_TIMEZONE || "CT",
 };
 
 const Layout = ({ children }) => {
@@ -452,16 +453,11 @@ const Layout = ({ children }) => {
                 }}
               />
 
-              <div className="relative z-10">
-
-                <div className="ectoo-logo-text font-display text-[25px] tracking-[0.28em] sm:text-[31px]">
-                  ECTOO
-                </div>
-
-                <div className="mt-0.5 hidden whitespace-nowrap text-[6.5px] font-medium uppercase tracking-[0.16em] text-white/65 sm:block">
-                  Modern Bags for Modern Women
-                </div>
-
+              <div className="relative z-10 flex items-center">
+                <EctooLogo
+                  size="lg"
+                  className="brightness-0 invert"
+                />
               </div>
 
             </Link>
@@ -726,374 +722,64 @@ const Layout = ({ children }) => {
 
       {}
 
-      <div
-        ref={footerRef}
-        className="relative mt-[85px]"
-      >
-
-        {}
-
-        <svg
-          className="pointer-events-none absolute bottom-[calc(100%-1px)] left-0 z-10 h-[100px] w-full"
-          viewBox="0 0 1600 120"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="
-              M0,75
-              C120,35 245,27 380,48
-              C510,68 625,78 760,62
-              C900,45 985,17 1110,25
-              C1250,34 1340,79 1460,69
-              C1510,65 1560,56 1600,51
-              L1600,120
-              L0,120
-              Z
-            "
-            fill="#1F2D22"
-          />
-        </svg>
-
-        {}
-
-        <footer
-          className={`relative overflow-hidden bg-[#1F2D22] text-white ${
-            footerVisible
-              ? "ectoo-footer-enter"
-              : "opacity-0"
-          }`}
-        >
-
-          <div className="pointer-events-none absolute -right-[170px] -top-[160px] h-[400px] w-[400px] rounded-full bg-white/[0.025]" />
-
-          <div className="relative mx-auto max-w-[1600px] px-6 pb-7 pt-10 sm:px-8 lg:px-12">
-
-            {}
-
-            <div className="grid gap-11 sm:grid-cols-2 lg:grid-cols-[1.45fr_0.72fr_0.95fr_1.3fr_0.65fr] lg:gap-8">
-
-              {}
-
-              <div>
-
-                <Link
-                  to="/"
-                  className="group inline-block"
-                >
-                  <div className="font-display text-[29px] tracking-[0.28em] transition-all duration-500 group-hover:tracking-[0.33em]">
-                    ECTOO
-                  </div>
-
-                  <div className="mt-1 text-[6.5px] uppercase tracking-[0.18em] text-white/55">
-                    Modern Bags for Modern Women
-                  </div>
-                </Link>
-
-                <p className="mt-5 max-w-[280px] text-[11.5px] leading-[1.8] text-white/65">
-                  We curate timeless handbags designed
-                  for modern women who value style,
-                  quality, practical details, and
-                  everyday confidence.
-                </p>
-
-              </div>
-
-              {}
-
-              <div>
-
-                <h3 className="text-[11px] font-semibold text-white">
-                  Quick Links
-                </h3>
-
-                <ul className="mt-5 space-y-3">
-
-                  {quickLinks.map((item) => (
-                    <li key={item.name}>
-
-                      <Link
-                        to={item.path}
-                        className="group inline-flex items-center text-[11px] text-white/65 transition-colors duration-300 hover:text-white"
-                      >
-                        <span className="mr-0 h-px w-0 bg-white transition-all duration-300 group-hover:mr-2 group-hover:w-3" />
-
-                        {item.name}
-                      </Link>
-
-                    </li>
-                  ))}
-
-                </ul>
-
-              </div>
-
-              {}
-
-              <div>
-
-                <h3 className="text-[11px] font-semibold text-white">
-                  Customer Care
-                </h3>
-
-                <ul className="mt-5 space-y-3">
-
-                  {customerCare.map((item) => (
-                    <li key={item.name}>
-
-                      <Link
-                        to={item.path}
-                        className="group inline-flex items-center text-[11px] text-white/65 transition-colors duration-300 hover:text-white"
-                      >
-                        <span className="mr-0 h-px w-0 bg-white transition-all duration-300 group-hover:mr-2 group-hover:w-3" />
-
-                        {item.name}
-                      </Link>
-
-                    </li>
-                  ))}
-
-                </ul>
-
-              </div>
-
-              {}
-
-              <div>
-
-                <h3 className="text-[11px] font-semibold text-white">
-                  Contact Us
-                </h3>
-
-                <div className="mt-5 space-y-4 text-[11px] text-white/65">
-
-                  {BUSINESS_INFO.email && (
-                    <a
-                      href={`mailto:${BUSINESS_INFO.email}`}
-                      className="group flex min-w-0 items-start gap-3 transition-colors duration-300 hover:text-white"
-                    >
-                      <Mail
-                        size={14}
-                        strokeWidth={1.7}
-                        className="mt-0.5 shrink-0 transition-transform duration-300 group-hover:scale-110"
-                      />
-
-                      <span className="break-all">
-                        {BUSINESS_INFO.email}
-                      </span>
-                    </a>
-                  )}
-
-                  {BUSINESS_INFO.phoneDisplay && (
-                    <a
-                      href={`tel:${BUSINESS_INFO.phoneHref}`}
-                      className="group flex items-center gap-3 transition-colors duration-300 hover:text-white"
-                    >
-                      <Phone
-                        size={14}
-                        strokeWidth={1.7}
-                        className="shrink-0 transition-transform duration-300 group-hover:scale-110"
-                      />
-
-                      {
-                        BUSINESS_INFO.phoneDisplay
-                      }
-                    </a>
-                  )}
-
-                  {hasAddress && (
-                    <div className="flex items-start gap-3">
-
-                      <MapPin
-                        size={14}
-                        strokeWidth={1.7}
-                        className="mt-[2px] shrink-0"
-                      />
-
-                      <span className="leading-5">
-
-                        {
-                          BUSINESS_INFO.addressLine1
-                        }
-
-                        {BUSINESS_INFO.addressLine1 &&
-                          BUSINESS_INFO.addressLine2 && (
-                            <br />
-                          )}
-
-                        {
-                          BUSINESS_INFO.addressLine2
-                        }
-
-                        {(BUSINESS_INFO.addressLine1 ||
-                          BUSINESS_INFO.addressLine2) &&
-                          BUSINESS_INFO.country && (
-                            <br />
-                          )}
-
-                        {
-                          BUSINESS_INFO.country
-                        }
-
-                      </span>
-
-                    </div>
-                  )}
-
-                  {hasHours && (
-                    <div className="flex items-start gap-3">
-
-                      <Clock
-                        size={14}
-                        strokeWidth={1.7}
-                        className="mt-[2px] shrink-0"
-                      />
-
-                      <span className="leading-5">
-
-                        {
-                          BUSINESS_INFO.businessDays
-                        }
-
-                        {BUSINESS_INFO.businessDays &&
-                          BUSINESS_INFO.supportHours && (
-                            <br />
-                          )}
-
-                        {
-                          BUSINESS_INFO.supportHours
-                        }
-
-                        {BUSINESS_INFO.timeZone && (
-                          <>
-                            {" "}
-                            (
-                            {
-                              BUSINESS_INFO.timeZone
-                            }
-                            )
-                          </>
-                        )}
-
-                      </span>
-
-                    </div>
-                  )}
-
-                  {!BUSINESS_INFO.email &&
-                    !BUSINESS_INFO.phoneDisplay &&
-                    !hasAddress &&
-                    !hasHours && (
-                      <Link
-                        to="/contact"
-                        className="group inline-flex items-center gap-2 text-white"
-                      >
-                        Contact Support
-
-                        <ArrowRight
-                          size={13}
-                          strokeWidth={1.7}
-                          className="transition-transform duration-300 group-hover:translate-x-1"
-                        />
-                      </Link>
-                    )}
-
+      <div ref={footerRef} className="relative mt-[95px] bg-[#FAF8F5] pt-8">
+        <section className="relative z-20 mx-auto max-w-[1500px] px-4 sm:px-7 lg:px-10">
+          <div className="overflow-hidden rounded-[30px] bg-[#EDE5DA] shadow-[0_24px_70px_rgba(31,45,34,0.10)]">
+            <div className="grid min-h-[285px] lg:grid-cols-[1.08fr_0.92fr]">
+              <div className="flex flex-col justify-center px-7 py-12 sm:px-12 lg:px-16">
+                <span className="mb-4 text-[9px] font-bold uppercase tracking-[0.34em] text-[#9A5937]">The Ectoo Edit</span>
+                <h2 className="font-display text-[38px] leading-[1.02] text-[#17231A] sm:text-[52px] lg:text-[60px]">Carry Your Style.<br/>Own Every Moment.</h2>
+                <div className="mt-7 flex flex-wrap gap-3">
+                  <Link to="/shop" className="group inline-flex h-11 items-center gap-3 rounded-full bg-[#1F2D22] px-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-[#354739]">Shop Collection <ArrowRight size={14} className="transition-transform group-hover:translate-x-1"/></Link>
+                  <Link to="/about" className="inline-flex h-11 items-center rounded-full border border-[#1F2D22]/25 px-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition hover:border-[#1F2D22]">Our Story</Link>
                 </div>
-
               </div>
-
-              {}
-
-              <div className="hidden border-l border-white/15 pl-7 lg:flex lg:flex-col lg:items-center lg:justify-center">
-
-                <div className="ectoo-leaf-float flex h-16 w-16 items-center justify-center">
-
-                  <Leaf
-                    size={48}
-                    strokeWidth={1.05}
-                    className="text-white/85"
-                  />
-
-                </div>
-
-                <p className="mt-5 text-center font-display text-[12px] uppercase leading-6 tracking-[0.28em] text-white/75">
-                  Elevated
-                  <br />
-                  Everyday
-                </p>
-
-                <div className="mt-5 h-px w-10 bg-white/40" />
-
+              <div className="relative min-h-[260px] overflow-hidden lg:min-h-[285px]">
+                <img src="/Crossbody Bags.png" alt="ECTOO crossbody bag" className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 hover:scale-[1.03]"/>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#EDE5DA]/25 via-transparent to-[#1F2D22]/10"/>
+                <span className="absolute bottom-6 right-6 rounded-full border border-white/40 bg-white/75 px-4 py-2 text-[8px] font-bold uppercase tracking-[0.22em] text-[#1F2D22] backdrop-blur-md">Everyday Icons</span>
               </div>
-
             </div>
-
-            {}
-
-            <div className="mt-11 border-t border-white/15 pt-5">
-
-              <div className="flex flex-col items-center justify-between gap-4 text-center text-[10px] text-white/45 sm:flex-row sm:text-left">
-
-                <p>
-                  © {new Date().getFullYear()} Ectoo.
-                  All rights reserved.
-                </p>
-
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-
-                  <Link
-                    to="/privacy-policy"
-                    className="transition-colors duration-300 hover:text-white"
-                  >
-                    Privacy Policy
-                  </Link>
-
-                  <span className="hidden h-3 w-px bg-white/20 sm:block" />
-
-                  <Link
-                    to="/terms-and-conditions"
-                    className="transition-colors duration-300 hover:text-white"
-                  >
-                    Terms & Conditions
-                  </Link>
-
-                  <span className="hidden h-3 w-px bg-white/20 sm:block" />
-
-                  <Link
-                    to="/payment-policy"
-                    className="transition-colors duration-300 hover:text-white"
-                  >
-                    Payment Policy
-                  </Link>
-
-                  <span className="hidden h-3 w-px bg-white/20 sm:block" />
-
-                  <Link
-                    to="/order-cancellation-policy"
-                    className="transition-colors duration-300 hover:text-white"
-                  >
-                    Order Cancellation Policy
-                  </Link>
-
-                  <span className="hidden h-3 w-px bg-white/20 sm:block" />
-
-                  <Link
-                    to="/cookie-policy"
-                    className="transition-colors duration-300 hover:text-white"
-                  >
-                    Cookie Policy
-                  </Link>
-
-                </div>
-
-              </div>
-
-            </div>
-
           </div>
+        </section>
 
+        <footer className={`relative -mt-10 overflow-hidden bg-[#1F2D22] pt-24 text-white ${footerVisible ? "ectoo-footer-enter" : "opacity-0"}`}>
+          <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full border border-white/[0.05]"/>
+          <div className="pointer-events-none absolute right-[-90px] top-[-40px] h-80 w-80 rounded-full bg-white/[0.025]"/>
+          <div className="relative mx-auto max-w-[1500px] px-6 pb-7 sm:px-8 lg:px-10">
+            <div className="grid gap-10 border-b border-white/15 pb-10 lg:grid-cols-[1.35fr_0.72fr_1fr] lg:gap-12">
+              <div>
+                <Link to="/" className="inline-block"><EctooLogo size="xl" showTagline={true} className="brightness-0 invert"/></Link>
+                <p className="mt-6 max-w-[390px] text-[12px] leading-7 text-white/65">Thoughtfully selected handbags for modern routines, refined looks, and the moments you carry with you every day.</p>
+                <Link to="/shop" className="group mt-7 inline-flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.24em] text-white">Explore Ectoo <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/25 transition group-hover:bg-white group-hover:text-[#1F2D22]"><ArrowRight size={13}/></span></Link>
+              </div>
+              <div>
+                <p className="mb-6 text-[9px] font-bold uppercase tracking-[0.28em] text-[#C99A79]">Navigate</p>
+                <ul className="space-y-3.5">{quickLinks.map((item)=><li key={item.name}><Link to={item.path} className="group inline-flex items-center gap-2 text-[12px] text-white/68 transition hover:text-white"><span className="h-px w-0 bg-[#C99A79] transition-all group-hover:w-4"/>{item.name}</Link></li>)}</ul>
+              </div>
+              <div>
+                <p className="mb-6 text-[9px] font-bold uppercase tracking-[0.28em] text-[#C99A79]">Get In Touch</p>
+                <div className="space-y-4 text-[11px] leading-6 text-white/68">
+                  {BUSINESS_INFO.phoneDisplay && <a href={`tel:${BUSINESS_INFO.phoneHref}`} className="flex gap-3 hover:text-white"><Phone size={15} className="mt-1 shrink-0 text-[#C99A79]"/>{BUSINESS_INFO.phoneDisplay}</a>}
+                  {BUSINESS_INFO.email && <a href={`mailto:${BUSINESS_INFO.email}`} className="flex min-w-0 gap-3 hover:text-white"><Mail size={15} className="mt-1 shrink-0 text-[#C99A79]"/><span className="break-all">{BUSINESS_INFO.email}</span></a>}
+                  {hasAddress && <div className="flex items-start gap-3"><MapPin size={15} className="mt-1 shrink-0 text-[#C99A79]"/><span>{BUSINESS_INFO.addressLine1}{BUSINESS_INFO.addressLine1 && BUSINESS_INFO.addressLine2 && <br/>}{BUSINESS_INFO.addressLine2}{(BUSINESS_INFO.addressLine1 || BUSINESS_INFO.addressLine2) && BUSINESS_INFO.country && <br/>}{BUSINESS_INFO.country}</span></div>}
+                  {hasHours && <div className="flex items-start gap-3"><Clock size={15} className="mt-1 shrink-0 text-[#C99A79]"/><span>{BUSINESS_INFO.businessDays}{BUSINESS_INFO.businessDays && BUSINESS_INFO.supportHours && <br/>}{BUSINESS_INFO.supportHours}{BUSINESS_INFO.timeZone && <> ({BUSINESS_INFO.timeZone})</>}</span></div>}
+                  {!BUSINESS_INFO.email && !BUSINESS_INFO.phoneDisplay && !hasAddress && !hasHours && <Link to="/contact" className="inline-flex items-center gap-2 text-white">Contact Support <ArrowRight size={13}/></Link>}
+                </div>
+              </div>
+            </div>
+            <div className="border-b border-white/15 py-7">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+                <p className="shrink-0 text-[9px] font-bold uppercase tracking-[0.28em] text-[#C99A79]">Customer Care</p><div className="hidden h-px flex-1 bg-white/10 lg:block"/>
+                <ul className="flex flex-wrap gap-x-5 gap-y-3">{customerCare.map((item)=><li key={item.name}><Link to={item.path} className="whitespace-nowrap text-[10px] text-white/55 transition hover:text-white">{item.name}</Link></li>)}</ul>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 pt-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+              <p className="text-[11px] text-white/45">© {new Date().getFullYear()} Ectoo. All rights reserved.</p>
+              <p className="font-display text-[15px] italic tracking-wide text-white/70">More than a bag — a brighter you.</p>
+            </div>
+          </div>
         </footer>
-
       </div>
 
     </div>
