@@ -519,11 +519,6 @@ const Home = () => {
                       product?.images?.[0]
                     );
 
-                  const secondImage =
-                    getImageUrl(
-                      product?.images?.[1]
-                    );
-
                   return (
                     <article
                       key={id}
@@ -563,16 +558,6 @@ const Home = () => {
                             />
 
                           </div>
-                        )}
-
-                        {secondImage && (
-                          <img
-                            src={secondImage}
-                            alt=""
-                            aria-hidden="true"
-                            loading="lazy"
-                            className="absolute inset-0 hidden h-full w-full object-contain object-center p-3 opacity-0 transition-opacity duration-500 lg:block lg:group-hover:opacity-100"
-                          />
                         )}
 
                         {/* VIEW ICON */}
