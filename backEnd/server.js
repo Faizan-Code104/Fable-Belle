@@ -19,11 +19,6 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/*
-  Frontend origins:
-  FRONTEND_URL may contain one URL or multiple comma-separated URLs.
-  Example: FRONTEND_URL=https://enflips.example,https://www.enflips.example
-*/
 const frontendOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
   .map((url) => url.trim().replace(/\/$/, ""))
@@ -32,10 +27,11 @@ const frontendOrigins = (process.env.FRONTEND_URL || "")
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://ectoo.us",
+  "https://www.ectoo.us",
   ...frontendOrigins,
 ]);
 
-/* Security headers */
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -45,7 +41,7 @@ app.use(
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         fontSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", ...frontendOrigins],
+        connectSrc: ["'self'", ...allowedOrigins],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
@@ -77,19 +73,15 @@ app.use((req, res, next) => {
       "picture-in-picture=()",
     ].join(", ")
   );
-
   next();
 });
 
-/* CORS */
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Direct navigation and server-to-server requests have no Origin.
       if (!origin || allowedOrigins.has(origin)) {
         return callback(null, true);
       }
-
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -98,28 +90,21 @@ app.use(
   })
 );
 
-/* Body parsers */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* Product images */
 app.use(
   "/uploads",
   express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res) => {
-      res.setHeader(
-        "Cross-Origin-Resource-Policy",
-        "cross-origin"
-      );
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
       res.setHeader("X-Content-Type-Options", "nosniff");
     },
   })
 );
 
-/* Database */
 connectDB();
 
-/* API routes */
 app.use("/api/contact", contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -129,18 +114,17 @@ app.use("/api/orders", orderRoutes);
 app.get("/", (req, res) => {
   return res.json({
     success: true,
-    message: "Enflips Backend is running",
+    message: "Ectoo Backend is running",
   });
 });
 
 app.get("/api/health", (req, res) => {
   return res.json({
     success: true,
-    message: "Enflips API is running",
+    message: "Ectoo API is running",
   });
 });
 
-/* 404 */
 app.use((req, res) => {
   return res.status(404).json({
     success: false,
@@ -148,7 +132,6 @@ app.use((req, res) => {
   });
 });
 
-/* Global error handler */
 app.use((error, req, res, next) => {
   console.error("Server Error:", error);
 
@@ -171,5 +154,5 @@ app.use((error, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Enflips Backend running on port ${PORT}`);
+  console.log(`Ectoo Backend running on port ${PORT}`);
 });
