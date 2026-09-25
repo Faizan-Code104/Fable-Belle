@@ -1,10 +1,61 @@
 import Product from "../models/Product.js";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 
-/*
-  CREATE PRODUCT
-*/
+const MAX_IMAGES = 4;
+const UPLOAD_PREFIX = "/uploads/products/";
+
+const uploadedImages = (files = []) =>
+  files.map((file) => `${UPLOAD_PREFIX}${file.filename}`);
+
+const removeUploadedFiles = async (files = []) => {
+  await Promise.all(
+    files
+      .filter((file) => file.path)
+      .map((file) => fs.unlink(file.path).catch(() => {}))
+  );
+};
+
+const removeStoredImages = async (images = []) => {
+  await Promise.all(
+    images
+      .filter(
+        (image) =>
+          typeof image === "string" &&
+          image.startsWith(UPLOAD_PREFIX)
+      )
+      .map((image) => {
+        const filename = path.basename(image);
+        const filePath = path.join(
+          process.cwd(),
+          "uploads",
+          "products",
+          filename
+        );
+
+        return fs.unlink(filePath).catch(() => {});
+      })
+  );
+};
+
+const isDuplicateSku = (error) =>
+  error?.code === 11000 && Boolean(error?.keyPattern?.sku);
+
+const validPrice = (value) =>
+  value !== "" &&
+  value !== null &&
+  Number.isFinite(Number(value)) &&
+  Number(value) >= 0;
+
+const validStock = (value) =>
+  value !== "" &&
+  value !== null &&
+  Number.isSafeInteger(Number(value)) &&
+  Number(value) >= 0;
+
+const parseFeatured = (value) =>
+  value === true || value === "true";
+
 export const createProduct = async (req, res) => {
   try {
     const {
@@ -13,7 +64,6 @@ export const createProduct = async (req, res) => {
       price,
       stock,
       sku,
-      brand,
       material,
       weight,
       description,
@@ -23,14 +73,16 @@ export const createProduct = async (req, res) => {
     } = req.body;
 
     if (
-      !name ||
-      !category ||
+      !name?.trim() ||
+      !category?.trim() ||
       price === undefined ||
       stock === undefined ||
-      !sku ||
-      !material ||
-      !weight
+      !sku?.trim() ||
+      !material?.trim() ||
+      !weight?.trim()
     ) {
+      await removeUploadedFiles(req.files);
+
       return res.status(400).json({
         success: false,
         message:
@@ -38,54 +90,36 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    if (!req.files || req.files.length === 0) {
+    if (!validPrice(price) || !validStock(stock)) {
+      await removeUploadedFiles(req.files);
+
       return res.status(400).json({
         success: false,
-        message: "At least one product image is required.",
+        message:
+          "Price must be zero or greater, and stock must be a whole number of zero or greater.",
       });
     }
 
-    if (req.files.length > 4) {
+    if (!req.files?.length || req.files.length > MAX_IMAGES) {
+      await removeUploadedFiles(req.files);
+
       return res.status(400).json({
         success: false,
-        message: "You can upload a maximum of 4 images.",
+        message: `Upload between 1 and ${MAX_IMAGES} product images.`,
       });
-    }
-
-    const stockValue = Number(stock);
-
-    let status = "Active";
-
-    if (stockValue === 0) {
-      status = "Out of Stock";
-    } else if (stockValue <= 5) {
-      status = "Low Stock";
     }
 
     const product = await Product.create({
       name: name.trim(),
-      category,
+      category: category.trim(),
       price: Number(price),
-      stock: stockValue,
-
-      // Product specifications
+      stock: Number(stock),
       sku: sku.trim(),
-      brand: brand?.trim() || "",
       material: material.trim(),
       weight: weight.trim(),
-
       description: description?.trim() || "",
-
-      images: req.files.map(
-        (file) => `/uploads/products/${file.filename}`
-      ),
-
-      isFeatured:
-        isFeatured === true ||
-        isFeatured === "true",
-
-      status,
-
+      images: uploadedImages(req.files),
+      isFeatured: parseFeatured(isFeatured),
       rating: Number(rating) || 0,
       reviews: Number(reviews) || 0,
     });
@@ -97,50 +131,25 @@ export const createProduct = async (req, res) => {
     });
   } catch (error) {
     console.error("Create Product Error:", error);
+    await removeUploadedFiles(req.files);
 
-    /*
-      If database creation fails after image upload,
-      remove any uploaded images.
-    */
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        if (file.path && fs.existsSync(file.path)) {
-          fs.unlinkSync(file.path);
-        }
-      });
-    }
-
-    /*
-      Duplicate SKU error
-    */
-    if (
-      error?.code === 11000 &&
-      error?.keyPattern?.sku
-    ) {
+    if (isDuplicateSku(error)) {
       return res.status(409).json({
         success: false,
-        message:
-          "This SKU already exists. Please use a unique SKU.",
+        message: "This SKU already exists. Please use a unique SKU.",
       });
     }
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to create product.",
+      message: "Failed to create product.",
     });
   }
 };
 
-/*
-  GET ALL PRODUCTS
-*/
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().sort({
-      createdAt: -1,
-    });
+    const products = await Product.find().sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -152,26 +161,17 @@ export const getProducts = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to fetch products.",
+      message: "Failed to fetch products.",
     });
   }
 };
 
-/*
-  GET FEATURED PRODUCTS
-*/
 export const getFeaturedProducts = async (req, res) => {
   try {
     const products = await Product.find({
       isFeatured: true,
-      status: {
-        $ne: "Out of Stock",
-      },
-    }).sort({
-      createdAt: -1,
-    });
+      status: { $ne: "Out of Stock" },
+    }).sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
@@ -179,28 +179,18 @@ export const getFeaturedProducts = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.error(
-      "Get Featured Products Error:",
-      error
-    );
+    console.error("Get Featured Products Error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to fetch featured products.",
+      message: "Failed to fetch featured products.",
     });
   }
 };
 
-/*
-  GET SINGLE PRODUCT
-*/
 export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(
-      req.params.id
-    );
+    const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({
@@ -214,37 +204,38 @@ export const getProductById = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.error(
-      "Get Product By ID Error:",
-      error
-    );
+    console.error("Get Product By ID Error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to fetch product.",
+      message: "Failed to fetch product.",
     });
   }
 };
 
-/*
-  UPDATE PRODUCT
-*/
 export const updateProduct = async (req, res) => {
+  let saved = false;
+
   try {
-    const product = await Product.findById(
-      req.params.id
-    );
+    if (req.files?.length > MAX_IMAGES) {
+      await removeUploadedFiles(req.files);
+
+      return res.status(400).json({
+        success: false,
+        message: `You can upload a maximum of ${MAX_IMAGES} images.`,
+      });
+    }
+
+    const product = await Product.findById(req.params.id);
 
     if (!product) {
+      await removeUploadedFiles(req.files);
+
       return res.status(404).json({
         success: false,
         message: "Product not found.",
       });
     }
-
-    const oldImages = product.images;
 
     const {
       name,
@@ -252,7 +243,6 @@ export const updateProduct = async (req, res) => {
       price,
       stock,
       sku,
-      brand,
       material,
       weight,
       description,
@@ -261,105 +251,51 @@ export const updateProduct = async (req, res) => {
       reviews,
     } = req.body;
 
-    if (name !== undefined) {
-      product.name = name.trim();
+    if (price !== undefined && !validPrice(price)) {
+      await removeUploadedFiles(req.files);
+
+      return res.status(400).json({
+        success: false,
+        message: "Price must be zero or greater.",
+      });
     }
 
-    if (category !== undefined) {
-      product.category = category;
+    if (stock !== undefined && !validStock(stock)) {
+      await removeUploadedFiles(req.files);
+
+      return res.status(400).json({
+        success: false,
+        message: "Stock must be a whole number of zero or greater.",
+      });
     }
 
-    if (price !== undefined) {
-      product.price = Number(price);
-    }
+    const oldImages = [...(product.images || [])];
 
-    if (stock !== undefined) {
-      product.stock = Number(stock);
-    }
-
-    /*
-      Update product specifications
-    */
-    if (sku !== undefined) {
-      product.sku = sku.trim();
-    }
-
-    if (brand !== undefined) {
-      product.brand = brand.trim();
-    }
-
-    if (material !== undefined) {
-      product.material = material.trim();
-    }
-
-    if (weight !== undefined) {
-      product.weight = weight.trim();
-    }
-
+    if (name !== undefined) product.name = name.trim();
+    if (category !== undefined) product.category = category.trim();
+    if (price !== undefined) product.price = Number(price);
+    if (stock !== undefined) product.stock = Number(stock);
+    if (sku !== undefined) product.sku = sku.trim();
+    if (material !== undefined) product.material = material.trim();
+    if (weight !== undefined) product.weight = weight.trim();
     if (description !== undefined) {
       product.description = description.trim();
     }
-
     if (isFeatured !== undefined) {
-      product.isFeatured =
-        isFeatured === true ||
-        isFeatured === "true";
+      product.isFeatured = parseFeatured(isFeatured);
     }
+    if (rating !== undefined) product.rating = Number(rating);
+    if (reviews !== undefined) product.reviews = Number(reviews);
 
-    if (rating !== undefined) {
-      product.rating = Number(rating);
-    }
-
-    if (reviews !== undefined) {
-      product.reviews = Number(reviews);
-    }
-
-    /*
-      Replace all images only when new images
-      have been uploaded (1-4 files).
-    */
-    if (req.files && req.files.length > 0) {
-      if (req.files.length > 4) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "You can upload a maximum of 4 images.",
-        });
-      }
-
-      product.images = req.files.map(
-        (file) =>
-          `/uploads/products/${file.filename}`
-      );
+    if (req.files?.length) {
+      product.images = uploadedImages(req.files);
     }
 
     await product.save();
+    saved = true;
 
-    /*
-      Delete all previous images after successful save.
-    */
-    if (
-      req.files &&
-      req.files.length > 0 &&
-      Array.isArray(oldImages)
-    ) {
-      oldImages.forEach((oldImage) => {
-        if (
-          oldImage &&
-          oldImage.startsWith(
-            "/uploads/products/"
-          )
-        ) {
-          const oldImagePath = path.join(
-            process.cwd(),
-            oldImage.replace(/^\/+/, "")
-          );
-
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-          }
-        }
-      });
+    if (req.files?.length) {
+      await removeStoredImages(oldImages);
     }
 
     return res.status(200).json({
@@ -368,42 +304,29 @@ export const updateProduct = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.error(
-      "Update Product Error:",
-      error
-    );
+    console.error("Update Product Error:", error);
 
-    /*
-      Duplicate SKU error
-    */
-    if (
-      error?.code === 11000 &&
-      error?.keyPattern?.sku
-    ) {
+    if (!saved) {
+      await removeUploadedFiles(req.files);
+    }
+
+    if (isDuplicateSku(error)) {
       return res.status(409).json({
         success: false,
-        message:
-          "This SKU already exists. Please use a unique SKU.",
+        message: "This SKU already exists. Please use a unique SKU.",
       });
     }
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to update product.",
+      message: "Failed to update product.",
     });
   }
 };
 
-/*
-  DELETE PRODUCT
-*/
 export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findById(
-      req.params.id
-    );
+    const product = await Product.findByIdAndDelete(req.params.id);
 
     if (!product) {
       return res.status(404).json({
@@ -412,32 +335,7 @@ export const deleteProduct = async (req, res) => {
       });
     }
 
-    /*
-      Delete all product images from uploads folder.
-    */
-    if (Array.isArray(product.images)) {
-      product.images.forEach((image) => {
-        if (
-          image &&
-          image.startsWith(
-            "/uploads/products/"
-          )
-        ) {
-          const imagePath = path.join(
-            process.cwd(),
-            image.replace(/^\/+/, "")
-          );
-
-          if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
-          }
-        }
-      });
-    }
-
-    await Product.findByIdAndDelete(
-      req.params.id
-    );
+    await removeStoredImages(product.images);
 
     return res.status(200).json({
       success: true,
@@ -445,16 +343,11 @@ export const deleteProduct = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.error(
-      "Delete Product Error:",
-      error
-    );
+    console.error("Delete Product Error:", error);
 
     return res.status(500).json({
       success: false,
-      message:
-        error.message ||
-        "Failed to delete product.",
+      message: "Failed to delete product.",
     });
   }
 };

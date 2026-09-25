@@ -1,6 +1,8 @@
 import express from "express";
 import multer from "multer";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import {
   createProduct,
@@ -16,13 +18,11 @@ import adminMiddleware from "../middleware/adminmiddleware.js";
 
 const router = express.Router();
 
-const uploadDirectory = "uploads/products";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadDirectory = path.join(__dirname, "..", "uploads", "products");
 
-if (!fs.existsSync(uploadDirectory)) {
-  fs.mkdirSync(uploadDirectory, {
-    recursive: true,
-  });
-}
+fs.mkdirSync(uploadDirectory, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -59,9 +59,7 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
   } else {
     cb(
-      new Error(
-        "Only JPG, JPEG, PNG and WEBP images are allowed."
-      ),
+      new Error("Only JPG, JPEG, PNG and WEBP images are allowed."),
       false
     );
   }
@@ -75,17 +73,8 @@ const upload = multer({
   },
 });
 
-/*
-  IMPORTANT:
-  Featured route must come BEFORE /:id
-*/
-router.get(
-  "/featured",
-  getFeaturedProducts
-);
-
+router.get("/featured", getFeaturedProducts);
 router.get("/", getProducts);
-
 router.get("/:id", getProductById);
 
 router.post(

@@ -1,5 +1,11 @@
 import mongoose from "mongoose";
 
+const getStockStatus = (stock) => {
+  if (stock === 0) return "Out of Stock";
+  if (stock <= 5) return "Low Stock";
+  return "Active";
+};
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -33,6 +39,10 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 0,
       default: 0,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: "Stock must be a whole number.",
+      },
     },
 
     sku: {
@@ -41,13 +51,6 @@ const productSchema = new mongoose.Schema(
       trim: true,
       unique: true,
       uppercase: true,
-    },
-
-    brand: {
-      type: String,
-      trim: true,
-      default: "",
-      maxlength: 150,
     },
 
     material: {
@@ -74,18 +77,14 @@ const productSchema = new mongoose.Schema(
       type: [String],
       required: true,
       validate: {
-        validator: function (value) {
-          return (
-            Array.isArray(value) &&
-            value.length >= 1 &&
-            value.length <= 4
-          );
-        },
+        validator: (value) =>
+          Array.isArray(value) &&
+          value.length >= 1 &&
+          value.length <= 4,
         message: "A product must have between 1 and 4 images.",
       },
     },
 
-    // Featured product
     isFeatured: {
       type: Boolean,
       default: false,
@@ -93,12 +92,8 @@ const productSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: [
-        "Active",
-        "Low Stock",
-        "Out of Stock",
-      ],
-      default: "Active",
+      enum: ["Active", "Low Stock", "Out of Stock"],
+      default: "Out of Stock",
     },
 
     rating: {
@@ -114,57 +109,33 @@ const productSchema = new mongoose.Schema(
       min: 0,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-/*
-  Automatically calculate product status
-  before saving the product.
-*/
 productSchema.pre("save", function () {
-  if (this.stock === 0) {
-    this.status = "Out of Stock";
-  } else if (this.stock <= 5) {
-    this.status = "Low Stock";
-  } else {
-    this.status = "Active";
-  }
+  this.status = getStockStatus(this.stock);
 });
 
-/*
-  Automatically calculate status
-  when product is updated.
-*/
-productSchema.pre(
-  "findOneAndUpdate",
-  function () {
-    const update = this.getUpdate();
+productSchema.pre("findOneAndUpdate", function () {
+  const update = this.getUpdate();
 
-    if (
-      update &&
-      update.stock !== undefined
-    ) {
-      const stock = Number(update.stock);
+  if (!update || Array.isArray(update)) return;
 
-      if (stock === 0) {
-        update.status = "Out of Stock";
-      } else if (stock <= 5) {
-        update.status = "Low Stock";
-      } else {
-        update.status = "Active";
-      }
+  const stock = update.$set?.stock ?? update.stock;
 
-      this.setUpdate(update);
-    }
+  if (stock === undefined) return;
+
+  const status = getStockStatus(Number(stock));
+
+  if (update.$set) {
+    update.$set.status = status;
+  } else {
+    update.status = status;
   }
-);
 
-const Product =
-  mongoose.model(
-    "Product",
-    productSchema
-  );
+  this.setUpdate(update);
+});
+
+const Product = mongoose.model("Product", productSchema);
 
 export default Product;

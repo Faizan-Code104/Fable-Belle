@@ -16,76 +16,54 @@ dotenv.config();
 
 const app = express();
 
-/* =========================================
-   ES MODULE PATH SETUP
-========================================= */
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/* =========================================
-   SECURITY HEADERS
-========================================= */
+/*
+  Frontend origins:
+  FRONTEND_URL may contain one URL or multiple comma-separated URLs.
+  Example: FRONTEND_URL=https://enflips.example,https://www.enflips.example
+*/
+const frontendOrigins = (process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((url) => url.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://localhost:3000",
+  ...frontendOrigins,
+]);
+
+/* Security headers */
 app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-
         scriptSrc: ["'self'"],
-
         styleSrc: ["'self'", "'unsafe-inline'"],
-
-        imgSrc: [
-          "'self'",
-          "data:",
-          "blob:",
-          "https:",
-          "http://localhost:5000",
-        ],
-
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
         fontSrc: ["'self'", "data:", "https:"],
-
-        connectSrc: [
-          "'self'",
-          "http://localhost:5000",
-          "http://localhost:5173",
-          "http://localhost:3000",
-          "https://ectoo.us",
-          "https://www.ectoo.us",
-          "https://api.ectoo.us",
-        ],
-
+        connectSrc: ["'self'", ...frontendOrigins],
         objectSrc: ["'none'"],
-
         frameAncestors: ["'none'"],
-
         baseUri: ["'self'"],
-
         formAction: ["'self'"],
       },
     },
-
     referrerPolicy: {
       policy: "strict-origin-when-cross-origin",
     },
-
     frameguard: {
       action: "deny",
     },
-
     noSniff: true,
-
     crossOriginResourcePolicy: {
       policy: "cross-origin",
     },
   })
 );
-
-/* =========================================
-   PERMISSIONS POLICY
-========================================= */
 
 app.use((req, res, next) => {
   res.setHeader(
@@ -103,139 +81,76 @@ app.use((req, res, next) => {
   next();
 });
 
-/* =========================================
-   CORS
-========================================= */
-
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://ectoo.us",
-  "https://www.ectoo.us",
-  "https://ectoo-frontend.onrender.com",
-];
-
+/* CORS */
 app.use(
   cors({
     origin: (origin, callback) => {
-      /*
-       * Allow requests without an Origin header.
-       * Examples:
-       * Postman, server-to-server requests,
-       * health checks and direct browser navigation.
-       */
-      if (!origin) {
+      // Direct navigation and server-to-server requests have no Origin.
+      if (!origin || allowedOrigins.has(origin)) {
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(
-        new Error("Not allowed by CORS")
-      );
+      return callback(new Error("Not allowed by CORS"));
     },
-
     credentials: true,
-
-    methods: [
-      "GET",
-      "POST",
-      "PUT",
-      "PATCH",
-      "DELETE",
-      "OPTIONS",
-    ],
-
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-/* =========================================
-   BODY PARSERS
-========================================= */
-
+/* Body parsers */
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 
-/* =========================================
-   STATIC UPLOADS
-========================================= */
-
+/* Product images */
 app.use(
   "/uploads",
   express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res) => {
-      /*
-       * Product images are intentionally allowed
-       * to load from the Ectoo frontend domain.
-       */
       res.setHeader(
         "Cross-Origin-Resource-Policy",
         "cross-origin"
       );
-
-      res.setHeader(
-        "X-Content-Type-Options",
-        "nosniff"
-      );
+      res.setHeader("X-Content-Type-Options", "nosniff");
     },
   })
 );
 
-/* =========================================
-   DATABASE
-========================================= */
-
+/* Database */
 connectDB();
 
-/* =========================================
-   ROUTES
-========================================= */
-
+/* API routes */
 app.use("/api/contact", contactRoutes);
-
 app.use("/api/auth", authRoutes);
-
 app.use("/api/users", userRoutes);
-
 app.use("/api/products", productRoutes);
-
 app.use("/api/orders", orderRoutes);
 
-/* =========================================
-   HOME ROUTE
-========================================= */
-
 app.get("/", (req, res) => {
-  res.json({
+  return res.json({
     success: true,
-    message: "Ectoo Backend is running",
+    message: "Enflips Backend is running",
   });
 });
 
-/* =========================================
-   404 HANDLER
-========================================= */
+app.get("/api/health", (req, res) => {
+  return res.json({
+    success: true,
+    message: "Enflips API is running",
+  });
+});
 
+/* 404 */
 app.use((req, res) => {
-  res.status(404).json({
+  return res.status(404).json({
     success: false,
     message: "Route not found",
   });
 });
 
-/* =========================================
-   GLOBAL ERROR HANDLER
-========================================= */
-
+/* Global error handler */
 app.use((error, req, res, next) => {
-  console.error("Server Error:", error.message);
+  console.error("Server Error:", error);
 
   if (error.message === "Not allowed by CORS") {
     return res.status(403).json({
@@ -244,7 +159,7 @@ app.use((error, req, res, next) => {
     });
   }
 
-  res.status(error.status || 500).json({
+  return res.status(error.status || 500).json({
     success: false,
     message:
       process.env.NODE_ENV === "production"
@@ -253,14 +168,8 @@ app.use((error, req, res, next) => {
   });
 });
 
-/* =========================================
-   SERVER
-========================================= */
-
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(
-    `Ectoo Backend running on port ${PORT}`
-  );
+  console.log(`Enflips Backend running on port ${PORT}`);
 });

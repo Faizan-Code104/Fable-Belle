@@ -4,10 +4,26 @@ export const sendContactMessage = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
-    if (!name || !email || !subject || !message) {
+    if (
+      [name, email, subject, message].some(
+        (value) => typeof value !== "string" || !value.trim()
+      )
+    ) {
       return res.status(400).json({
         success: false,
         message: "All fields are required.",
+      });
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email.trim();
+    const cleanSubject = subject.trim().replace(/[\r\n]/g, " ");
+    const cleanMessage = message.trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address.",
       });
     }
 
@@ -22,17 +38,16 @@ export const sendContactMessage = async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: `"Ectoo Website" <${process.env.SMTP_FROM}>`,
+      from: `"Enflips Website" <${process.env.SMTP_FROM}>`,
       to: process.env.CONTACT_RECEIVER_EMAIL,
-      replyTo: email,
-      subject: `[Ectoo Contact] ${subject}`,
-      text: `
-Name: ${name}
-Email: ${email}
+      replyTo: cleanEmail,
+      subject: `[Enflips Contact] ${cleanSubject}`,
+      text: `Name: ${cleanName}
+Email: ${cleanEmail}
+Subject: ${cleanSubject}
 
 Message:
-${message}
-      `,
+${cleanMessage}`,
     });
 
     return res.status(200).json({
@@ -40,7 +55,7 @@ ${message}
       message: "Your message has been sent successfully.",
     });
   } catch (error) {
-    console.error("Ectoo contact form error:", error.message);
+    console.error("Contact form error:", error);
 
     return res.status(500).json({
       success: false,

@@ -2,22 +2,15 @@ import Order from "../models/order.js";
 import Product from "../models/Product.js";
 
 /*
-  Generate a unique, human-friendly order number.
-  Example: EC-48213076123
+  Example: EN-48213076123
 */
 const generateOrderNumber = () => {
   const timestampPart = Date.now().toString().slice(-8);
   const randomPart = Math.floor(100 + Math.random() * 900);
 
-  return `EC-${timestampPart}${randomPart}`;
+  return `EN-${timestampPart}${randomPart}`;
 };
 
-/*
-  CREATE ORDER
-  Requires login. Reads cart items sent from the frontend,
-  re-validates stock against the database, deducts stock,
-  and creates the order.
-*/
 export const createOrder = async (req, res) => {
   try {
     const { items, shippingAddress } = req.body;
@@ -63,9 +56,9 @@ export const createOrder = async (req, res) => {
         });
       }
 
-      const quantity = Number(cartItem.quantity) || 0;
+      const quantity = Number(cartItem.quantity);
 
-      if (quantity <= 0) {
+      if (!Number.isSafeInteger(quantity) || quantity <= 0) {
         return res.status(400).json({
           success: false,
           message: `Invalid quantity for ${product.name}.`,
@@ -98,7 +91,6 @@ export const createOrder = async (req, res) => {
       const product = await Product.findById(orderItem.product);
 
       product.stock -= orderItem.quantity;
-
       await product.save();
     }
 
@@ -125,7 +117,7 @@ export const createOrder = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to place order.",
+      message: "Failed to place order.",
     });
   }
 };
@@ -146,7 +138,7 @@ export const getMyOrders = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch your orders.",
+      message: "Failed to fetch your orders.",
     });
   }
 };
@@ -154,7 +146,6 @@ export const getMyOrders = async (req, res) => {
 export const trackOrder = async (req, res) => {
   try {
     const { orderNumber } = req.params;
-
     const order = await Order.findOne({ orderNumber });
 
     if (!order) {
@@ -173,7 +164,7 @@ export const trackOrder = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch order.",
+      message: "Failed to fetch order.",
     });
   }
 };
@@ -194,7 +185,7 @@ export const getAllOrders = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch orders.",
+      message: "Failed to fetch orders.",
     });
   }
 };
@@ -228,7 +219,6 @@ export const updateOrderStatus = async (req, res) => {
     }
 
     order.status = status;
-
     await order.save();
 
     return res.status(200).json({
@@ -241,7 +231,7 @@ export const updateOrderStatus = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message || "Failed to update order status.",
+      message: "Failed to update order status.",
     });
   }
 };
