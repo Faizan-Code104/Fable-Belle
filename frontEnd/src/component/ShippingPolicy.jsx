@@ -1,17 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  Clock3,
-  MapPin,
-  Package,
-  Truck,
-} from "lucide-react";
+import { ArrowRight, Clock3, MapPin, Package, Truck } from "lucide-react";
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
   address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
@@ -34,7 +28,7 @@ const ShippingPolicy = () => {
           }
         });
       },
-      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
+      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -85,7 +79,10 @@ const ShippingPolicy = () => {
   ];
 
   return (
-    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
       <style>{`
         [data-reveal] {
           opacity: 0;
@@ -102,9 +99,12 @@ const ShippingPolicy = () => {
           [data-reveal] { opacity: 1; transform: none; transition: none; }
         }
       `}</style>
-      
+
       <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-        <div data-reveal="scale" className="relative mx-auto max-w-4xl text-center">
+        <div
+          data-reveal="scale"
+          className="relative mx-auto max-w-4xl text-center"
+        >
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
             <Truck size={24} aria-hidden="true" />
           </div>
@@ -123,7 +123,6 @@ const ShippingPolicy = () => {
         </div>
       </section>
 
-      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-3xl">
@@ -141,7 +140,8 @@ const ShippingPolicy = () => {
             {shippingDetails.map((item) => (
               <div
                 key={item.label}
-                data-reveal className="shipping-card rounded-[20px] border border-[#E4DED7] bg-white p-5 sm:p-6"
+                data-reveal
+                className="shipping-card rounded-[20px] border border-[#E4DED7] bg-white p-5 sm:p-6"
               >
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#5E5B57]/70">
                   {item.label}
@@ -161,7 +161,6 @@ const ShippingPolicy = () => {
         </div>
       </section>
 
-      
       <section className="bg-[#E8E7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
@@ -181,7 +180,8 @@ const ShippingPolicy = () => {
               return (
                 <div
                   key={step.title}
-                  data-reveal className="shipping-card rounded-[22px] border border-[#E4DED7] bg-white p-5 sm:p-6"
+                  data-reveal
+                  className="shipping-card rounded-[22px] border border-[#E4DED7] bg-white p-5 sm:p-6"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#1F2D22] text-white">
@@ -207,11 +207,12 @@ const ShippingPolicy = () => {
         </div>
       </section>
 
-      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-4 text-sm leading-7 text-[#5E5B57]">
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Shipping Area
             </h2>
@@ -227,34 +228,38 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Shipping Cost
             </h2>
 
             <p className="mt-3">
-              Ectoo provides <strong className="text-[#111311]">free standard shipping</strong>{" "}
+              Ectoo provides{" "}
+              <strong className="text-[#111311]">free standard shipping</strong>{" "}
               on eligible orders within our published U.S. shipping area.
             </p>
 
             <p className="mt-3">
               Customers will not be charged a standard shipping fee unless a
-              different charge is clearly disclosed before completing the
-              order.
+              different charge is clearly disclosed before completing the order.
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Order Processing
             </h2>
 
             <p className="mt-3">
               Orders are normally processed within{" "}
-              <strong className="text-[#111311]">1–2 business days</strong> after
-              payment authorization and order acceptance.
+              <strong className="text-[#111311]">1–2 business days</strong>{" "}
+              after payment authorization and order acceptance.
             </p>
 
             <p className="mt-3">
@@ -270,8 +275,10 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Estimated Delivery
             </h2>
@@ -283,24 +290,27 @@ const ShippingPolicy = () => {
 
             <p className="mt-3">
               The estimated total period from order acceptance to delivery is
-              generally <strong className="text-[#111311]">4–9 business days</strong>.
+              generally{" "}
+              <strong className="text-[#111311]">4–9 business days</strong>.
             </p>
 
             <p className="mt-3">
               Delivery estimates are not guarantees. Severe weather, carrier
-              disruptions, incorrect addresses, holidays, emergencies, or
-              other circumstances outside our control may cause delays.
+              disruptions, incorrect addresses, holidays, emergencies, or other
+              circumstances outside our control may cause delays.
             </p>
 
             <p className="mt-3">
               If we cannot ship within the promised period, we will notify the
-              customer and provide available options, including cancellation
-              and refund when required.
+              customer and provide available options, including cancellation and
+              refund when required.
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Shipping Method
             </h2>
@@ -318,8 +328,10 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Address Accuracy
             </h2>
@@ -343,16 +355,16 @@ const ShippingPolicy = () => {
             </p>
 
             <p className="mt-3">
-              Ectoo is not responsible for delays or failed delivery caused
-              by incorrect or incomplete information supplied by the customer.
+              Ectoo is not responsible for delays or failed delivery caused by
+              incorrect or incomplete information supplied by the customer.
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Tracking
-            </h2>
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
+            <h2 className="font-display text-2xl text-[#111311]">Tracking</h2>
 
             <p className="mt-3">
               Tracking information may take up to 48 hours to update after a
@@ -360,8 +372,8 @@ const ShippingPolicy = () => {
             </p>
 
             <p className="mt-3">
-              A carrier’s “delivered” scan does not always mean the package
-              was handed directly to the recipient. Customers should check the
+              A carrier’s “delivered” scan does not always mean the package was
+              handed directly to the recipient. Customers should check the
               delivery area, household members, property staff, and carrier
               notices before reporting a missing delivery.
             </p>
@@ -378,8 +390,10 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Lost Packages
             </h2>
@@ -403,8 +417,10 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Damaged Packages
             </h2>
@@ -421,16 +437,18 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Refused or Undeliverable Packages
             </h2>
 
             <p className="mt-3">
               A shipment returned because of refusal, an incorrect address,
-              repeated failed delivery, or failure to collect the package may
-              be treated as a return.
+              repeated failed delivery, or failure to collect the package may be
+              treated as a return.
             </p>
 
             <p className="mt-3">
@@ -441,8 +459,10 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Split Shipments
             </h2>
@@ -454,11 +474,11 @@ const ShippingPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Contact
-            </h2>
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
+            <h2 className="font-display text-2xl text-[#111311]">Contact</h2>
 
             <div className="mt-3 space-y-1">
               <p>{BUSINESS_INFO.businessName}</p>
@@ -495,9 +515,11 @@ const ShippingPolicy = () => {
         </div>
       </section>
 
-      
       <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between">
+        <div
+          data-reveal="scale"
+          className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between"
+        >
           <div>
             <h3 className="font-display text-2xl">
               Already submitted an order?

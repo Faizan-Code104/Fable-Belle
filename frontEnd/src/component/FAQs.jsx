@@ -1,15 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  ChevronDown,
-  HelpCircle,
-} from "lucide-react";
+import { ArrowRight, ChevronDown, HelpCircle } from "lucide-react";
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
   address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
@@ -24,8 +20,7 @@ const FAQs = () => {
     {
       category: "Business",
       question: "Who operates Ectoo?",
-      answer:
-        "Ectoo is operated by Ectoo, a Texas limited liability company.",
+      answer: "Ectoo is operated by Ectoo, a Texas limited liability company.",
     },
     {
       category: "Product Information",
@@ -48,8 +43,7 @@ const FAQs = () => {
     {
       category: "Orders & Payment",
       question: "Do you offer Cash on Delivery?",
-      answer:
-        "No. Ectoo does not accept Cash on Delivery.",
+      answer: "No. Ectoo does not accept Cash on Delivery.",
     },
     {
       category: "Orders & Payment",
@@ -120,8 +114,7 @@ const FAQs = () => {
     {
       category: "Returns & Refunds",
       question: "Do you charge a restocking fee?",
-      answer:
-        "No. We do not charge a restocking fee for an eligible return.",
+      answer: "No. We do not charge a restocking fee for an eligible return.",
     },
     {
       category: "Returns & Refunds",
@@ -169,7 +162,7 @@ const FAQs = () => {
       category: "Support",
       question: "How can I contact customer support?",
       answer:
-        "Email: info@ectoo.us. Phone: +1 (917) 695-2303. Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time. We generally respond within one business day.",
+        "Email: info@ectoo.us. Phone: +1 (832) 347-8821. Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time. We generally respond within one business day.",
     },
   ];
 
@@ -190,7 +183,7 @@ const FAQs = () => {
       {
         threshold: 0.1,
         rootMargin: "0px 0px -30px 0px",
-      }
+      },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -199,9 +192,7 @@ const FAQs = () => {
   }, []);
 
   const toggleFaq = (index) => {
-    setOpenIndex((current) =>
-      current === index ? -1 : index
-    );
+    setOpenIndex((current) => (current === index ? -1 : index));
   };
 
   return (
@@ -239,14 +230,11 @@ const FAQs = () => {
           }
         }
       `}</style>
-      
+
       <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
         <div data-reveal="scale" className="mx-auto max-w-4xl text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#1F2D22] text-white sm:h-16 sm:w-16">
-            <HelpCircle
-              size={24}
-              aria-hidden="true"
-            />
+            <HelpCircle size={24} aria-hidden="true" />
           </div>
 
           <p className="mt-6 text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
@@ -258,13 +246,12 @@ const FAQs = () => {
           </h1>
 
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#5E5B57] sm:text-base">
-            Find helpful information about Ectoo, orders, payments,
-            shipping, returns, refunds, and customer support.
+            Find helpful information about Ectoo, orders, payments, shipping,
+            returns, refunds, and customer support.
           </p>
         </div>
       </section>
 
-      
       <section className="px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
         <div className="mx-auto max-w-4xl space-y-3">
           {faqs.map((faq, index) => {
@@ -276,7 +263,8 @@ const FAQs = () => {
             return (
               <div
                 key={faq.question}
-                data-reveal className="overflow-hidden rounded-[16px] border border-[#E4DED7] bg-white px-5 py-4 transition-all duration-300 hover:border-[#1F2D22]/20 sm:px-6 sm:py-5"
+                data-reveal
+                className="overflow-hidden rounded-[16px] border border-[#E4DED7] bg-white px-5 py-4 transition-all duration-300 hover:border-[#1F2D22]/20 sm:px-6 sm:py-5"
               >
                 <button
                   id={buttonId}
@@ -306,11 +294,7 @@ const FAQs = () => {
                 </button>
 
                 {isOpen && (
-                  <div
-                    id={panelId}
-                    role="region"
-                    aria-labelledby={buttonId}
-                  >
+                  <div id={panelId} role="region" aria-labelledby={buttonId}>
                     <p className="mt-3 max-w-2xl pr-1 whitespace-pre-line text-sm leading-7 text-[#5E5B57] sm:pr-8">
                       {faq.answer}
                     </p>
@@ -322,17 +306,19 @@ const FAQs = () => {
         </div>
       </section>
 
-      
       <section className="border-t border-[#E4DED7] bg-[#E4E5DD] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-center gap-6 rounded-[22px] bg-[#1F2D22] p-7 text-center text-white sm:p-9 md:flex-row md:justify-between md:text-left">
+        <div
+          data-reveal="scale"
+          className="mx-auto flex max-w-4xl flex-col items-center gap-6 rounded-[22px] bg-[#1F2D22] p-7 text-center text-white sm:p-9 md:flex-row md:justify-between md:text-left"
+        >
           <div className="min-w-0">
             <h2 className="font-display text-2xl sm:text-3xl">
               Still have questions?
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-white/60">
-              Contact {BUSINESS_INFO.businessName} if you need
-              additional information.
+              Contact {BUSINESS_INFO.businessName} if you need additional
+              information.
             </p>
 
             <p className="mt-2 text-xs leading-5 text-white/45">
@@ -347,11 +333,7 @@ const FAQs = () => {
             className="group inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[6px] bg-[#F1EEE8] px-6 py-3.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-1 hover:bg-white sm:w-auto"
           >
             Contact Support
-
-            <ArrowRight
-              size={16}
-              aria-hidden="true"
-            />
+            <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
       </section>

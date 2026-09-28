@@ -10,7 +10,7 @@ import {
 const BUSINESS_INFO = {
   businessName: "Ectoo",
   address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   email: "info@ectoo.us",
 };
@@ -42,8 +42,7 @@ const CookiePolicy = () => {
   ];
 
   useEffect(() => {
-    const elements =
-      pageRef.current?.querySelectorAll("[data-reveal]");
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
 
     if (!elements?.length) return;
 
@@ -59,7 +58,7 @@ const CookiePolicy = () => {
       {
         threshold: 0.12,
         rootMargin: "0px 0px -30px 0px",
-      }
+      },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -154,10 +153,7 @@ const CookiePolicy = () => {
       </section>
 
       <section className="px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
-        <div
-          data-reveal="left"
-          className="mx-auto max-w-[900px]"
-        >
+        <div data-reveal="left" className="mx-auto max-w-[900px]">
           <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-[#9A5937]">
             About Cookies
           </p>
@@ -200,9 +196,7 @@ const CookiePolicy = () => {
                   0{index + 1}
                 </span>
 
-                <h3 className="mt-4 font-display text-2xl">
-                  {item.title}
-                </h3>
+                <h3 className="mt-4 font-display text-2xl">{item.title}</h3>
 
                 <p className="mt-3 text-[12px] leading-6 text-[#5E5B57]">
                   {item.description}
@@ -238,9 +232,7 @@ const CookiePolicy = () => {
               Essential Technologies
             </h2>
 
-            <p className="mt-4">
-              These support necessary functions such as:
-            </p>
+            <p className="mt-4">These support necessary functions such as:</p>
 
             <ul className="mt-3 list-disc space-y-2 pl-5">
               <li>Website navigation.</li>
@@ -274,8 +266,8 @@ const CookiePolicy = () => {
             </h2>
 
             <p className="mt-4">
-              If enabled, analytics technologies help us understand how
-              visitors use the website, identify technical errors, and improve
+              If enabled, analytics technologies help us understand how visitors
+              use the website, identify technical errors, and improve
               performance.
             </p>
           </section>
@@ -303,9 +295,7 @@ const CookiePolicy = () => {
               </div>
 
               <div>
-                <h2 className="font-display text-3xl">
-                  Payment Information
-                </h2>
+                <h2 className="font-display text-3xl">Payment Information</h2>
 
                 <p className="mt-4 text-white/60">
                   Cookies and local storage used by Ectoo are not intended to
@@ -354,9 +344,7 @@ const CookiePolicy = () => {
           </section>
 
           <section data-reveal="left">
-            <h2 className="font-display text-3xl text-[#111311]">
-              Changes
-            </h2>
+            <h2 className="font-display text-3xl text-[#111311]">Changes</h2>
 
             <p className="mt-4">
               We may update this Cookie Policy when our technology, providers,
@@ -366,9 +354,7 @@ const CookiePolicy = () => {
           </section>
 
           <section data-reveal="left">
-            <h2 className="font-display text-3xl text-[#111311]">
-              Contact
-            </h2>
+            <h2 className="font-display text-3xl text-[#111311]">Contact</h2>
 
             <div className="mt-4 space-y-1">
               <p className="font-semibold text-[#111311]">
@@ -409,13 +395,10 @@ const CookiePolicy = () => {
           className="mx-auto flex max-w-[900px] flex-col gap-6 rounded-[22px] bg-[#1F2D22] p-7 text-white sm:p-9 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h3 className="font-display text-3xl">
-              Have a privacy question?
-            </h3>
+            <h3 className="font-display text-3xl">Have a privacy question?</h3>
 
             <p className="mt-2 text-[11px] leading-6 text-white/55">
-              Contact us if you have questions about cookies or website
-              privacy.
+              Contact us if you have questions about cookies or website privacy.
             </p>
           </div>
 

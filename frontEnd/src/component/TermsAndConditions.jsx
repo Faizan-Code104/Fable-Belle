@@ -5,7 +5,7 @@ import { ArrowRight, FileText } from "lucide-react";
 const BUSINESS_INFO = {
   businessName: "Ectoo",
   address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
@@ -29,7 +29,7 @@ const TermsAndConditions = () => {
           }
         });
       },
-      { threshold: 0.06, rootMargin: "0px 0px -20px 0px" }
+      { threshold: 0.06, rootMargin: "0px 0px -20px 0px" },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -37,7 +37,10 @@ const TermsAndConditions = () => {
     return () => observer.disconnect();
   }, []);
   return (
-    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
       <style>{`
         [data-reveal] {
           opacity: 0;
@@ -79,18 +82,19 @@ const TermsAndConditions = () => {
         <div className="mx-auto max-w-4xl space-y-5 text-sm leading-7 text-[#5E5B57]">
           <p>
             These Terms and Conditions (“Terms”) govern your access to and use
-            of https://www.ectoo.us and any purchase from Ectoo LLC. By
-            using our website or placing an order, you agree to these Terms.
+            of https://www.ectoo.us and any purchase from Ectoo LLC. By using
+            our website or placing an order, you agree to these Terms.
           </p>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               1. Business Operator
             </h2>
 
-            <p className="mt-3">
-              The website and Ectoo brand are operated by:
-            </p>
+            <p className="mt-3">The website and Ectoo brand are operated by:</p>
 
             <div className="mt-3 space-y-1">
               <p>{BUSINESS_INFO.businessName}</p>
@@ -120,7 +124,10 @@ const TermsAndConditions = () => {
             </div>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               2. Eligibility
             </h2>
@@ -136,22 +143,25 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               3. Products
             </h2>
 
             <p className="mt-3">
-              Ectoo sells handbags, tote bags, crossbody bags, shoulder
-              bags, and related fashion accessories.
+              Ectoo sells handbags, tote bags, crossbody bags, shoulder bags,
+              and related fashion accessories.
             </p>
 
             <p className="mt-3">
               We make reasonable efforts to display product descriptions,
               materials, dimensions, colors, availability, and images
               accurately. Colors and appearance may vary slightly depending on
-              lighting, photography, manufacturing variations, and
-              device-screen settings.
+              lighting, photography, manufacturing variations, and device-screen
+              settings.
             </p>
 
             <p className="mt-3">
@@ -160,7 +170,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               4. Prices and Currency
             </h2>
@@ -178,13 +191,15 @@ const TermsAndConditions = () => {
             <p className="mt-3">
               We may correct accidental pricing, description, inventory, or
               typographical errors. If an error affects an order, we will
-              contact the customer before fulfillment and provide the option
-              to accept the correction or receive a cancellation and full
-              refund.
+              contact the customer before fulfillment and provide the option to
+              accept the correction or receive a cancellation and full refund.
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               5. Online Orders
             </h2>
@@ -202,8 +217,8 @@ const TermsAndConditions = () => {
 
             <p className="mt-3">
               We may decline or cancel an order because of inventory errors,
-              inaccurate information, suspected fraud, payment failure,
-              delivery restrictions, pricing errors, or legal requirements.
+              inaccurate information, suspected fraud, payment failure, delivery
+              restrictions, pricing errors, or legal requirements.
             </p>
 
             <p className="mt-3">
@@ -212,15 +227,15 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
-            <h2 className="font-display text-2xl text-[#111311]">
-              6. Payment
-            </h2>
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
+            <h2 className="font-display text-2xl text-[#111311]">6. Payment</h2>
 
             <p className="mt-3">
-              Ectoo accepts online electronic payments only through the
-              payment methods displayed at checkout. We do not accept Cash on
-              Delivery.
+              Ectoo accepts online electronic payments only through the payment
+              methods displayed at checkout. We do not accept Cash on Delivery.
             </p>
 
             <p className="mt-3">
@@ -243,7 +258,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               7. Fraud Prevention
             </h2>
@@ -267,7 +285,10 @@ const TermsAndConditions = () => {
             </ul>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               8. Shipping
             </h2>
@@ -300,7 +321,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               9. Order Tracking
             </h2>
@@ -316,7 +340,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               10. Cancellations and Address Changes
             </h2>
@@ -338,7 +365,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               11. Returns and Refunds
             </h2>
@@ -349,8 +379,8 @@ const TermsAndConditions = () => {
             </p>
 
             <p className="mt-3">
-              Returned products must generally be unused, unworn, unaltered,
-              and in their original condition with tags and original packaging.
+              Returned products must generally be unused, unworn, unaltered, and
+              in their original condition with tags and original packaging.
             </p>
 
             <p className="mt-3">
@@ -360,10 +390,10 @@ const TermsAndConditions = () => {
             </p>
 
             <p className="mt-3">
-              No restocking fee is charged on an eligible return.
-              Change-of-mind return shipping is the customer’s responsibility.
-              Ectoo covers reasonable return shipping for verified damaged,
-              defective, or incorrect items.
+              No restocking fee is charged on an eligible return. Change-of-mind
+              return shipping is the customer’s responsibility. Ectoo covers
+              reasonable return shipping for verified damaged, defective, or
+              incorrect items.
             </p>
 
             <p className="mt-3">
@@ -378,7 +408,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               12. Customer Accounts
             </h2>
@@ -392,9 +425,7 @@ const TermsAndConditions = () => {
               <li>Keeping account credentials confidential.</li>
               <li>Providing accurate information.</li>
               <li>Restricting unauthorized access to your device.</li>
-              <li>
-                Notifying us promptly of suspected unauthorized activity.
-              </li>
+              <li>Notifying us promptly of suspected unauthorized activity.</li>
             </ul>
 
             <p className="mt-3">
@@ -403,7 +434,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               13. Acceptable Use
             </h2>
@@ -412,7 +446,9 @@ const TermsAndConditions = () => {
 
             <ul className="mt-3 list-disc space-y-2 pl-5">
               <li>Use the website for unlawful or fraudulent activity.</li>
-              <li>Attempt unauthorized access to accounts, systems, or data.</li>
+              <li>
+                Attempt unauthorized access to accounts, systems, or data.
+              </li>
               <li>
                 Introduce malicious code or interfere with website operation.
               </li>
@@ -427,16 +463,18 @@ const TermsAndConditions = () => {
             </ul>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               14. Intellectual Property
             </h2>
 
             <p className="mt-3">
-              The Ectoo name, website design, written content, graphics,
-              logos, and original website materials are owned by or licensed to
-              Ectoo LLC and are protected by applicable intellectual-property
-              laws.
+              The Ectoo name, website design, written content, graphics, logos,
+              and original website materials are owned by or licensed to Ectoo
+              LLC and are protected by applicable intellectual-property laws.
             </p>
 
             <p className="mt-3">
@@ -446,7 +484,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               15. Third-Party Services
             </h2>
@@ -458,13 +499,16 @@ const TermsAndConditions = () => {
             </p>
 
             <p className="mt-3">
-              We are not responsible for an independent third party’s systems
-              or policies, but we remain responsible for our obligations to
+              We are not responsible for an independent third party’s systems or
+              policies, but we remain responsible for our obligations to
               customers under applicable law.
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               16. Product Use and Care
             </h2>
@@ -477,12 +521,15 @@ const TermsAndConditions = () => {
             </p>
 
             <p className="mt-3">
-              Nothing in these Terms excludes warranties or consumer rights
-              that cannot legally be excluded.
+              Nothing in these Terms excludes warranties or consumer rights that
+              cannot legally be excluded.
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               17. Website Availability
             </h2>
@@ -494,7 +541,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               18. Disclaimer
             </h2>
@@ -502,8 +552,8 @@ const TermsAndConditions = () => {
             <p className="mt-3">
               To the maximum extent permitted by law, the website and its
               content are provided on an “as available” basis. We do not
-              guarantee that every product or website feature will always
-              remain available.
+              guarantee that every product or website feature will always remain
+              available.
             </p>
 
             <p className="mt-3">
@@ -512,7 +562,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               19. Limitation of Liability
             </h2>
@@ -526,24 +579,30 @@ const TermsAndConditions = () => {
             <p className="mt-3">
               For a claim concerning a purchased product, our aggregate
               liability will not exceed the amount the customer paid for the
-              product giving rise to the claim, except where a greater remedy
-              is required by law.
+              product giving rise to the claim, except where a greater remedy is
+              required by law.
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               20. Indemnification
             </h2>
 
             <p className="mt-3">
               You agree to be responsible for losses or claims caused by your
-              unlawful use of the website, fraudulent activity, infringement
-              of another party’s rights, or material violation of these Terms.
+              unlawful use of the website, fraudulent activity, infringement of
+              another party’s rights, or material violation of these Terms.
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               21. Delays Outside Our Control
             </h2>
@@ -561,7 +620,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               22. Governing Law and Venue
             </h2>
@@ -584,7 +646,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               23. Severability
             </h2>
@@ -595,7 +660,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               24. No Waiver
             </h2>
@@ -606,33 +674,42 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               25. Assignment
             </h2>
 
             <p className="mt-3">
-              Customers may not transfer their rights or obligations under
-              these Terms without our written consent. Ectoo may transfer
-              these Terms in connection with a merger, acquisition, financing,
+              Customers may not transfer their rights or obligations under these
+              Terms without our written consent. Ectoo may transfer these Terms
+              in connection with a merger, acquisition, financing,
               reorganization, or sale of business assets.
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               26. Entire Agreement
             </h2>
 
             <p className="mt-3">
               These Terms and the policies linked from the website constitute
-              the entire agreement concerning website use and product
-              purchases, except for any additional terms expressly accepted
-              during checkout.
+              the entire agreement concerning website use and product purchases,
+              except for any additional terms expressly accepted during
+              checkout.
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               27. Changes to These Terms
             </h2>
@@ -649,7 +726,10 @@ const TermsAndConditions = () => {
             </p>
           </section>
 
-          <section data-reveal className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="ectoo-term-card rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               28. Contact
             </h2>
@@ -691,11 +771,12 @@ const TermsAndConditions = () => {
 
       {}
       <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-12 sm:px-8 sm:py-16 lg:px-12">
-        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_20px_50px_rgba(31,45,34,0.12)] sm:p-9 md:flex-row md:items-center md:justify-between md:p-10">
+        <div
+          data-reveal="scale"
+          className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_20px_50px_rgba(31,45,34,0.12)] sm:p-9 md:flex-row md:items-center md:justify-between md:p-10"
+        >
           <div>
-            <h3 className="font-display text-2xl">
-              Have a question?
-            </h3>
+            <h3 className="font-display text-2xl">Have a question?</h3>
 
             <p className="mt-2 text-sm leading-6 text-white/60">
               Visit our contact page for assistance.

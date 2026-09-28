@@ -13,7 +13,7 @@ import {
 const BUSINESS_INFO = {
   businessName: "Ectoo",
   email: "info@ectoo.us",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   addressLine1: "1825 Dickinson Ave Ste D",
   addressLine2: "Dickinson, TX 77539",
@@ -37,8 +37,7 @@ const Contact = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    const elements =
-      pageRef.current?.querySelectorAll("[data-reveal]");
+    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
 
     if (!elements?.length) return;
 
@@ -54,7 +53,7 @@ const Contact = () => {
       {
         threshold: 0.12,
         rootMargin: "0px 0px -30px 0px",
-      }
+      },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -104,11 +103,11 @@ const Contact = () => {
         },
         {
           publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
-        }
+        },
       );
 
       setSuccessMessage(
-        "Your message has been sent successfully. Our support team will get back to you as soon as possible."
+        "Your message has been sent successfully. Our support team will get back to you as soon as possible.",
       );
 
       setFormData({
@@ -121,7 +120,7 @@ const Contact = () => {
       console.error("EmailJS error:", error);
 
       setErrorMessage(
-        "We were unable to send your message. Please try again or email us directly."
+        "We were unable to send your message. Please try again or email us directly.",
       );
     } finally {
       setIsSubmitting(false);
@@ -207,9 +206,7 @@ const Contact = () => {
 
             <h1 className="mt-5 max-w-3xl font-display text-5xl leading-[0.95] sm:text-6xl lg:text-[78px]">
               Here when you
-              <span className="block text-[#3F4C3A]">
-                need us.
-              </span>
+              <span className="block text-[#3F4C3A]">need us.</span>
             </h1>
           </div>
 
@@ -365,8 +362,7 @@ const Contact = () => {
               </h2>
 
               <p className="mt-3 max-w-xl text-sm leading-7 text-white/55">
-                Complete the form and our support team will review your
-                message.
+                Complete the form and our support team will review your message.
               </p>
 
               <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -461,10 +457,7 @@ const Contact = () => {
                     role="status"
                     className="flex items-start gap-3 rounded-[10px] border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-100"
                   >
-                    <CheckCircle2
-                      size={18}
-                      className="mt-0.5 shrink-0"
-                    />
+                    <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
                     <span>{successMessage}</span>
                   </div>
                 )}
@@ -474,10 +467,7 @@ const Contact = () => {
                     role="alert"
                     className="flex items-start gap-3 rounded-[10px] border border-red-300/20 bg-red-300/10 p-4 text-sm leading-6 text-red-100"
                   >
-                    <AlertCircle
-                      size={18}
-                      className="mt-0.5 shrink-0"
-                    />
+                    <AlertCircle size={18} className="mt-0.5 shrink-0" />
                     <span>{errorMessage}</span>
                   </div>
                 )}
@@ -501,10 +491,7 @@ const Contact = () => {
       </section>
 
       <section className="border-t border-[#E4DED7] bg-[#E4E5DD] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div
-          data-reveal="scale"
-          className="mx-auto max-w-[1100px] text-center"
-        >
+        <div data-reveal="scale" className="mx-auto max-w-[1100px] text-center">
           <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
             Ectoo
           </p>

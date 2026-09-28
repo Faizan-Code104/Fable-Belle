@@ -1,16 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  Ban,
-  Clock3,
-  PackageCheck,
-  RotateCcw,
-} from "lucide-react";
+import { ArrowRight, Ban, Clock3, PackageCheck, RotateCcw } from "lucide-react";
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
@@ -58,7 +52,7 @@ const OrderCancellationPolicy = () => {
       {
         threshold: 0.1,
         rootMargin: "0px 0px -30px 0px",
-      }
+      },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -118,7 +112,7 @@ const OrderCancellationPolicy = () => {
           }
         }
       `}</style>
-      
+
       <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
         <div data-reveal="scale" className="mx-auto max-w-4xl text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#1F2D22] text-white">
@@ -139,7 +133,6 @@ const OrderCancellationPolicy = () => {
         </div>
       </section>
 
-      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-3xl">
@@ -158,7 +151,8 @@ const OrderCancellationPolicy = () => {
             {cancellationDetails.map((item) => (
               <div
                 key={item.label}
-                data-reveal className="ectoo-policy-card rounded-[16px] border border-[#E4DED7] bg-white p-5 sm:p-6"
+                data-reveal
+                className="ectoo-policy-card rounded-[16px] border border-[#E4DED7] bg-white p-5 sm:p-6"
               >
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#5E5B57]/70">
                   {item.label}
@@ -173,10 +167,12 @@ const OrderCancellationPolicy = () => {
         </div>
       </section>
 
-      
       <section className="bg-[#E4E5DD] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
-          <div data-reveal className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6">
+          <div
+            data-reveal
+            className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6"
+          >
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1F2D22] text-white">
               <Clock3 size={20} aria-hidden="true" />
             </div>
@@ -186,12 +182,15 @@ const OrderCancellationPolicy = () => {
             </h3>
 
             <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
-              Contact us as soon as possible before the order enters shipment
-              or tracking is issued.
+              Contact us as soon as possible before the order enters shipment or
+              tracking is issued.
             </p>
           </div>
 
-          <div data-reveal className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6">
+          <div
+            data-reveal
+            className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6"
+          >
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1F2D22] text-white">
               <PackageCheck size={20} aria-hidden="true" />
             </div>
@@ -201,20 +200,20 @@ const OrderCancellationPolicy = () => {
             </h3>
 
             <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
-              Cancellation and address-change requests are available only
-              before shipment and cannot be guaranteed after fulfillment
-              begins.
+              Cancellation and address-change requests are available only before
+              shipment and cannot be guaranteed after fulfillment begins.
             </p>
           </div>
 
-          <div data-reveal className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6">
+          <div
+            data-reveal
+            className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6"
+          >
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1F2D22] text-white">
               <RotateCcw size={20} aria-hidden="true" />
             </div>
 
-            <h3 className="mt-4 font-display text-xl text-[#111311]">
-              Refund
-            </h3>
+            <h3 className="mt-4 font-display text-xl text-[#111311]">Refund</h3>
 
             <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
               Approved cancellations are refunded to the original payment
@@ -224,7 +223,6 @@ const OrderCancellationPolicy = () => {
         </div>
       </section>
 
-      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-3xl space-y-10 text-sm leading-7 text-[#5E5B57]">
           <section data-reveal="left">
@@ -290,8 +288,8 @@ const OrderCancellationPolicy = () => {
 
             <p className="mt-3">
               The refund is generally submitted within{" "}
-              <strong className="text-[#111311]">5–7 business days</strong>, although
-              the customer’s bank may require additional posting time.
+              <strong className="text-[#111311]">5–7 business days</strong>,
+              although the customer’s bank may require additional posting time.
             </p>
           </section>
 
@@ -325,9 +323,7 @@ const OrderCancellationPolicy = () => {
           </section>
 
           <section data-reveal="left">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Contact
-            </h2>
+            <h2 className="font-display text-2xl text-[#111311]">Contact</h2>
 
             <div className="mt-3 space-y-1">
               <p className="font-medium text-[#111311]">
@@ -363,13 +359,13 @@ const OrderCancellationPolicy = () => {
         </div>
       </section>
 
-      
       <section className="border-t border-[#E4DED7] bg-[#E4E5DD] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div data-reveal="scale" className="mx-auto flex max-w-3xl flex-col items-start gap-6 rounded-[22px] bg-[#1F2D22] p-7 text-white sm:p-9 md:flex-row md:items-center md:justify-between">
+        <div
+          data-reveal="scale"
+          className="mx-auto flex max-w-3xl flex-col items-start gap-6 rounded-[22px] bg-[#1F2D22] p-7 text-white sm:p-9 md:flex-row md:items-center md:justify-between"
+        >
           <div>
-            <h3 className="font-display text-2xl">
-              Need to cancel an order?
-            </h3>
+            <h3 className="font-display text-2xl">Need to cancel an order?</h3>
 
             <p className="mt-2 text-sm leading-6 text-white/60">
               Contact us as soon as possible before your order ships.

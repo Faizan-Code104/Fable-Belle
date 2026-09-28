@@ -5,7 +5,7 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 const BUSINESS_INFO = {
   businessName: "Ectoo",
   address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
@@ -31,7 +31,7 @@ const PrivacyPolicy = () => {
       {
         threshold: 0.08,
         rootMargin: "0px 0px -25px 0px",
-      }
+      },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -45,14 +45,12 @@ const PrivacyPolicy = () => {
       body: [
         "Ectoo is operated by:",
         "Ectoo\n1825 Dickinson Ave Ste D\nDickinson, TX 77539\nUnited States",
-        "Email: info@ectoo.us\nPhone: +1 (917) 695-2303\nCustomer Support Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
+        "Email: info@ectoo.us\nPhone: +1 (832) 347-8821\nCustomer Support Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
       ],
     },
     {
       title: "2. Information We Collect",
-      body: [
-        "Depending on how you interact with our website, we may collect:",
-      ],
+      body: ["Depending on how you interact with our website, we may collect:"],
       bullets: [
         "Name, billing address, shipping address, email address, and telephone number.",
         "Account login information, if you create an account.",
@@ -73,9 +71,7 @@ const PrivacyPolicy = () => {
     },
     {
       title: "4. How We Use Information",
-      body: [
-        "We may use personal information to:",
-      ],
+      body: ["We may use personal information to:"],
       bullets: [
         "Operate and maintain our website.",
         "Create and manage customer accounts.",
@@ -138,9 +134,7 @@ const PrivacyPolicy = () => {
         "Understand website traffic and performance.",
         "Detect fraud or suspicious activity.",
       ],
-      after: [
-        "Additional information is available in our Cookie Policy.",
-      ],
+      after: ["Additional information is available in our Cookie Policy."],
     },
     {
       title: "8. Marketing Communications",
@@ -224,7 +218,7 @@ const PrivacyPolicy = () => {
       body: [
         "Questions or privacy requests may be directed to:",
         "Ectoo\n1825 Dickinson Ave Ste D\nDickinson, TX 77539\nUnited States",
-        "Email: info@ectoo.us\nPhone: +1 (917) 695-2303\nHours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
+        "Email: info@ectoo.us\nPhone: +1 (832) 347-8821\nHours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
       ],
     },
   ];
@@ -273,9 +267,12 @@ const PrivacyPolicy = () => {
           }
         }
       `}</style>
-      
+
       <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-        <div data-reveal="scale" className="relative mx-auto max-w-4xl text-center">
+        <div
+          data-reveal="scale"
+          className="relative mx-auto max-w-4xl text-center"
+        >
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
             <ShieldCheck size={24} aria-hidden="true" />
           </div>
@@ -294,20 +291,25 @@ const PrivacyPolicy = () => {
         </div>
       </section>
 
-      
       <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <p data-reveal className="rounded-[24px] border border-[#E4DED7] bg-white p-6 text-sm leading-7 text-[#5E5B57] shadow-[0_14px_40px_rgba(31,45,34,0.04)] sm:p-8 sm:text-base">
-            Ectoo (“Ectoo,” “we,” “us,” or “our”) respects your
-            privacy. This Privacy Policy explains how we collect, use,
-            disclose, retain, and protect personal information when you visit
-            https://www.ectoo.us, create an account, communicate with us,
-            or purchase our products.
+          <p
+            data-reveal
+            className="rounded-[24px] border border-[#E4DED7] bg-white p-6 text-sm leading-7 text-[#5E5B57] shadow-[0_14px_40px_rgba(31,45,34,0.04)] sm:p-8 sm:text-base"
+          >
+            Ectoo (“Ectoo,” “we,” “us,” or “our”) respects your privacy. This
+            Privacy Policy explains how we collect, use, disclose, retain, and
+            protect personal information when you visit https://www.ectoo.us,
+            create an account, communicate with us, or purchase our products.
           </p>
 
           <div className="mt-6 grid gap-4 sm:mt-8">
             {sections.map((section) => (
-              <section data-reveal key={section.title} className="privacy-section rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+              <section
+                data-reveal
+                key={section.title}
+                className="privacy-section rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+              >
                 <h2 className="font-display text-2xl leading-tight text-[#111311]">
                   {section.title}
                 </h2>
@@ -325,9 +327,7 @@ const PrivacyPolicy = () => {
                   {section.bullets && (
                     <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
                       {section.bullets.map((item, index) => (
-                        <li key={`${section.title}-bullet-${index}`}>
-                          {item}
-                        </li>
+                        <li key={`${section.title}-bullet-${index}`}>{item}</li>
                       ))}
                     </ul>
                   )}
@@ -355,15 +355,17 @@ const PrivacyPolicy = () => {
             ))}
           </div>
 
-          
-          <div data-reveal="scale" className="mt-8 rounded-[24px] border border-[#E4DED7] bg-[#E8E7DF] p-6 sm:p-8">
+          <div
+            data-reveal="scale"
+            className="mt-8 rounded-[24px] border border-[#E4DED7] bg-[#E8E7DF] p-6 sm:p-8"
+          >
             <h2 className="font-display text-xl text-[#111311]">
               Privacy Questions or Requests
             </h2>
 
             <p className="mt-2 text-sm leading-7 text-[#5E5B57]">
-              If you have a question about this Privacy Policy or want to make
-              a privacy-related request, you can contact{" "}
+              If you have a question about this Privacy Policy or want to make a
+              privacy-related request, you can contact{" "}
               {BUSINESS_INFO.businessName} using the details below.
             </p>
 
@@ -400,9 +402,11 @@ const PrivacyPolicy = () => {
         </div>
       </section>
 
-      
       <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between">
+        <div
+          data-reveal="scale"
+          className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between"
+        >
           <div>
             <h3 className="font-display text-2xl">
               Questions about your information?

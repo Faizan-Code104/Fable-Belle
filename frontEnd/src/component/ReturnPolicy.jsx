@@ -1,16 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  CheckCircle2,
-  RotateCcw,
-  XCircle,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
 const BUSINESS_INFO = {
   businessName: "Ectoo",
   address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (917) 695-2303",
+  phoneDisplay: "+1 (832) 347-8821",
   phoneHref: "+19176952303",
   email: "info@ectoo.us",
   businessDays: "Monday – Friday",
@@ -33,7 +28,7 @@ const ReturnPolicy = () => {
           }
         });
       },
-      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
+      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" },
     );
 
     elements.forEach((element) => observer.observe(element));
@@ -83,7 +78,10 @@ const ReturnPolicy = () => {
   ];
 
   return (
-    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
+    <div
+      ref={pageRef}
+      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
+    >
       <style>{`
         [data-reveal] {
           opacity: 0;
@@ -100,9 +98,12 @@ const ReturnPolicy = () => {
           [data-reveal] { opacity: 1; transform: none; transition: none; }
         }
       `}</style>
-      
+
       <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
-        <div data-reveal="scale" className="relative mx-auto max-w-4xl text-center">
+        <div
+          data-reveal="scale"
+          className="relative mx-auto max-w-4xl text-center"
+        >
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
             <RotateCcw size={24} aria-hidden="true" />
           </div>
@@ -121,7 +122,6 @@ const ReturnPolicy = () => {
         </div>
       </section>
 
-      
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div data-reveal className="mx-auto max-w-3xl text-center">
           <h2 className="font-display text-3xl text-[#111311]">
@@ -136,7 +136,10 @@ const ReturnPolicy = () => {
         </div>
 
         <div className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-2">
-          <div data-reveal="left" className="return-card rounded-[24px] border border-emerald-200 bg-emerald-50 p-6 sm:p-7">
+          <div
+            data-reveal="left"
+            className="return-card rounded-[24px] border border-emerald-200 bg-emerald-50 p-6 sm:p-7"
+          >
             <div className="flex items-center gap-2">
               <CheckCircle2
                 size={19}
@@ -162,13 +165,12 @@ const ReturnPolicy = () => {
             </ul>
           </div>
 
-          <div data-reveal="right" className="return-card rounded-[24px] border border-red-200 bg-red-50 p-6 sm:p-7">
+          <div
+            data-reveal="right"
+            className="return-card rounded-[24px] border border-red-200 bg-red-50 p-6 sm:p-7"
+          >
             <div className="flex items-center gap-2">
-              <XCircle
-                size={19}
-                className="text-red-600"
-                aria-hidden="true"
-              />
+              <XCircle size={19} className="text-red-600" aria-hidden="true" />
 
               <h3 className="text-sm font-bold text-red-800">
                 May Not Be Eligible
@@ -190,7 +192,6 @@ const ReturnPolicy = () => {
         </div>
       </section>
 
-      
       <section className="bg-[#E8E7DF] px-5 py-16 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-5xl">
           <h2 className="font-display text-3xl text-[#111311]">
@@ -201,7 +202,8 @@ const ReturnPolicy = () => {
             {steps.map((step, index) => (
               <div
                 key={step.title}
-                data-reveal className="return-card rounded-[22px] border border-[#E4DED7] bg-white p-5 sm:p-6"
+                data-reveal
+                className="return-card rounded-[22px] border border-[#E4DED7] bg-white p-5 sm:p-6"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1F2D22] text-sm font-bold text-white">
                   {index + 1}
@@ -220,11 +222,12 @@ const ReturnPolicy = () => {
         </div>
       </section>
 
-      
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-4 text-sm leading-7 text-[#5E5B57]">
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Return Eligibility
             </h2>
@@ -247,8 +250,10 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Starting a Return
             </h2>
@@ -298,8 +303,10 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Return Address
             </h2>
@@ -318,13 +325,15 @@ const ReturnPolicy = () => {
             </div>
 
             <p className="mt-3">
-              The customer should retain the return tracking number and
-              shipping receipt until the refund is completed.
+              The customer should retain the return tracking number and shipping
+              receipt until the refund is completed.
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Change-of-Mind Returns
             </h2>
@@ -335,13 +344,10 @@ const ReturnPolicy = () => {
             </p>
 
             <ul className="mt-3 list-disc space-y-2 pl-5">
-              <li>
-                The customer is responsible for return-shipping costs.
-              </li>
+              <li>The customer is responsible for return-shipping costs.</li>
               <li>The return shipment should include tracking.</li>
               <li>
-                Ectoo is not responsible for a return lost before it reaches
-                us.
+                Ectoo is not responsible for a return lost before it reaches us.
               </li>
               <li>
                 The product must satisfy all return-eligibility requirements.
@@ -349,20 +355,21 @@ const ReturnPolicy = () => {
             </ul>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Damaged, Defective, or Incorrect Products
             </h2>
 
             <p className="mt-3">
               A damaged, defective, or incorrect product should be reported
-              within <strong className="text-[#111311]">48 hours of delivery</strong>.
+              within{" "}
+              <strong className="text-[#111311]">48 hours of delivery</strong>.
             </p>
 
-            <p className="mt-3">
-              The customer should provide photographs of:
-            </p>
+            <p className="mt-3">The customer should provide photographs of:</p>
 
             <ul className="mt-3 list-disc space-y-2 pl-5">
               <li>The product.</li>
@@ -377,14 +384,18 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Exchanges
-            </h2>
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
+            <h2 className="font-display text-2xl text-[#111311]">Exchanges</h2>
 
             <p className="mt-3">
-              We do <strong className="text-[#111311]">not offer direct exchanges</strong>.
+              We do{" "}
+              <strong className="text-[#111311]">
+                not offer direct exchanges
+              </strong>
+              .
             </p>
 
             <p className="mt-3">
@@ -394,8 +405,10 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Restocking Fees
             </h2>
@@ -409,23 +422,22 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Non-Returnable Products
             </h2>
 
-            <p className="mt-3">
-              A return may be refused if the product:
-            </p>
+            <p className="mt-3">A return may be refused if the product:</p>
 
             <ul className="mt-3 list-disc space-y-2 pl-5">
               <li>
                 Was used, worn, washed, altered, or damaged after delivery.
               </li>
               <li>
-                Is missing tags, accessories, components, or original
-                packaging.
+                Is missing tags, accessories, components, or original packaging.
               </li>
               <li>
                 Shows signs of misuse, improper cleaning, or ordinary wear.
@@ -436,13 +448,15 @@ const ReturnPolicy = () => {
             </ul>
 
             <p className="mt-3">
-              These exclusions do not limit legal rights concerning defective
-              or misrepresented products.
+              These exclusions do not limit legal rights concerning defective or
+              misrepresented products.
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Return Inspection
             </h2>
@@ -459,15 +473,21 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Refund Timing
             </h2>
 
             <p className="mt-3">
               Approved refunds are issued to the{" "}
-              <strong className="text-[#111311]">original payment method within 5–7 business days after inspection</strong>.
+              <strong className="text-[#111311]">
+                original payment method within 5–7 business days after
+                inspection
+              </strong>
+              .
             </p>
 
             <p className="mt-3">
@@ -477,21 +497,21 @@ const ReturnPolicy = () => {
             </p>
 
             <p className="mt-3">
-              Shipping charges paid for expedited or optional delivery
-              services, if any, are not refundable unless the return resulted
-              from our error or applicable law requires otherwise.
+              Shipping charges paid for expedited or optional delivery services,
+              if any, are not refundable unless the return resulted from our
+              error or applicable law requires otherwise.
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Late or Missing Refunds
             </h2>
 
-            <p className="mt-3">
-              If an approved refund does not appear:
-            </p>
+            <p className="mt-3">If an approved refund does not appear:</p>
 
             <ol className="mt-3 list-decimal space-y-2 pl-5">
               <li>Review the original payment account.</li>
@@ -510,8 +530,10 @@ const ReturnPolicy = () => {
             </ol>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Refused and Undeliverable Orders
             </h2>
@@ -528,25 +550,27 @@ const ReturnPolicy = () => {
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
             <h2 className="font-display text-2xl text-[#111311]">
               Charge and Order Questions
             </h2>
 
             <p className="mt-3">
               Contact us before initiating a payment dispute so we can
-              investigate the order promptly. This request does not restrict
-              any rights a customer may have through their card issuer or
-              applicable law.
+              investigate the order promptly. This request does not restrict any
+              rights a customer may have through their card issuer or applicable
+              law.
             </p>
           </section>
 
-          
-          <section data-reveal className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Contact
-            </h2>
+          <section
+            data-reveal
+            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          >
+            <h2 className="font-display text-2xl text-[#111311]">Contact</h2>
 
             <div className="mt-3 space-y-1">
               <p className="font-medium text-[#111311]">
@@ -585,13 +609,13 @@ const ReturnPolicy = () => {
         </div>
       </section>
 
-      
       <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 lg:px-12">
-        <div data-reveal="scale" className="mx-auto flex max-w-4xl flex-col items-center gap-6 rounded-[28px] bg-[#1F2D22] p-8 text-center text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:flex-row sm:justify-between sm:p-10 sm:text-left">
+        <div
+          data-reveal="scale"
+          className="mx-auto flex max-w-4xl flex-col items-center gap-6 rounded-[28px] bg-[#1F2D22] p-8 text-center text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:flex-row sm:justify-between sm:p-10 sm:text-left"
+        >
           <div>
-            <h3 className="font-display text-2xl">
-              Need to start a return?
-            </h3>
+            <h3 className="font-display text-2xl">Need to start a return?</h3>
 
             <p className="mt-1 text-sm text-white/60">
               Contact our support team before mailing your return.
