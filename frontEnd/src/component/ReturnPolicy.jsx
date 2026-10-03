@@ -1,40 +1,115 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Mail,
+  Phone,
+} from "lucide-react";
+import { BUSINESS_INFO } from "../storeInfo";
 
-const BUSINESS_INFO = {
-  businessName: "Ectoo",
-  address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (832) 347-8821",
-  phoneHref: "+19176952303",
-  email: "info@ectoo.us",
-  businessDays: "Monday – Friday",
-  supportHours: "9:00 AM – 5:00 PM Central Time",
+const RETURN_STEPS = [
+  {
+    title: "Request a return",
+    description:
+      "Contact our support team within 30 days of confirmed delivery and provide your order number and return reason.",
+  },
+  {
+    title: "Receive authorization",
+    description:
+      "If approved, we will provide return instructions. Do not mail a product before authorization is provided.",
+  },
+  {
+    title: "Ship the return",
+    description:
+      "Send the authorized product as instructed and retain your tracking number and shipping receipt.",
+  },
+  {
+    title: "Refund processed",
+    description:
+      "After inspection and approval, the refund is issued to the original payment method within 5–7 business days.",
+  },
+];
+
+const SupportContact = () => {
+  const phoneHref =
+    BUSINESS_INFO.phoneHref ||
+    BUSINESS_INFO.phoneDisplay?.replace(/[^\d+]/g, "");
+
+  return (
+    <div className="fbreturn-contact-links">
+      {BUSINESS_INFO.email && (
+        <a href={`mailto:${BUSINESS_INFO.email}`}>
+          <Mail size={17} aria-hidden="true" />
+          <span>{BUSINESS_INFO.email}</span>
+        </a>
+      )}
+
+      {BUSINESS_INFO.phoneDisplay && phoneHref && (
+        <a href={`tel:${phoneHref}`}>
+          <Phone size={17} aria-hidden="true" />
+          <span>{BUSINESS_INFO.phoneDisplay}</span>
+        </a>
+      )}
+
+      <Link to="/contact">
+        Contact our team
+        <ArrowUpRight size={16} aria-hidden="true" />
+      </Link>
+    </div>
+  );
 };
 
+const BusinessAddress = () => {
+  const lines = [
+    BUSINESS_INFO.addressLine1,
+    BUSINESS_INFO.addressLine2,
+    BUSINESS_INFO.country,
+  ].filter(Boolean);
+
+  return (
+    <address className="fbreturn-address">
+      <strong>{BUSINESS_INFO.businessName}</strong>
+      {lines.map((line, index) => (
+        <span key={`${index}-${line}`}>{line}</span>
+      ))}
+    </address>
+  );
+};
+
+const PolicySection = ({ id, number, title, children }) => (
+  <section
+    id={`fbreturn-${id}`}
+    className="fbreturn-section"
+    aria-labelledby={`fbreturn-title-${id}`}
+  >
+    <div className="fbreturn-section-title">
+      <span aria-hidden="true">
+        {String(number).padStart(2, "0")}
+      </span>
+      <h2 id={`fbreturn-title-${id}`}>{title}</h2>
+    </div>
+    <div className="fbreturn-section-content">{children}</div>
+  </section>
+);
+
 const ReturnPolicy = () => {
-  const pageRef = useRef(null);
-  useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+  const brand = BUSINESS_INFO.businessName;
 
-    if (!elements?.length) return;
+  const hasAddress = Boolean(
+    BUSINESS_INFO.addressLine1 ||
+      BUSINESS_INFO.addressLine2 ||
+      BUSINESS_INFO.country
+  );
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" },
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
-  }, []);
+  const supportSchedule = [
+    BUSINESS_INFO.businessDays,
+    [BUSINESS_INFO.supportHours, BUSINESS_INFO.timeZone]
+      .filter(Boolean)
+      .join(" "),
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   const eligible = [
     "Unused and unworn",
@@ -51,243 +126,144 @@ const ReturnPolicy = () => {
     "Products showing misuse, improper cleaning, or ordinary wear",
     "Products returned more than 30 days after delivery",
     "Products mailed without authorization",
-    "Products not purchased directly from Ectoo",
-  ];
-
-  const steps = [
-    {
-      title: "Request a return",
-      description:
-        "Contact our support team within 30 days of confirmed delivery and provide your order number and return reason.",
-    },
-    {
-      title: "Receive authorization",
-      description:
-        "If approved, we will provide return instructions. Do not mail a product before authorization is provided.",
-    },
-    {
-      title: "Ship the return",
-      description:
-        "Send the authorized product as instructed and retain your tracking number and shipping receipt.",
-    },
-    {
-      title: "Refund processed",
-      description:
-        "After inspection and approval, the refund is issued to the original payment method within 5–7 business days.",
-    },
+    `Products not purchased directly from ${brand}`,
   ];
 
   return (
-    <div
-      ref={pageRef}
-      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
-    >
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.8s cubic-bezier(0.22,1,0.36,1), transform 0.8s cubic-bezier(0.22,1,0.36,1);
-        }
-        [data-reveal="left"] { transform: translateX(-40px); }
-        [data-reveal="right"] { transform: translateX(40px); }
-        [data-reveal="scale"] { transform: scale(0.97); }
-        [data-reveal].ectoo-visible { opacity: 1; transform: translate(0,0) scale(1); }
-        .return-card { transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease; }
-        .return-card:hover { transform: translateY(-4px); box-shadow: 0 18px 48px rgba(31,45,34,.07); }
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] { opacity: 1; transform: none; transition: none; }
-        }
-      `}</style>
+    <main id="fbreturn-top" className="fbreturn-page">
+      <style>{styles}</style>
 
-      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 lg:px-12 lg:py-24">
-        <div
-          data-reveal="scale"
-          className="relative mx-auto max-w-4xl text-center"
+      <div className="fbreturn-container">
+        <div className="fbreturn-topline">
+          <span>{brand} / Return & Refund Policy</span>
+          <span>
+            Last updated:{" "}
+            <time dateTime="2026-10-03">October 3, 2026</time>
+          </span>
+        </div>
+
+        <header className="fbreturn-header">
+          <div>
+            <p className="fbreturn-eyebrow">Returns & refunds</p>
+            <h1>
+              A little
+              <span>reconsideration.</span>
+            </h1>
+            <p className="fbreturn-intro">
+              {brand} accepts eligible returns requested within 30 days
+              of confirmed delivery. Products must meet the return
+              conditions described below.
+            </p>
+          </div>
+
+          <div className="fbreturn-window">
+            <span className="fbreturn-eyebrow">Return window</span>
+            <strong>30</strong>
+            <span className="fbreturn-window-unit">days</span>
+            <p>From confirmed delivery, subject to eligibility.</p>
+            <a href="#fbreturn-starting">
+              Start with authorization
+              <ArrowUpRight size={17} aria-hidden="true" />
+            </a>
+          </div>
+        </header>
+
+        <nav className="fbreturn-navigation" aria-label="Return policy navigation">
+          <a href="#fbreturn-conditions">Return conditions</a>
+          <a href="#fbreturn-process">Return process</a>
+          <a href="#fbreturn-starting">Start a return</a>
+          <a href="#fbreturn-damaged">Damaged products</a>
+          <a href="#fbreturn-refunds">Refund timing</a>
+          <a href="#fbreturn-contact">Contact</a>
+        </nav>
+
+        <section
+          id="fbreturn-conditions"
+          className="fbreturn-conditions"
+          aria-labelledby="fbreturn-conditions-title"
         >
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
-            <RotateCcw size={24} aria-hidden="true" />
+          <div className="fbreturn-block-heading">
+            <p className="fbreturn-eyebrow">Before you begin</p>
+            <h2 id="fbreturn-conditions-title">Check the conditions.</h2>
           </div>
 
-          <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-            Ectoo
-          </p>
-
-          <h1 className="mt-3 font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl">
-            Return &amp; Refund Policy
-          </h1>
-
-          <p className="mt-4 text-sm text-[#5E5B57]">
-            Last updated: September 11, 2026
-          </p>
-        </div>
-      </section>
-
-      <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div data-reveal className="mx-auto max-w-3xl text-center">
-          <h2 className="font-display text-3xl text-[#111311]">
-            30-Day Return Window
-          </h2>
-
-          <p className="mt-4 text-sm leading-7 text-[#5E5B57]">
-            {BUSINESS_INFO.businessName} accepts eligible returns requested
-            within 30 days of confirmed delivery. Products must meet the return
-            conditions described below.
-          </p>
-        </div>
-
-        <div className="mx-auto mt-10 grid max-w-4xl gap-6 sm:grid-cols-2">
-          <div
-            data-reveal="left"
-            className="return-card rounded-[24px] border border-emerald-200 bg-emerald-50 p-6 sm:p-7"
-          >
-            <div className="flex items-center gap-2">
-              <CheckCircle2
-                size={19}
-                className="text-emerald-600"
-                aria-hidden="true"
-              />
-
-              <h3 className="text-sm font-bold text-emerald-800">
-                Eligible for Return
-              </h3>
+          <div className="fbreturn-condition-columns">
+            <div>
+              <h3>Eligible for return</h3>
+              <ul>
+                {eligible.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
             </div>
 
-            <ul className="mt-4 space-y-2.5">
-              {eligible.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2 text-xs leading-5 text-emerald-800"
-                >
-                  <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-emerald-600" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div
-            data-reveal="right"
-            className="return-card rounded-[24px] border border-red-200 bg-red-50 p-6 sm:p-7"
-          >
-            <div className="flex items-center gap-2">
-              <XCircle size={19} className="text-red-600" aria-hidden="true" />
-
-              <h3 className="text-sm font-bold text-red-800">
-                May Not Be Eligible
-              </h3>
+            <div>
+              <h3>May not be eligible</h3>
+              <ul>
+                {notEligible.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
             </div>
-
-            <ul className="mt-4 space-y-2.5">
-              {notEligible.map((item) => (
-                <li
-                  key={item}
-                  className="flex items-start gap-2 text-xs leading-5 text-red-800"
-                >
-                  <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-red-600" />
-                  {item}
-                </li>
-              ))}
-            </ul>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="bg-[#E8E7DF] px-5 py-16 sm:px-8 lg:px-12">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="font-display text-3xl text-[#111311]">
-            How to Return an Item
-          </h2>
+        <section
+          id="fbreturn-process"
+          className="fbreturn-process"
+          aria-labelledby="fbreturn-process-title"
+        >
+          <div className="fbreturn-block-heading">
+            <p className="fbreturn-eyebrow">How to return an item</p>
+            <h2 id="fbreturn-process-title">The return journey.</h2>
+          </div>
 
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((step, index) => (
-              <div
-                key={step.title}
-                data-reveal
-                className="return-card rounded-[22px] border border-[#E4DED7] bg-white p-5 sm:p-6"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#1F2D22] text-sm font-bold text-white">
-                  {index + 1}
-                </div>
-
-                <h3 className="mt-4 text-sm font-bold text-[#111311]">
-                  {step.title}
-                </h3>
-
-                <p className="mt-2 text-xs leading-5 text-[#5E5B57]">
-                  {step.description}
-                </p>
-              </div>
+          <ol>
+            {RETURN_STEPS.map((step, index) => (
+              <li key={step.title}>
+                <span aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </li>
             ))}
+          </ol>
+        </section>
+
+        <article className="fbreturn-document" aria-label="Return and refund policy">
+          <div className="fbreturn-document-heading">
+            <p className="fbreturn-eyebrow">The full policy</p>
+            <span>Return & Refund Policy</span>
           </div>
-        </div>
-      </section>
 
-      <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl space-y-4 text-sm leading-7 text-[#5E5B57]">
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Return Eligibility
-            </h2>
-
-            <p className="mt-3">
-              To qualify for a return, the product must be unused and unworn,
-              unwashed and unaltered, free from stains, odors, scratches, or
-              customer-caused damage, and returned with its original tags,
-              accessories, and packaging.
+          <PolicySection id="eligibility" number={1} title="Return eligibility">
+            <p>
+              To qualify for a return, the product must be unused and
+              unworn, unwashed and unaltered, free from stains, odors,
+              scratches, or customer-caused damage, and returned with its
+              original tags, accessories, and packaging.
             </p>
-
-            <p className="mt-3">
-              The return must also be accompanied by the order number or proof
-              of purchase.
+            <p>
+              The return must also be accompanied by the order number or
+              proof of purchase.
             </p>
-
-            <p className="mt-3">
-              Products returned without authorization or outside the return
-              period may be refused.
+            <p>
+              Products returned without authorization or outside the
+              return period may be refused.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Starting a Return
-            </h2>
-
-            <p className="mt-3">
+          <PolicySection id="starting" number={2} title="Starting a return">
+            <p>
               Before mailing a return, contact our support team using the
               following details:
             </p>
 
-            <div className="mt-3 space-y-1">
-              <p>
-                Email:{" "}
-                <a
-                  href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.email}
-                </a>
-              </p>
+            <SupportContact />
 
-              <p>
-                Phone:{" "}
-                <a
-                  href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.phoneDisplay}
-                </a>
-              </p>
-            </div>
-
-            <p className="mt-4">Please provide:</p>
-
-            <ul className="mt-3 list-disc space-y-2 pl-5">
+            <p>Please provide:</p>
+            <ul>
               <li>Customer name.</li>
               <li>Order number.</li>
               <li>Product being returned.</li>
@@ -296,343 +272,809 @@ const ReturnPolicy = () => {
                 Photographs if the item is damaged, defective, or incorrect.
               </li>
             </ul>
-
-            <p className="mt-3">
-              If approved, we will provide return instructions. Do not mail a
-              product until return authorization has been provided.
+            <p>
+              If approved, we will provide return instructions. Do not
+              mail a product until return authorization has been provided.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          <PolicySection id="address" number={3} title="Return address">
+            <p>
+              {hasAddress
+                ? "Authorized returns should be sent as instructed to:"
+                : "Authorized returns should be sent to the address provided in our return instructions."}
+            </p>
+
+            {hasAddress && <BusinessAddress />}
+
+            <p>
+              The customer should retain the return tracking number and
+              shipping receipt until the refund is completed.
+            </p>
+          </PolicySection>
+
+          <PolicySection
+            id="change-of-mind"
+            number={4}
+            title="Change-of-mind returns"
           >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Return Address
-            </h2>
-
-            <p className="mt-3">
-              Authorized returns should be sent as instructed to:
+            <p>
+              If a customer changes their mind, orders the wrong item,
+              or no longer wants the product:
             </p>
-
-            <div className="mt-3 space-y-1">
-              <p className="font-medium text-[#111311]">
-                {BUSINESS_INFO.businessName}
-              </p>
-              <p>1825 Dickinson Ave Ste D</p>
-              <p>Dickinson, TX 77539</p>
-              <p>United States</p>
-            </div>
-
-            <p className="mt-3">
-              The customer should retain the return tracking number and shipping
-              receipt until the refund is completed.
-            </p>
-          </section>
-
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Change-of-Mind Returns
-            </h2>
-
-            <p className="mt-3">
-              If a customer changes their mind, orders the wrong item, or no
-              longer wants the product:
-            </p>
-
-            <ul className="mt-3 list-disc space-y-2 pl-5">
+            <ul>
               <li>The customer is responsible for return-shipping costs.</li>
               <li>The return shipment should include tracking.</li>
               <li>
-                Ectoo is not responsible for a return lost before it reaches us.
+                {brand} is not responsible for a return lost before it
+                reaches us.
               </li>
               <li>
                 The product must satisfy all return-eligibility requirements.
               </li>
             </ul>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          <PolicySection
+            id="damaged"
+            number={5}
+            title="Damaged, defective, or incorrect products"
           >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Damaged, Defective, or Incorrect Products
-            </h2>
-
-            <p className="mt-3">
-              A damaged, defective, or incorrect product should be reported
-              within{" "}
-              <strong className="text-[#111311]">48 hours of delivery</strong>.
+            <p>
+              A damaged, defective, or incorrect product should be
+              reported within <strong>48 hours of delivery</strong>.
             </p>
-
-            <p className="mt-3">The customer should provide photographs of:</p>
-
-            <ul className="mt-3 list-disc space-y-2 pl-5">
+            <p>The customer should provide photographs of:</p>
+            <ul>
               <li>The product.</li>
               <li>The packaging.</li>
               <li>The shipping label.</li>
               <li>The damaged or incorrect area.</li>
             </ul>
-
-            <p className="mt-3">
-              After verification, Ectoo will provide appropriate return
+            <p>
+              After verification, {brand} will provide appropriate return
               instructions and cover reasonable return-shipping costs.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">Exchanges</h2>
-
-            <p className="mt-3">
-              We do{" "}
-              <strong className="text-[#111311]">
-                not offer direct exchanges
-              </strong>
-              .
+          <PolicySection id="exchanges" number={6} title="Exchanges">
+            <p>We do <strong>not offer direct exchanges</strong>.</p>
+            <p>
+              A customer who wants another color, style, or product may
+              return the eligible original product for a refund and
+              place a separate order.
             </p>
+          </PolicySection>
 
-            <p className="mt-3">
-              A customer who wants another color, style, or product may return
-              the eligible original product for a refund and place a separate
-              order.
-            </p>
-          </section>
-
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Restocking Fees
-            </h2>
-
-            <p className="mt-3">
-              Ectoo does{" "}
-              <strong className="text-[#111311]">
-                not charge a restocking fee
-              </strong>{" "}
+          <PolicySection id="fees" number={7} title="Restocking fees">
+            <p>
+              {brand} does <strong>not charge a restocking fee</strong>{" "}
               for an eligible return.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          <PolicySection
+            id="non-returnable"
+            number={8}
+            title="Non-returnable products"
           >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Non-Returnable Products
-            </h2>
-
-            <p className="mt-3">A return may be refused if the product:</p>
-
-            <ul className="mt-3 list-disc space-y-2 pl-5">
-              <li>
-                Was used, worn, washed, altered, or damaged after delivery.
-              </li>
+            <p>A return may be refused if the product:</p>
+            <ul>
+              <li>Was used, worn, washed, altered, or damaged after delivery.</li>
               <li>
                 Is missing tags, accessories, components, or original packaging.
               </li>
-              <li>
-                Shows signs of misuse, improper cleaning, or ordinary wear.
-              </li>
+              <li>Shows signs of misuse, improper cleaning, or ordinary wear.</li>
               <li>Is returned more than 30 days after delivery.</li>
               <li>Was mailed without authorization.</li>
-              <li>Was not purchased directly from Ectoo.</li>
+              <li>Was not purchased directly from {brand}.</li>
             </ul>
-
-            <p className="mt-3">
-              These exclusions do not limit legal rights concerning defective or
-              misrepresented products.
+            <p>
+              These exclusions do not limit legal rights concerning
+              defective or misrepresented products.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Return Inspection
-            </h2>
-
-            <p className="mt-3">
-              Returned products are inspected after receipt. We will notify the
-              customer whether the return has been approved or rejected.
+          <PolicySection id="inspection" number={9} title="Return inspection">
+            <p>
+              Returned products are inspected after receipt. We will
+              notify the customer whether the return has been approved
+              or rejected.
             </p>
-
-            <p className="mt-3">
-              If a return does not meet the stated conditions, we will explain
-              the reason and may ask the customer to pay for shipment of the
-              product back to them.
+            <p>
+              If a return does not meet the stated conditions, we will
+              explain the reason and may ask the customer to pay for
+              shipment of the product back to them.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Refund Timing
-            </h2>
-
-            <p className="mt-3">
+          <PolicySection id="refunds" number={10} title="Refund timing">
+            <p>
               Approved refunds are issued to the{" "}
-              <strong className="text-[#111311]">
-                original payment method within 5–7 business days after
-                inspection
-              </strong>
-              .
+              <strong>
+                original payment method within 5–7 business days after inspection
+              </strong>.
             </p>
-
-            <p className="mt-3">
-              The customer’s bank or card issuer may require additional time to
-              post the credit. Ectoo does not control financial-institution
-              posting times.
+            <p>
+              The customer’s bank or card issuer may require additional
+              time to post the credit. {brand} does not control
+              financial-institution posting times.
             </p>
-
-            <p className="mt-3">
-              Shipping charges paid for expedited or optional delivery services,
-              if any, are not refundable unless the return resulted from our
-              error or applicable law requires otherwise.
+            <p>
+              Shipping charges paid for expedited or optional delivery
+              services, if any, are not refundable unless the return
+              resulted from our error or applicable law requires otherwise.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          <PolicySection
+            id="missing-refunds"
+            number={11}
+            title="Late or missing refunds"
           >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Late or Missing Refunds
-            </h2>
-
-            <p className="mt-3">If an approved refund does not appear:</p>
-
-            <ol className="mt-3 list-decimal space-y-2 pl-5">
+            <p>If an approved refund does not appear:</p>
+            <ol>
               <li>Review the original payment account.</li>
               <li>Contact the bank or card issuer.</li>
               <li>Allow for the institution’s processing period.</li>
               <li>
                 Contact{" "}
-                <a
-                  href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-[#111311] underline underline-offset-2"
-                >
-                  {BUSINESS_INFO.email}
-                </a>{" "}
+                {BUSINESS_INFO.email ? (
+                  <a href={`mailto:${BUSINESS_INFO.email}`}>
+                    {BUSINESS_INFO.email}
+                  </a>
+                ) : (
+                  <Link to="/contact">our support team</Link>
+                )}{" "}
                 if the refund still cannot be located.
               </li>
             </ol>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          <PolicySection
+            id="undeliverable"
+            number={12}
+            title="Refused and undeliverable orders"
           >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Refused and Undeliverable Orders
-            </h2>
-
-            <p className="mt-3">
-              Packages returned because of refusal, an inaccurate address, or
-              repeated failed delivery may be processed under this policy.
+            <p>
+              Packages returned because of refusal, an inaccurate
+              address, or repeated failed delivery may be processed
+              under this policy.
             </p>
-
-            <p className="mt-3">
-              Actual carrier costs caused by refusal or inaccurate customer
-              information may be deducted from the refund where legally
-              permitted.
+            <p>
+              Actual carrier costs caused by refusal or inaccurate
+              customer information may be deducted from the refund
+              where legally permitted.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+          <PolicySection
+            id="questions"
+            number={13}
+            title="Charge and order questions"
           >
-            <h2 className="font-display text-2xl text-[#111311]">
-              Charge and Order Questions
-            </h2>
-
-            <p className="mt-3">
+            <p>
               Contact us before initiating a payment dispute so we can
-              investigate the order promptly. This request does not restrict any
-              rights a customer may have through their card issuer or applicable
-              law.
+              investigate the order promptly. This request does not
+              restrict any rights a customer may have through their
+              card issuer or applicable law.
             </p>
-          </section>
+          </PolicySection>
 
-          <section
-            data-reveal
-            className="rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
-          >
-            <h2 className="font-display text-2xl text-[#111311]">Contact</h2>
+          <PolicySection id="contact" number={14} title="Contact">
+            <BusinessAddress />
+            <SupportContact />
+            {supportSchedule && <p>Support Hours: {supportSchedule}</p>}
+          </PolicySection>
 
-            <div className="mt-3 space-y-1">
-              <p className="font-medium text-[#111311]">
-                {BUSINESS_INFO.businessName}
-              </p>
-              <p>1825 Dickinson Ave Ste D</p>
-              <p>Dickinson, TX 77539</p>
-              <p>United States</p>
+          <footer className="fbreturn-document-footer">
+            <span>{brand} / Return & Refund Policy</span>
+            <a href="#fbreturn-top">
+              Back to top
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </a>
+          </footer>
+        </article>
 
-              <p className="pt-2">
-                Email:{" "}
-                <a
-                  href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.email}
-                </a>
-              </p>
-
-              <p>
-                Phone:{" "}
-                <a
-                  href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.phoneDisplay}
-                </a>
-              </p>
-
-              <p>
-                Support Hours: {BUSINESS_INFO.businessDays},{" "}
-                {BUSINESS_INFO.supportHours}
-              </p>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 lg:px-12">
-        <div
-          data-reveal="scale"
-          className="mx-auto flex max-w-4xl flex-col items-center gap-6 rounded-[28px] bg-[#1F2D22] p-8 text-center text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:flex-row sm:justify-between sm:p-10 sm:text-left"
-        >
+        <section className="fbreturn-help" aria-labelledby="fbreturn-help-title">
           <div>
-            <h3 className="font-display text-2xl">Need to start a return?</h3>
-
-            <p className="mt-1 text-sm text-white/60">
-              Contact our support team before mailing your return.
-            </p>
+            <p className="fbreturn-eyebrow">Our team can help</p>
+            <h2 id="fbreturn-help-title">Need to start a return?</h2>
+            <p>Contact our support team before mailing your return.</p>
           </div>
-
-          <Link
-            to="/contact"
-            className="inline-flex shrink-0 items-center gap-2 rounded-[14px] bg-[#F1EEE8] px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
-          >
-            Contact Support
-            <ArrowRight size={16} aria-hidden="true" />
+          <Link to="/contact">
+            Contact support
+            <ArrowRight size={18} aria-hidden="true" />
           </Link>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </main>
   );
 };
+
+const styles = `
+  .fbreturn-page {
+    --ink: #173f36;
+    --cream: #f5f0e6;
+    --paper: #fffdf5;
+    --lime: #d7e5a5;
+    --accent: #a56e4f;
+    --muted: #516b62;
+    --line: rgba(23, 63, 54, .23);
+    min-height: 100vh;
+    padding-bottom: clamp(45px, 6vw, 85px);
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui,
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    scroll-margin-top: 110px;
+  }
+
+  .fbreturn-page *,
+  .fbreturn-page *::before,
+  .fbreturn-page *::after {
+    box-sizing: border-box;
+  }
+
+  .fbreturn-page a {
+    color: inherit;
+    text-underline-offset: 4px;
+  }
+
+  .fbreturn-page a:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 5px;
+  }
+
+  .fbreturn-container {
+    width: min(100%, 1450px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4.2vw, 70px);
+  }
+
+  .fbreturn-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding-block: 25px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+  }
+
+  .fbreturn-topline > span:last-child {
+    color: var(--muted);
+  }
+
+  .fbreturn-eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .fbreturn-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    align-items: center;
+    gap: 40px;
+    padding-block: clamp(40px, 6vw, 80px);
+    animation: fbreturnEnter .6s both;
+  }
+
+  .fbreturn-header h1 {
+    margin: 22px 0 28px;
+    font-size: clamp(45px, 5.8vw, 83px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -.07em;
+  }
+
+  .fbreturn-header h1 span {
+    display: block;
+    color: var(--accent);
+  }
+
+  .fbreturn-intro {
+    max-width: 590px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.9;
+  }
+
+  .fbreturn-window {
+    display: flex;
+    flex-direction: column;
+    padding: 28px;
+    border: 1px solid var(--ink);
+    background: var(--lime);
+    box-shadow: 7px 7px 0 rgba(23, 63, 54, .1);
+  }
+
+  .fbreturn-window > strong {
+    margin-top: 10px;
+    font-size: 115px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -.08em;
+  }
+
+  .fbreturn-window-unit {
+    font-size: 31px;
+    line-height: 1;
+    letter-spacing: -.04em;
+  }
+
+  .fbreturn-window > p {
+    margin: 22px 0 14px;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .fbreturn-window a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    border-top: 1px solid var(--ink);
+    font-size: 11px;
+    text-decoration: none;
+  }
+
+  .fbreturn-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding-block: 18px;
+    border-block: 1px solid var(--ink);
+  }
+
+  .fbreturn-navigation a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 12px;
+    text-decoration: none;
+  }
+
+  .fbreturn-navigation a:hover {
+    color: var(--accent);
+  }
+
+  .fbreturn-conditions,
+  .fbreturn-process {
+    padding-block: clamp(35px, 5vw, 60px);
+    scroll-margin-top: 110px;
+  }
+
+  .fbreturn-block-heading h2 {
+    margin: 15px 0 28px;
+    font-size: clamp(32px, 3.8vw, 49px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbreturn-condition-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--ink);
+  }
+
+  .fbreturn-condition-columns > div {
+    min-width: 0;
+    padding: 28px 30px 0 0;
+  }
+
+  .fbreturn-condition-columns > div:last-child {
+    border-left: 1px solid var(--line);
+    padding: 28px 0 0 30px;
+  }
+
+  .fbreturn-condition-columns h3 {
+    margin: 0 0 20px;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -.04em;
+  }
+
+  .fbreturn-condition-columns > div:last-child h3 {
+    color: var(--accent);
+  }
+
+  .fbreturn-condition-columns ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fbreturn-condition-columns li {
+    padding-block: 13px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .fbreturn-process {
+    padding: clamp(25px, 4vw, 50px);
+    border: 1px solid var(--ink);
+    background: var(--lime);
+    margin-bottom: 40px;
+  }
+
+  .fbreturn-process ol {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 25px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fbreturn-process li {
+    padding-top: 18px;
+    border-top: 1px solid var(--ink);
+  }
+
+  .fbreturn-process li > span {
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .fbreturn-process h3 {
+    margin: 22px 0 12px;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -.035em;
+  }
+
+  .fbreturn-process li p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.9;
+  }
+
+  .fbreturn-document {
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    animation: fbreturnEnter .6s .08s both;
+  }
+
+  .fbreturn-document-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 23px 30px;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .fbreturn-document-heading > span {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .fbreturn-section {
+    display: grid;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    gap: clamp(25px, 4vw, 60px);
+    padding: clamp(25px, 3.8vw, 50px);
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 110px;
+  }
+
+  .fbreturn-section:target {
+    background: #f1f4e8;
+  }
+
+  .fbreturn-section-title {
+    display: grid;
+    grid-template-columns: 25px minmax(0, 1fr);
+    align-items: start;
+    gap: 15px;
+  }
+
+  .fbreturn-section-title > span {
+    padding-top: 6px;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .fbreturn-section h2 {
+    margin: 0;
+    font-size: clamp(25px, 2.5vw, 33px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -.045em;
+  }
+
+  .fbreturn-section-content {
+    min-width: 0;
+  }
+
+  .fbreturn-section-content p {
+    margin: 0 0 15px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+  }
+
+  .fbreturn-section-content > p:last-child {
+    margin-bottom: 0;
+  }
+
+  .fbreturn-section-content strong,
+  .fbreturn-section-content p a,
+  .fbreturn-section-content li a {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .fbreturn-section-content ul,
+  .fbreturn-section-content ol {
+    margin: 18px 0 22px;
+    padding-left: 20px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  .fbreturn-section-content ul:last-child,
+  .fbreturn-section-content ol:last-child {
+    margin-bottom: 0;
+  }
+
+  .fbreturn-section-content li {
+    padding-block: 5px;
+  }
+
+  .fbreturn-address {
+    display: grid;
+    gap: 5px;
+    margin: 18px 0 22px;
+    color: var(--muted);
+    font-size: 13px;
+    font-style: normal;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+  }
+
+  .fbreturn-address strong {
+    font-size: 17px;
+  }
+
+  .fbreturn-contact-links {
+    display: grid;
+    justify-items: start;
+    gap: 8px;
+    margin: 15px 0 22px;
+  }
+
+  .fbreturn-contact-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .fbreturn-contact-links a > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .fbreturn-contact-links svg {
+    flex-shrink: 0;
+  }
+
+  .fbreturn-contact-links a:hover {
+    color: var(--accent);
+  }
+
+  .fbreturn-document-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    padding: 20px 30px;
+    font-size: 10px;
+  }
+
+  .fbreturn-document-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .fbreturn-help {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    margin-top: 35px;
+    padding-block: 35px;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .fbreturn-help h2 {
+    margin: 15px 0;
+    font-size: clamp(31px, 3.7vw, 48px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbreturn-help div > p:last-child {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .fbreturn-help > a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 25px;
+    min-height: 54px;
+    padding: 15px 22px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform .2s ease;
+  }
+
+  .fbreturn-help > a:hover {
+    transform: translateY(-2px);
+  }
+
+  @keyframes fbreturnEnter {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 1000px) {
+    .fbreturn-header {
+      grid-template-columns: minmax(0, 1fr) 245px;
+      gap: 25px;
+    }
+
+    .fbreturn-header h1 {
+      font-size: clamp(40px, 5.5vw, 60px);
+    }
+
+    .fbreturn-process ol {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 30px;
+    }
+
+    .fbreturn-section {
+      gap: 25px;
+      padding: 32px 28px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .fbreturn-header {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbreturn-header h1 {
+      font-size: clamp(39px, 7.5vw, 65px);
+    }
+
+    .fbreturn-window {
+      max-width: 350px;
+      width: 100%;
+    }
+
+    .fbreturn-condition-columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbreturn-condition-columns > div,
+    .fbreturn-condition-columns > div:last-child {
+      border-left: 0;
+      padding: 25px 0 0;
+    }
+
+    .fbreturn-condition-columns > div:last-child {
+      margin-top: 20px;
+    }
+
+    .fbreturn-section {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 22px;
+    }
+
+    .fbreturn-help {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .fbreturn-help > a {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .fbreturn-topline {
+      align-items: flex-start;
+      flex-direction: column;
+      font-size: 10px;
+    }
+
+    .fbreturn-header h1 {
+      font-size: clamp(31px, 8.8vw, 43px);
+    }
+
+    .fbreturn-navigation {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px 15px;
+    }
+
+    .fbreturn-navigation a {
+      font-size: 11px;
+    }
+
+    .fbreturn-process ol {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 25px;
+    }
+
+    .fbreturn-process h3 {
+      margin-top: 15px;
+    }
+
+    .fbreturn-section {
+      padding: 27px 20px;
+    }
+
+    .fbreturn-section-title {
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .fbreturn-section h2 {
+      font-size: 27px;
+    }
+
+    .fbreturn-section-content p {
+      font-size: 13px;
+    }
+
+    .fbreturn-document-heading,
+    .fbreturn-document-footer {
+      padding-inline: 20px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbreturn-page *,
+    .fbreturn-page *::before,
+    .fbreturn-page *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
 
 export default ReturnPolicy;

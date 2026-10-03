@@ -1,388 +1,756 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Ban, Clock3, PackageCheck, RotateCcw } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Clock3,
+  Mail,
+  Phone,
+  RotateCcw,
+} from "lucide-react";
+import { BUSINESS_INFO, getFullAddress } from "../storeInfo";
 
-const BUSINESS_INFO = {
-  businessName: "Ectoo",
-  phoneDisplay: "+1 (832) 347-8821",
-  phoneHref: "+19176952303",
-  email: "info@ectoo.us",
-  businessDays: "Monday – Friday",
-  supportHours: "9:00 AM – 5:00 PM Central Time",
-};
+const REQUEST_ITEMS = [
+  "Customer name",
+  "Order number",
+  "Email address used for the order",
+  "Reason for cancellation",
+];
+
+const PolicySection = ({ number, title, children }) => (
+  <section
+    className="fbcancel-section"
+    aria-labelledby={`fbcancel-heading-${number}`}
+  >
+    <span className="fbcancel-number" aria-hidden="true">
+      {String(number).padStart(2, "0")}
+    </span>
+    <div>
+      <h2 id={`fbcancel-heading-${number}`}>{title}</h2>
+      {children}
+    </div>
+  </section>
+);
 
 const OrderCancellationPolicy = () => {
-  const pageRef = useRef(null);
-  const cancellationDetails = [
-    {
-      label: "Cancellation Window",
-      value: "Before Shipment",
-    },
-    {
-      label: "Refund Method",
-      value: "Original Payment Method",
-    },
-    {
-      label: "Refund Submission",
-      value: "5–7 Business Days",
-    },
-  ];
+  const brandName = BUSINESS_INFO.businessName;
+  const fullAddress = getFullAddress();
 
-  const requestItems = [
-    "Customer name",
-    "Order number",
-    "Email address used for the order",
-    "Reason for cancellation",
-  ];
+  const phoneHref =
+    BUSINESS_INFO.phoneHref ||
+    BUSINESS_INFO.phoneDisplay?.replace(/[^\d+]/g, "");
 
-  useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+  const supportTime = [
+    BUSINESS_INFO.supportHours,
+    BUSINESS_INFO.timeZone,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-    if (!elements?.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "0px 0px -30px 0px",
-      },
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
-  }, []);
+  const supportSchedule = [
+    BUSINESS_INFO.businessDays,
+    supportTime,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
-    <div
-      ref={pageRef}
-      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
-    >
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(34px);
-          transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-        }
+    <main id="fbcancel-top" className="fbcancel-page">
+      <style>{styles}</style>
 
-        [data-reveal="left"] {
-          transform: translateX(-40px);
-        }
-
-        [data-reveal="right"] {
-          transform: translateX(40px);
-        }
-
-        [data-reveal="scale"] {
-          transform: scale(0.97);
-        }
-
-        [data-reveal].ectoo-visible {
-          opacity: 1;
-          transform: translate(0, 0) scale(1);
-        }
-
-        .ectoo-policy-card {
-          transition:
-            transform 0.35s ease,
-            box-shadow 0.35s ease,
-            border-color 0.35s ease;
-        }
-
-        .ectoo-policy-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(31, 45, 34, 0.18);
-          box-shadow: 0 18px 45px rgba(31, 45, 34, 0.06);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] {
-            opacity: 1;
-            transform: none;
-            transition: none;
-          }
-        }
-      `}</style>
-
-      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-        <div data-reveal="scale" className="mx-auto max-w-4xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-            <Ban size={24} aria-hidden="true" />
-          </div>
-
-          <p className="mt-6 text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-            Ectoo
-          </p>
-
-          <h1 className="mt-3 font-display text-4xl leading-tight text-[#111311] sm:text-5xl lg:text-6xl">
-            Order Cancellation Policy
-          </h1>
-
-          <p className="mt-4 text-sm text-[#5E5B57]">
-            Last updated: September 11, 2026
-          </p>
-        </div>
-      </section>
-
-      <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="max-w-3xl">
-            <h2 className="font-display text-3xl leading-tight text-[#111311]">
-              Cancellation Information
-            </h2>
-
-            <p className="mt-3 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
-              Customers may request an order cancellation before the order has
-              shipped. Cancellation requests should be submitted as soon as
-              possible.
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {cancellationDetails.map((item) => (
-              <div
-                key={item.label}
-                data-reveal
-                className="ectoo-policy-card rounded-[16px] border border-[#E4DED7] bg-white p-5 sm:p-6"
-              >
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#5E5B57]/70">
-                  {item.label}
-                </p>
-
-                <p className="mt-2 text-base font-bold text-[#111311]">
-                  {item.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#E4E5DD] px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
-          <div
-            data-reveal
-            className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6"
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-              <Clock3 size={20} aria-hidden="true" />
-            </div>
-
-            <h3 className="mt-4 font-display text-xl text-[#111311]">
-              Request Early
-            </h3>
-
-            <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
-              Contact us as soon as possible before the order enters shipment or
-              tracking is issued.
-            </p>
-          </div>
-
-          <div
-            data-reveal
-            className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6"
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-              <PackageCheck size={20} aria-hidden="true" />
-            </div>
-
-            <h3 className="mt-4 font-display text-xl text-[#111311]">
-              Before Shipment
-            </h3>
-
-            <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
-              Cancellation and address-change requests are available only before
-              shipment and cannot be guaranteed after fulfillment begins.
-            </p>
-          </div>
-
-          <div
-            data-reveal
-            className="ectoo-policy-card rounded-[18px] border border-[#E4DED7] bg-white p-6"
-          >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-              <RotateCcw size={20} aria-hidden="true" />
-            </div>
-
-            <h3 className="mt-4 font-display text-xl text-[#111311]">Refund</h3>
-
-            <p className="mt-3 text-sm leading-7 text-[#5E5B57]">
-              Approved cancellations are refunded to the original payment
-              method.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-3xl space-y-10 text-sm leading-7 text-[#5E5B57]">
-          <section data-reveal="left">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Cancellation Requests
-            </h2>
-
-            <p className="mt-3">
-              Customers may request an order cancellation before the order has
-              shipped.
-            </p>
-
-            <p className="mt-3">
-              To request cancellation, contact{" "}
-              <a
-                href={`mailto:${BUSINESS_INFO.email}`}
-                className="font-bold text-[#111311] underline underline-offset-2"
-              >
-                {BUSINESS_INFO.email}
-              </a>{" "}
-              as soon as possible and include:
-            </p>
-
-            <ul className="mt-3 list-disc space-y-2 pl-5">
-              {requestItems.map((item) => (
-                <li key={item}>{item}.</li>
-              ))}
-            </ul>
-          </section>
-
-          <section data-reveal="left">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Fulfillment and Shipment
-            </h2>
-
-            <p className="mt-3">
-              We cannot guarantee cancellation after an order has entered
-              fulfillment.
-            </p>
-
-            <p className="mt-3">
-              Once tracking has been issued or the order has shipped, the
-              customer must follow our{" "}
-              <Link
-                to="/return-policy"
-                className="font-bold text-[#111311] underline underline-offset-2"
-              >
-                Return and Refund Policy
-              </Link>
-              .
-            </p>
-          </section>
-
-          <section data-reveal="left">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Cancellation Refunds
-            </h2>
-
-            <p className="mt-3">
-              Approved cancellations are refunded to the original payment
-              method.
-            </p>
-
-            <p className="mt-3">
-              The refund is generally submitted within{" "}
-              <strong className="text-[#111311]">5–7 business days</strong>,
-              although the customer’s bank may require additional posting time.
-            </p>
-          </section>
-
-          <section data-reveal="left">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Cancellations by Ectoo
-            </h2>
-
-            <p className="mt-3">
-              If Ectoo cancels an order because of unavailable inventory, a
-              pricing error, delivery restrictions, payment problems, or
-              suspected fraud, any collected payment for the canceled products
-              will be returned to the original payment method.
-            </p>
-          </section>
-
-          <section data-reveal="left">
-            <h2 className="font-display text-2xl text-[#111311]">
-              Shipping Address Changes
-            </h2>
-
-            <p className="mt-3">
-              Shipping-address changes are also available only before shipment
-              and cannot be guaranteed after fulfillment begins.
-            </p>
-
-            <p className="mt-3">
-              Customers should contact us immediately if an address correction
-              is needed.
-            </p>
-          </section>
-
-          <section data-reveal="left">
-            <h2 className="font-display text-2xl text-[#111311]">Contact</h2>
-
-            <div className="mt-3 space-y-1">
-              <p className="font-medium text-[#111311]">
-                {BUSINESS_INFO.businessName}
-              </p>
-
-              <p>
-                Email:{" "}
-                <a
-                  href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.email}
-                </a>
-              </p>
-
-              <p>
-                Phone:{" "}
-                <a
-                  href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-[#111311] underline underline-offset-2 transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.phoneDisplay}
-                </a>
-              </p>
-
-              <p>
-                Hours: {BUSINESS_INFO.businessDays},{" "}
-                {BUSINESS_INFO.supportHours}
-              </p>
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <section className="border-t border-[#E4DED7] bg-[#E4E5DD] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div
-          data-reveal="scale"
-          className="mx-auto flex max-w-3xl flex-col items-start gap-6 rounded-[22px] bg-[#1F2D22] p-7 text-white sm:p-9 md:flex-row md:items-center md:justify-between"
-        >
-          <div>
-            <h3 className="font-display text-2xl">Need to cancel an order?</h3>
-
-            <p className="mt-2 text-sm leading-6 text-white/60">
-              Contact us as soon as possible before your order ships.
-            </p>
-          </div>
-
-          <Link
-            to="/contact"
-            className="group inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[6px] bg-[#F1EEE8] px-6 py-3.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-1 hover:bg-white md:w-auto"
-          >
-            Contact Us
-            <ArrowRight size={16} aria-hidden="true" />
+      <div className="fbcancel-container">
+        <div className="fbcancel-topline">
+          <span>{brandName} / Customer care</span>
+          <Link to="/contact">
+            Contact our team
+            <ArrowUpRight size={16} aria-hidden="true" />
           </Link>
         </div>
-      </section>
-    </div>
+
+        <header className="fbcancel-header">
+          <p className="fbcancel-eyebrow">Order cancellation policy</p>
+          <h1>
+            A change
+            <span>of plans.</span>
+          </h1>
+
+          <div className="fbcancel-header-bottom">
+            <p>
+              Customers may request an order cancellation before the order
+              has shipped. Cancellation requests should be submitted as
+              soon as possible.
+            </p>
+            <span className="fbcancel-date">
+              Last updated
+              <time dateTime="2026-10-03">October 3, 2026</time>
+            </span>
+          </div>
+        </header>
+
+        <div className="fbcancel-layout">
+          <article
+            className="fbcancel-document"
+            aria-label="Order cancellation policy"
+          >
+            <PolicySection number={1} title="Cancellation requests">
+              <p>
+                Customers may request an order cancellation before the
+                order has shipped.
+              </p>
+              <p>
+                To request cancellation, contact{" "}
+                {BUSINESS_INFO.email ? (
+                  <a href={`mailto:${BUSINESS_INFO.email}`}>
+                    {BUSINESS_INFO.email}
+                  </a>
+                ) : (
+                  <Link to="/contact">our customer support team</Link>
+                )}{" "}
+                as soon as possible and include:
+              </p>
+
+              <ul className="fbcancel-request-list">
+                {REQUEST_ITEMS.map((item) => (
+                  <li key={item}>{item}.</li>
+                ))}
+              </ul>
+            </PolicySection>
+
+            <PolicySection number={2} title="Fulfillment and shipment">
+              <p>
+                We cannot guarantee cancellation after an order has
+                entered fulfillment.
+              </p>
+              <p>
+                Once tracking has been issued or the order has shipped,
+                the customer must follow our{" "}
+                <Link to="/return-policy">
+                  Return and Refund Policy
+                </Link>
+                .
+              </p>
+            </PolicySection>
+
+            <PolicySection number={3} title="Cancellation refunds">
+              <p>
+                Approved cancellations are refunded to the original
+                payment method.
+              </p>
+              <p>
+                The refund is generally submitted within{" "}
+                <strong>5–7 business days</strong>, although the
+                customer’s bank may require additional posting time.
+              </p>
+            </PolicySection>
+
+            <PolicySection
+              number={4}
+              title={`Cancellations by ${brandName}`}
+            >
+              <p>
+                If {brandName} cancels an order because of unavailable
+                inventory, a pricing error, delivery restrictions,
+                payment problems, or suspected fraud, any collected
+                payment for the canceled products will be returned to
+                the original payment method.
+              </p>
+            </PolicySection>
+
+            <PolicySection number={5} title="Shipping address changes">
+              <p>
+                Shipping-address changes are also available only before
+                shipment and cannot be guaranteed after fulfillment
+                begins.
+              </p>
+              <p>
+                Customers should contact us immediately if an address
+                correction is needed.
+              </p>
+            </PolicySection>
+
+            <PolicySection number={6} title="Contact">
+              <div className="fbcancel-contact">
+                <strong className="fbcancel-business">
+                  {brandName}
+                </strong>
+
+                {BUSINESS_INFO.email && (
+                  <a href={`mailto:${BUSINESS_INFO.email}`}>
+                    <Mail size={17} aria-hidden="true" />
+                    <span>{BUSINESS_INFO.email}</span>
+                  </a>
+                )}
+
+                {BUSINESS_INFO.phoneDisplay && phoneHref && (
+                  <a href={`tel:${phoneHref}`}>
+                    <Phone size={17} aria-hidden="true" />
+                    <span>{BUSINESS_INFO.phoneDisplay}</span>
+                  </a>
+                )}
+
+                {supportSchedule && (
+                  <p>Hours: {supportSchedule}</p>
+                )}
+
+                {fullAddress && (
+                  <address>{fullAddress}</address>
+                )}
+
+                <Link to="/contact">
+                  Contact our team
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </Link>
+              </div>
+            </PolicySection>
+
+            <footer className="fbcancel-document-footer">
+              <span>{brandName} / Order Cancellation Policy</span>
+              <a href="#fbcancel-top">
+                Back to top
+                <ArrowUpRight size={15} aria-hidden="true" />
+              </a>
+            </footer>
+          </article>
+
+          <aside
+            className="fbcancel-sidebar"
+            aria-label="Cancellation summary"
+          >
+            <div className="fbcancel-summary">
+              <p className="fbcancel-eyebrow">At a glance</p>
+              <h2>Before it ships.</h2>
+
+              <dl>
+                <div>
+                  <dt>Cancellation window</dt>
+                  <dd>Before shipment</dd>
+                </div>
+                <div>
+                  <dt>Refund method</dt>
+                  <dd>Original payment method</dd>
+                </div>
+                <div>
+                  <dt>Refund submission</dt>
+                  <dd>5–7 business days</dd>
+                </div>
+              </dl>
+
+              <div className="fbcancel-reminder">
+                <Clock3 size={21} aria-hidden="true" />
+                <div>
+                  <h3>Request early</h3>
+                  <p>
+                    Contact us as soon as possible before the order
+                    enters shipment or tracking is issued.
+                  </p>
+                </div>
+              </div>
+
+              <div className="fbcancel-reminder">
+                <ArrowUpRight size={21} aria-hidden="true" />
+                <div>
+                  <h3>Before shipment</h3>
+                  <p>
+                    Cancellation and address-change requests are
+                    available only before shipment and cannot be
+                    guaranteed after fulfillment begins.
+                  </p>
+                </div>
+              </div>
+
+              <div className="fbcancel-reminder">
+                <RotateCcw size={21} aria-hidden="true" />
+                <div>
+                  <h3>Refund</h3>
+                  <p>
+                    Approved cancellations are refunded to the original
+                    payment method.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="fbcancel-help">
+              <p className="fbcancel-eyebrow">Need to cancel an order?</p>
+              <h2>Let us know.</h2>
+              <p>
+                Contact us as soon as possible before your order ships.
+              </p>
+              <Link to="/contact">
+                Contact us
+                <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
   );
 };
+
+const styles = `
+  .fbcancel-page {
+    --ink: #173f36;
+    --cream: #f5f0e6;
+    --paper: #fffdf5;
+    --lime: #d7e5a5;
+    --accent: #a56e4f;
+    --muted: #516b62;
+    --line: rgba(23, 63, 54, .23);
+    min-height: 100vh;
+    padding-bottom: clamp(50px, 7vw, 95px);
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui,
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    scroll-margin-top: 100px;
+  }
+
+  .fbcancel-page *,
+  .fbcancel-page *::before,
+  .fbcancel-page *::after {
+    box-sizing: border-box;
+  }
+
+  .fbcancel-page a {
+    color: inherit;
+    text-underline-offset: 4px;
+  }
+
+  .fbcancel-page a:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 5px;
+  }
+
+  .fbcancel-container {
+    width: min(100%, 1450px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4.2vw, 70px);
+  }
+
+  .fbcancel-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+  }
+
+  .fbcancel-topline a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .fbcancel-eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .fbcancel-header {
+    padding-block: clamp(35px, 5vw, 65px);
+    animation: fbcancelEnter .6s both;
+  }
+
+  .fbcancel-header h1 {
+    margin: 20px 0 30px;
+    font-size: clamp(58px, 8.5vw, 120px);
+    font-weight: 500;
+    line-height: .98;
+    letter-spacing: -.07em;
+  }
+
+  .fbcancel-header h1 span {
+    display: block;
+    margin-left: clamp(0px, 10vw, 145px);
+    color: var(--accent);
+  }
+
+  .fbcancel-header-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 25px;
+    padding-top: 25px;
+    border-top: 1px solid var(--ink);
+  }
+
+  .fbcancel-header-bottom > p {
+    max-width: 650px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.9;
+  }
+
+  .fbcancel-date {
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .fbcancel-date time {
+    display: block;
+    margin-top: 6px;
+    color: var(--ink);
+    font-size: 12px;
+  }
+
+  .fbcancel-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    align-items: start;
+    gap: clamp(25px, 4vw, 55px);
+  }
+
+  .fbcancel-document {
+    min-width: 0;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    animation: fbcancelEnter .6s .08s both;
+  }
+
+  .fbcancel-section {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 20px;
+    padding: clamp(25px, 3vw, 42px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbcancel-section > div {
+    min-width: 0;
+  }
+
+  .fbcancel-number {
+    padding-top: 6px;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .fbcancel-section h2 {
+    margin: 0 0 18px;
+    font-size: clamp(25px, 2.5vw, 33px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -.045em;
+  }
+
+  .fbcancel-section p,
+  .fbcancel-section address {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+  }
+
+  .fbcancel-section p:last-child {
+    margin-bottom: 0;
+  }
+
+  .fbcancel-section p a,
+  .fbcancel-section p strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .fbcancel-request-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 25px;
+    margin: 22px 0 0;
+    padding-left: 18px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .fbcancel-request-list li {
+    padding-block: 8px;
+  }
+
+  .fbcancel-contact {
+    display: grid;
+    justify-items: start;
+    gap: 12px;
+  }
+
+  .fbcancel-business {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .fbcancel-contact a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .fbcancel-contact a span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .fbcancel-contact svg {
+    flex-shrink: 0;
+  }
+
+  .fbcancel-contact a:hover {
+    color: var(--accent);
+  }
+
+  .fbcancel-contact p,
+  .fbcancel-contact address {
+    margin: 0;
+  }
+
+  .fbcancel-contact address {
+    font-style: normal;
+  }
+
+  .fbcancel-document-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    padding: 20px 28px;
+    font-size: 10px;
+  }
+
+  .fbcancel-document-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .fbcancel-sidebar {
+    position: sticky;
+    top: 110px;
+    min-width: 0;
+    animation: fbcancelEnter .6s .15s both;
+  }
+
+  .fbcancel-summary {
+    padding: 28px;
+    border: 1px solid var(--ink);
+  }
+
+  .fbcancel-summary > h2,
+  .fbcancel-help h2 {
+    margin: 17px 0 24px;
+    font-size: 38px;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -.055em;
+  }
+
+  .fbcancel-summary dl {
+    margin: 0 0 25px;
+    border-top: 1px solid var(--ink);
+  }
+
+  .fbcancel-summary dl > div {
+    padding-block: 17px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbcancel-summary dt {
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .fbcancel-summary dd {
+    margin: 6px 0 0;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -.025em;
+  }
+
+  .fbcancel-reminder {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .fbcancel-reminder > svg {
+    margin-top: 2px;
+    color: var(--accent);
+  }
+
+  .fbcancel-reminder h3 {
+    margin: 0 0 7px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .fbcancel-reminder p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.9;
+  }
+
+  .fbcancel-help {
+    margin-top: 22px;
+    padding: 28px;
+    background: var(--lime);
+    border: 1px solid var(--ink);
+  }
+
+  .fbcancel-help h2 {
+    margin-bottom: 15px;
+  }
+
+  .fbcancel-help > p:not(.fbcancel-eyebrow) {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.9;
+  }
+
+  .fbcancel-help a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 50px;
+    margin-top: 22px;
+    padding: 14px 18px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform .2s ease;
+  }
+
+  .fbcancel-help a:hover {
+    transform: translateY(-2px);
+  }
+
+  @keyframes fbcancelEnter {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 1050px) {
+    .fbcancel-layout {
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 25px;
+    }
+
+    .fbcancel-summary,
+    .fbcancel-help {
+      padding: 23px;
+    }
+
+    .fbcancel-section {
+      grid-template-columns: 24px minmax(0, 1fr);
+      gap: 12px;
+      padding: 28px 24px;
+    }
+  }
+
+  @media (max-width: 800px) {
+    .fbcancel-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbcancel-sidebar {
+      position: static;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+      gap: 20px;
+    }
+
+    .fbcancel-help {
+      margin-top: 0;
+    }
+
+    .fbcancel-header-bottom {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .fbcancel-header h1 {
+      font-size: clamp(54px, 16vw, 76px);
+    }
+
+    .fbcancel-header h1 span {
+      margin-left: 0;
+    }
+
+    .fbcancel-header-bottom > p {
+      font-size: 13px;
+    }
+
+    .fbcancel-sidebar {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbcancel-section {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+      padding: 27px 20px;
+    }
+
+    .fbcancel-number {
+      padding-top: 0;
+    }
+
+    .fbcancel-section h2 {
+      font-size: 27px;
+    }
+
+    .fbcancel-section p,
+    .fbcancel-section address {
+      font-size: 13px;
+    }
+
+    .fbcancel-request-list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbcancel-document-footer {
+      padding: 18px 20px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbcancel-page *,
+    .fbcancel-page *::before,
+    .fbcancel-page *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
 
 export default OrderCancellationPolicy;

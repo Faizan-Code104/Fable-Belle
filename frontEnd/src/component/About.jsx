@@ -1,543 +1,455 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-
 import {
-  ArrowRight,
+  ArrowUpRight,
   CheckCircle2,
   Layers3,
   Ruler,
   Sparkles,
-  ShoppingBag,
 } from "lucide-react";
+
+import storeInfo from "../storeInfo";
+
+const principles = [
+  {
+    number: "01",
+    title: "Everyday use",
+    description:
+      "We look for bags that make sense across normal routines, from daily errands to plans that take you somewhere new.",
+  },
+  {
+    number: "02",
+    title: "Useful details",
+    description:
+      "Practical layouts, usable storage, and comfortable carrying options are part of what we consider.",
+  },
+  {
+    number: "03",
+    title: "Easy styling",
+    description:
+      "Versatile shapes and colors help a bag move naturally between different looks and occasions.",
+  },
+];
+
+const processSteps = [
+  {
+    number: "01",
+    title: "Shape & silhouette",
+    description:
+      "We look for handbags with balanced proportions and versatile forms that work across everyday routines.",
+    Icon: Ruler,
+  },
+  {
+    number: "02",
+    title: "Practical details",
+    description:
+      "Storage, carrying comfort, closures, and usable interior layouts are considered as part of the selection.",
+    Icon: Layers3,
+  },
+  {
+    number: "03",
+    title: "Style versatility",
+    description:
+      "We favor designs that can move easily between work, errands, travel, casual plans, and social occasions.",
+    Icon: Sparkles,
+  },
+  {
+    number: "04",
+    title: "Clear information",
+    description:
+      "Each product page is intended to present the available product details so shoppers can review before ordering.",
+    Icon: CheckCircle2,
+  },
+];
 
 const About = () => {
   const pageRef = useRef(null);
 
-  const processSteps = [
-    {
-      number: "01",
-      title: "Shape & Silhouette",
-      description:
-        "We look for handbags with balanced proportions and versatile forms that work across everyday routines.",
-    },
-    {
-      number: "02",
-      title: "Practical Details",
-      description:
-        "Storage, carrying comfort, closures, and usable interior layouts are considered as part of the selection.",
-    },
-    {
-      number: "03",
-      title: "Style Versatility",
-      description:
-        "We favor designs that can move easily between work, errands, travel, casual plans, and social occasions.",
-    },
-    {
-      number: "04",
-      title: "Clear Information",
-      description:
-        "Each product page is intended to present the available product details so shoppers can review before ordering.",
-    },
-  ];
-
   useEffect(() => {
-    const elements =
-      pageRef.current?.querySelectorAll("[data-reveal]");
+    const root = pageRef.current;
 
-    if (!elements?.length) return;
+    if (
+      !root ||
+      !("IntersectionObserver" in window) ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const elements = root.querySelectorAll("[data-fb-reveal]");
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
+            entry.target.classList.remove("fb-about-pending");
             observer.unobserve(entry.target);
           }
         });
       },
       {
-        threshold: 0.14,
-        rootMargin: "0px 0px -40px 0px",
-      }
+        threshold: 0.08,
+      },
     );
 
-    elements.forEach((element) =>
-      observer.observe(element)
-    );
+    elements.forEach((element) => {
+      element.classList.add("fb-about-pending");
+      observer.observe(element);
+    });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      elements.forEach((element) =>
+        element.classList.remove("fb-about-pending"),
+      );
+    };
   }, []);
 
   return (
     <div
       ref={pageRef}
-      className="min-h-screen overflow-hidden bg-[#FAF8F5] text-[#111311]"
+      className="fb-about min-w-0 bg-paper font-sans text-navy"
     >
       <style>{`
-        [data-reveal] {
+        .fb-about [data-fb-reveal] {
+          transition:
+            opacity 700ms ease,
+            transform 700ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        .fb-about .fb-about-pending {
           opacity: 0;
-          transform: translateY(42px);
-          transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+          transform: translateY(24px);
         }
 
-        [data-reveal="left"] {
-          transform: translateX(-45px);
+        .fb-about .fb-about-image {
+          transition: transform 900ms cubic-bezier(.2,.8,.2,1);
         }
 
-        [data-reveal="right"] {
-          transform: translateX(45px);
+        .fb-about .fb-about-image-wrap:hover .fb-about-image {
+          transform: scale(1.04);
         }
 
-        [data-reveal="scale"] {
-          transform: scale(0.96);
+        .fb-about .fb-about-arrow {
+          transition: transform 250ms ease;
         }
 
-        [data-reveal].ectoo-visible {
-          opacity: 1;
-          transform: translate(0, 0) scale(1);
+        .fb-about a:hover .fb-about-arrow {
+          transform: translate(3px, -3px);
         }
 
-        .ectoo-image-zoom {
-          transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        @keyframes fbAboutOrbit {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
-        .ectoo-image-wrap:hover .ectoo-image-zoom {
-          transform: scale(1.035);
-        }
-
-        .ectoo-hover-card {
-          transition:
-            transform 0.4s ease,
-            box-shadow 0.4s ease,
-            background-color 0.4s ease;
-        }
-
-        .ectoo-hover-card:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 45px rgba(31, 45, 34, 0.08);
-        }
-
-        .ectoo-number {
-          transition:
-            transform 0.35s ease,
-            color 0.35s ease;
-        }
-
-        .ectoo-hover-card:hover .ectoo-number {
-          transform: translateY(-4px);
-          color: #9A5937;
-        }
-
-        @keyframes ectooArrowMove {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-
-          50% {
-            transform: translateX(5px);
-          }
-        }
-
-        .ectoo-cta:hover .ectoo-arrow {
-          animation: ectooArrowMove 0.8s ease infinite;
+        .fb-about .fb-about-orbit {
+          animation: fbAboutOrbit 30s linear infinite;
         }
 
         @media (prefers-reduced-motion: reduce) {
-          [data-reveal] {
+          .fb-about [data-fb-reveal],
+          .fb-about .fb-about-pending {
             opacity: 1;
             transform: none;
             transition: none;
           }
 
-          *,
-          *::before,
-          *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
+          .fb-about .fb-about-orbit {
+            animation: none;
+          }
+
+          .fb-about .fb-about-image,
+          .fb-about .fb-about-arrow {
+            transition: none;
           }
         }
       `}</style>
 
-      {/* =====================================================
-          INTRO
-      ===================================================== */}
+      {/* OPENING NOTE */}
+      <section className="bg-champagne px-5 py-12 sm:px-6 sm:py-16 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-[1520px]">
+          <div
+            data-fb-reveal
+            className="flex flex-wrap items-center justify-between gap-4 border-b border-navy/25 pb-5 text-[10px] font-bold uppercase tracking-[0.14em] sm:text-xs"
+          >
+            <span>{storeInfo.businessName} / Our story</span>
+            <span>A note on carrying well</span>
+          </div>
 
-      <section className="border-b border-[#E4DED7] bg-[#FAF8F5]">
-        <div className="mx-auto max-w-[1500px] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-          <div className="grid gap-10 lg:grid-cols-[0.55fr_1.45fr] lg:items-end">
-
-            <div data-reveal="left">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#9A5937]">
-                About Ectoo
-              </p>
-
-              <div className="mt-5 h-px w-12 bg-[#9A5937]" />
-            </div>
-
-            <div data-reveal>
-              <h1 className="max-w-5xl font-display text-[46px] leading-[0.98] tracking-[-0.03em] sm:text-[62px] lg:text-[76px] xl:text-[88px]">
-                Bags that fit
-                <span className="block text-[#5E5B57]">
-                  into real life.
+          <div className="mt-10 grid gap-8 lg:mt-14 lg:grid-cols-[1.4fr_0.6fr] lg:items-end lg:gap-12">
+            <div data-fb-reveal className="min-w-0">
+              <h1 className="text-[clamp(3rem,7.5vw,7.5rem)] font-medium leading-[1.02] tracking-[-0.075em]">
+                Life moves.
+                <span className="block text-gold lg:ml-[8%]">
+                  Carry it well.
                 </span>
               </h1>
-
-              <p className="mt-7 max-w-2xl text-sm leading-7 text-[#5E5B57] sm:text-[16px] sm:leading-8">
-                Ectoo is focused on women's handbags
-                selected for everyday versatility,
-                practical use, and modern styling.
-              </p>
             </div>
 
-          </div>
-        </div>
-      </section>
-
-      {/* =====================================================
-          STATEMENT
-      ===================================================== */}
-
-      <section className="bg-[#1F2D22] text-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-
-          <div className="grid gap-12 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
-
-            <div data-reveal="left">
-              <p className="max-w-4xl font-display text-3xl leading-[1.12] sm:text-4xl lg:text-[52px]">
-                We believe a handbag should feel
-                useful before it feels complicated.
-              </p>
-            </div>
-
-            <div
-              data-reveal="right"
-              className="border-l border-white/15 pl-0 lg:pl-10"
-            >
-              <p className="text-[12px] leading-7 text-white/65 sm:text-[13px]">
-                Our approach is centered on styles
-                that can move naturally through
-                different parts of the day — from
-                work and errands to travel and
-                everyday plans.
+            <div data-fb-reveal className="max-w-sm">
+              <p className="text-sm leading-7 text-navy/85 sm:text-base">
+                {storeInfo.businessName} is focused on women&apos;s
+                handbags selected for everyday versatility, practical
+                use, and modern styling.
               </p>
 
-              <p className="mt-5 text-[12px] leading-7 text-white/65 sm:text-[13px]">
-                Rather than building around one
-                occasion, Ectoo focuses on versatile
-                bags that can support different
-                routines and personal styles.
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* =====================================================
-          THREE PILLARS
-      ===================================================== */}
-
-      <section className="bg-[#EEE7DF]">
-        <div className="mx-auto max-w-[1500px] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-
-          <div
-            data-reveal
-            className="mb-12 max-w-2xl"
-          >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-              Our Perspective
-            </p>
-
-            <h2 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
-              What matters to us
-            </h2>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-
-            <div
-              data-reveal
-              className="ectoo-hover-card rounded-[18px] bg-[#FAF8F5] p-7 sm:p-8"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                <ShoppingBag
-                  size={20}
-                  strokeWidth={1.5}
-                />
-              </div>
-
-              <h3 className="mt-6 font-display text-2xl">
-                Everyday Use
-              </h3>
-
-              <p className="mt-4 text-sm leading-7 text-[#5E5B57]">
-                We look for bags that make sense
-                across normal routines, not just one
-                specific moment.
-              </p>
-            </div>
-
-            <div
-              data-reveal
-              style={{
-                transitionDelay: "120ms",
-              }}
-              className="ectoo-hover-card rounded-[18px] bg-[#E4E5DD] p-7 sm:p-8"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                <Layers3
-                  size={20}
-                  strokeWidth={1.5}
-                />
-              </div>
-
-              <h3 className="mt-6 font-display text-2xl">
-                Useful Details
-              </h3>
-
-              <p className="mt-4 text-sm leading-7 text-[#5E5B57]">
-                Practical layouts, usable storage,
-                and comfortable carrying options are
-                part of what we consider.
-              </p>
-            </div>
-
-            <div
-              data-reveal
-              style={{
-                transitionDelay: "240ms",
-              }}
-              className="ectoo-hover-card rounded-[18px] bg-[#FAF8F5] p-7 sm:p-8"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                <Sparkles
-                  size={20}
-                  strokeWidth={1.5}
-                />
-              </div>
-
-              <h3 className="mt-6 font-display text-2xl">
-                Easy Styling
-              </h3>
-
-              <p className="mt-4 text-sm leading-7 text-[#5E5B57]">
-                We favor versatile shapes and colors
-                that can work with different looks
-                and occasions.
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* =====================================================
-          IMAGE STORY
-      ===================================================== */}
-
-      <section className="bg-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-
-          <div className="grid gap-10 lg:grid-cols-[1.45fr_0.55fr] lg:items-stretch">
-
-            <div
-  data-reveal="scale"
-  className="ectoo-image-wrap relative min-h-[420px] overflow-hidden rounded-[22px] bg-[#E4E5DD] lg:min-h-[560px]"
->
-  <img
-    src="/about.png"
-    alt="Ectoo handbag in a modern editorial setting"
-    className="ectoo-image-zoom absolute inset-0 h-full w-full object-cover object-center"
-  />
-
-  <div className="absolute inset-0 bg-gradient-to-t from-[#1F2D22]/30 via-transparent to-transparent" />
-</div>
-
-            <div
-              data-reveal="right"
-              className="flex flex-col justify-between rounded-[22px] bg-[#1F2D22] p-7 text-white sm:p-9"
-            >
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-white/45">
-                  Our Direction
-                </p>
-
-                <h2 className="mt-5 font-display text-3xl leading-tight sm:text-4xl">
-                  Less noise.
-                  <br />
-                  More purpose.
-                </h2>
-
-                <p className="mt-6 text-sm leading-7 text-white/60">
-                  We want Ectoo to feel clear,
-                  considered, and easy to navigate —
-                  from discovering a bag to reviewing
-                  its available details.
-                </p>
-              </div>
-
-              <div className="mt-12 border-t border-white/10 pt-6">
-                <p className="text-[11px] leading-6 text-white/55">
-                  Modern style
-                  <br />
-                  Practical use
-                  <br />
-                  Clear product information
-                </p>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* =====================================================
-          PROCESS
-      ===================================================== */}
-
-      <section className="bg-[#FAF8F5]">
-        <div className="mx-auto max-w-[1500px] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-
-          <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
-
-            <div data-reveal="left">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-                How We Choose
-              </p>
-
-              <h2 className="mt-4 max-w-md font-display text-4xl leading-tight sm:text-5xl">
-                A simple way
-                <span className="block text-[#5E5B57]">
-                  to think about bags.
-                </span>
-              </h2>
-
-              <p className="mt-6 max-w-md text-sm leading-7 text-[#5E5B57]">
-                Our selection process is built around
-                practical considerations rather than
-                unnecessary complexity.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-
-              {processSteps.map(
-                (step, index) => (
-                  <div
-                    key={step.number}
-                    data-reveal
-                    style={{
-                      transitionDelay: `${
-                        index * 100
-                      }ms`,
-                    }}
-                    className="ectoo-hover-card group rounded-[18px] border border-[#E4DED7] bg-white p-6"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-
-                      <span className="ectoo-number font-display text-4xl text-[#9A5937]/35">
-                        {step.number}
-                      </span>
-
-                      {index === 0 && (
-                        <Ruler
-                          size={20}
-                          strokeWidth={1.4}
-                          className="text-[#1F2D22]"
-                        />
-                      )}
-
-                      {index === 1 && (
-                        <Layers3
-                          size={20}
-                          strokeWidth={1.4}
-                          className="text-[#1F2D22]"
-                        />
-                      )}
-
-                      {index === 2 && (
-                        <Sparkles
-                          size={20}
-                          strokeWidth={1.4}
-                          className="text-[#1F2D22]"
-                        />
-                      )}
-
-                      {index === 3 && (
-                        <CheckCircle2
-                          size={20}
-                          strokeWidth={1.4}
-                          className="text-[#1F2D22]"
-                        />
-                      )}
-
-                    </div>
-
-                    <h3 className="mt-6 text-[14px] font-semibold">
-                      {step.title}
-                    </h3>
-
-                    <p className="mt-3 text-[12px] leading-6 text-[#5E5B57]">
-                      {step.description}
-                    </p>
-                  </div>
-                )
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* =====================================================
-          CTA
-      ===================================================== */}
-
-      <section className="bg-[#E4E5DD]">
-        <div className="mx-auto max-w-[1500px] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-
-          <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
-
-            <div data-reveal="left">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-                Explore Ectoo
-              </p>
-
-              <h2 className="mt-3 font-display text-3xl sm:text-4xl">
-                Find a bag that works with your day.
-              </h2>
-            </div>
-
-            <div data-reveal="right">
               <Link
                 to="/shop"
-                className="ectoo-cta group inline-flex min-h-12 items-center justify-center gap-3 rounded-[5px] bg-[#1F2D22] px-7 text-[10px] font-semibold uppercase tracking-[0.1em] text-white transition-all duration-300 hover:-translate-y-1 hover:bg-[#3F4C3A]"
+                className="mt-5 inline-flex min-h-11 items-center gap-5 border-b border-navy text-sm font-semibold"
               >
-                Shop Handbags
-
-                <ArrowRight
-                  size={15}
-                  strokeWidth={1.7}
-                  className="ectoo-arrow"
+                Meet the collection
+                <ArrowUpRight
+                  size={18}
+                  className="fb-about-arrow"
+                  aria-hidden="true"
                 />
               </Link>
             </div>
-
           </div>
 
+          {/* BRAND STATEMENT */}
+          <div
+            data-fb-reveal
+            className="mt-12 grid border border-navy bg-paper shadow-[7px_7px_0_rgba(23,36,59,0.12)] sm:mt-16 lg:grid-cols-[0.85fr_1.15fr] lg:shadow-[12px_12px_0_rgba(23,36,59,0.12)]"
+          >
+            <div className="relative grid min-h-[260px] place-items-center overflow-hidden bg-navy text-paper sm:min-h-[330px]">
+              <div
+                aria-hidden="true"
+                className="absolute h-52 w-52 rounded-full border border-champagne/25 sm:h-64 sm:w-64"
+              />
+
+              <div
+                aria-hidden="true"
+                className="fb-about-orbit absolute h-64 w-64 rounded-full border border-champagne/15 sm:h-80 sm:w-80"
+              >
+                <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-gold" />
+              </div>
+
+              <span
+                aria-hidden="true"
+                className="relative text-[100px] font-medium leading-none tracking-[-0.13em] sm:text-[130px]"
+              >
+                f<span className="text-gold">.</span>b
+              </span>
+
+              <p className="absolute bottom-6 text-[10px] font-bold uppercase tracking-[0.16em] text-champagne">
+                Find your way to carry
+              </p>
+            </div>
+
+            <div className="flex flex-col justify-center p-6 sm:p-10 lg:p-14">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-mute">
+                The thought behind the collection
+              </p>
+
+              <h2 className="mt-5 text-3xl font-medium leading-tight tracking-[-0.055em] sm:text-4xl lg:text-5xl">
+                A handbag should feel useful before it feels complicated.
+              </h2>
+
+              <p className="mt-6 max-w-xl text-sm leading-7 text-mute sm:text-base">
+                Our approach centers on styles that move naturally
+                through different parts of the day—from work and errands
+                to travel and everyday plans.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
+      {/* PRINCIPLE LEDGER */}
+      <section className="px-5 py-16 sm:px-6 sm:py-20 lg:px-10 lg:py-28">
+        <div className="mx-auto max-w-[1520px]">
+          <div
+            data-fb-reveal
+            className="mb-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"
+          >
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-mute">
+                Our perspective / 03 principles
+              </p>
+
+              <h2 className="mt-4 text-[clamp(2.4rem,5vw,5rem)] font-medium leading-tight tracking-[-0.065em]">
+                What we carry forward.
+              </h2>
+            </div>
+
+            <p className="max-w-sm text-sm leading-7 text-mute">
+              A few simple ideas guide the way we look at a bag and the
+              place it can have in your day.
+            </p>
+          </div>
+
+          <div className="border-b border-navy">
+            {principles.map((item) => (
+              <article
+                key={item.number}
+                data-fb-reveal
+                className="grid gap-4 border-t border-navy px-2 py-7 transition-colors hover:bg-champagne/40 sm:grid-cols-[40px_1fr] sm:gap-x-6 sm:px-4 sm:py-9 lg:grid-cols-[6%_42%_1fr]"
+              >
+                <span className="text-xs font-bold text-mute">
+                  {item.number}
+                </span>
+
+                <h3 className="text-2xl font-medium leading-tight tracking-[-0.045em] sm:text-3xl lg:text-4xl">
+                  {item.title}
+                </h3>
+
+                <p className="max-w-xl text-sm leading-7 text-mute sm:col-start-2 lg:col-start-auto lg:text-base">
+                  {item.description}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* EDITORIAL STORY */}
+      <section className="bg-navy px-5 py-12 text-paper sm:px-6 sm:py-16 lg:px-10 lg:py-20">
+        <div className="mx-auto grid max-w-[1520px] gap-10 lg:grid-cols-2 lg:items-center lg:gap-16">
+          <div data-fb-reveal className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-champagne">
+              {storeInfo.businessName} / Our direction
+            </p>
+
+            <h2 className="mt-5 text-[clamp(2.8rem,5vw,5.5rem)] font-medium leading-[1.04] tracking-[-0.065em]">
+              Room for
+              <br />
+              your everyday.
+            </h2>
+
+            <p className="mt-6 max-w-lg text-sm leading-7 text-paper/80 sm:text-base">
+              Rather than building around one occasion, we focus on
+              versatile bags that support different routines and
+              personal styles.
+            </p>
+
+            <p className="mt-4 max-w-lg text-sm leading-7 text-paper/80 sm:text-base">
+              We want {storeInfo.businessName} to feel clear, considered,
+              and easy to navigate—from discovering a bag to reviewing
+              its available details.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-paper/30 pt-5 text-xs text-champagne">
+              <span>Modern style</span>
+              <span>Practical use</span>
+              <span>Clear information</span>
+            </div>
+          </div>
+
+          <figure
+            data-fb-reveal
+            className="min-w-0 border border-champagne/40 p-3 sm:p-4"
+          >
+            <div className="fb-about-image-wrap aspect-[4/3] overflow-hidden bg-champagne">
+              <img
+                src="/about.png"
+                alt={`${storeInfo.businessName} handbag in an editorial setting`}
+                loading="lazy"
+                className="fb-about-image h-full w-full object-cover object-center"
+              />
+            </div>
+
+            <figcaption className="flex flex-wrap justify-between gap-3 px-1 pb-1 pt-4 text-[10px] uppercase tracking-[0.12em] text-champagne">
+              <span>The everyday edit</span>
+              <span>Carry it your way ↗</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      {/* SELECTION REFERENCE SHEET */}
+      <section className="px-5 py-16 sm:px-6 sm:py-20 lg:px-10 lg:py-28">
+        <div className="mx-auto max-w-[1520px]">
+          <div data-fb-reveal className="mb-10 max-w-3xl">
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-mute">
+              How we choose
+            </p>
+
+            <h2 className="mt-4 text-[clamp(2.4rem,5vw,5rem)] font-medium leading-tight tracking-[-0.065em]">
+              The selection notes.
+            </h2>
+
+            <p className="mt-5 max-w-xl text-sm leading-7 text-mute sm:text-base">
+              Our selection process is built around practical
+              considerations and straightforward product information.
+            </p>
+          </div>
+
+          <div
+            data-fb-reveal
+            className="border border-navy bg-champagne shadow-[7px_9px_0_rgba(23,36,59,0.12)]"
+          >
+            <div className="flex flex-wrap justify-between gap-3 border-b border-navy/40 px-6 py-4 text-[10px] font-bold uppercase tracking-[0.14em] sm:px-8">
+              <span>Your reference sheet</span>
+              <span>01—04 / Considered details</span>
+            </div>
+
+            <div className="grid sm:grid-cols-2">
+              {processSteps.map(({ number, title, description, Icon }, index) => (
+                <article
+                  key={number}
+                  className={`group min-w-0 p-6 transition-colors hover:bg-paper/60 sm:p-8 lg:p-10 ${
+                    index < 3 ? "border-b border-navy/40" : ""
+                  } ${
+                    index % 2 === 0 ? "sm:border-r sm:border-navy/40" : ""
+                  } ${index === 2 ? "sm:border-b-0" : ""}`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-xs font-bold text-mute">
+                      {number}
+                    </span>
+                    <Icon
+                      size={24}
+                      strokeWidth={1.4}
+                      aria-hidden="true"
+                      className="transition-transform duration-300 group-hover:-translate-y-1"
+                    />
+                  </div>
+
+                  <h3 className="mt-8 text-2xl font-medium leading-tight tracking-[-0.045em] lg:text-3xl">
+                    {title}
+                  </h3>
+
+                  <p className="mt-4 max-w-lg text-sm leading-7 text-mute">
+                    {description}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COLLECTION INVITATION */}
+      <section className="border-t border-navy/25 bg-champagne px-5 py-12 sm:px-6 sm:py-16 lg:px-10">
+        <div
+          data-fb-reveal
+          className="mx-auto flex max-w-[1520px] flex-col gap-8 lg:flex-row lg:items-center lg:justify-between"
+        >
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-mute">
+              Your next chapter
+            </p>
+
+            <h2 className="mt-4 max-w-3xl text-3xl font-medium leading-tight tracking-[-0.055em] sm:text-4xl lg:text-5xl">
+              Find a shape for the day ahead.
+            </h2>
+          </div>
+
+          <Link
+            to="/shop"
+            className="inline-flex min-h-12 w-full shrink-0 items-center justify-between gap-8 bg-navy px-6 py-4 text-sm font-semibold text-white transition-colors hover:bg-navy-dark sm:w-auto"
+          >
+            Explore the collection
+            <ArrowUpRight
+              size={20}
+              className="fb-about-arrow"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
+      </section>
     </div>
   );
 };

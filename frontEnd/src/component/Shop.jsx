@@ -1,902 +1,1076 @@
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
-  ArrowDownUp,
-  ChevronDown,
+  ArrowUpRight,
+  Check,
   ImageOff,
+  Loader2,
   Search,
   ShoppingBag,
-  SlidersHorizontal,
   X,
 } from "lucide-react";
 
-import {
-  Link,
-  useSearchParams,
-} from "react-router-dom";
-
 import { useCart } from "../component/CartContext";
 import { API_BASE_URL } from "../config";
+import { BUSINESS_INFO } from "../storeInfo";
+
+const apiBase = API_BASE_URL.replace(/\/+$/, "");
+
+const getProductId = (product) => product?._id || product?.id || "";
+
+const getImageUrl = (image) => {
+  if (typeof image !== "string" || !image.trim()) return "";
+
+  const value = image.trim();
+  if (/^https?:\/\//i.test(value)) return value;
+
+  return `${apiBase}/${value.replace(/^\/+/, "")}`;
+};
+
+const formatPrice = (price) => {
+  if (price === null || price === undefined || price === "") return "—";
+
+  const value = Number(price);
+  return Number.isFinite(value) && value >= 0
+    ? new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(value)
+    : "—";
+};
+
+const isUnavailable = (product) => {
+  const stock = Number(product?.stock);
+  return (
+    !Number.isFinite(stock) ||
+    stock <= 0 ||
+    String(product?.status || "").toLowerCase() === "out of stock"
+  );
+};
+
+const ProductImage = ({ image, name }) => {
+  const [failed, setFailed] = useState(false);
+  const src = getImageUrl(image);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return src && !failed ? (
+    <img
+      src={src}
+      alt={name || `${BUSINESS_INFO.businessName} handbag`}
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  ) : (
+    <span className="fbshop-image-fallback">
+      <ImageOff size={32} aria-hidden="true" />
+      <span>Image unavailable</span>
+    </span>
+  );
+};
 
 const Shop = () => {
-  const pageRef = useRef(null);
   const { addToCart } = useCart();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const categoryFromUrl =
-    searchParams.get("category");
+  const activeCategory = searchParams.get("category") || "All";
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
-
-  const [activeCategory, setActiveCategory] =
-    useState(categoryFromUrl || "All");
-
-  const [searchQuery, setSearchQuery] =
-    useState("");
-
-  const [sortBy, setSortBy] =
-    useState("newest");
-
-  const [showFilters, setShowFilters] =
-    useState(false);
-
-  
+  const [retryCount, setRetryCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [cartNotice, setCartNotice] = useState("");
 
   useEffect(() => {
-    let isMounted = true;
+    const controller = new AbortController();
+    let active = true;
 
     const fetchProducts = async () => {
+      setLoading(true);
+      setFetchError("");
+
       try {
-        setLoading(true);
-        setFetchError("");
+        const response = await fetch(`${apiBase}/api/products`, {
+          signal: controller.signal,
+        });
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/products`
-        );
-
-        let data = {};
-
-        try {
-          data = await response.json();
-        } catch {
-          data = {};
-        }
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          throw new Error(
-            data?.message ||
-              "Unable to load products."
+          throw new Error(data?.message || "Unable to load products.");
+        }
+
+        if (!Array.isArray(data?.products)) {
+          throw new Error("Product details are unavailable. Please try again.");
+        }
+
+        if (active) {
+          setProducts(
+            data.products.filter(
+              (product) => product && typeof product === "object"
+            )
           );
         }
-
-        if (!isMounted) return;
-
-        setProducts(
-          Array.isArray(data?.products)
-            ? data.products
-            : []
-        );
       } catch (error) {
-        if (!isMounted) return;
-
-        setFetchError(
-          error?.message ||
-            "Unable to load products. Please try again."
-        );
-      } finally {
-        if (isMounted) {
-          setLoading(false);
+        if (active && error?.name !== "AbortError") {
+          setFetchError(
+            error?.message || "Unable to load products. Please try again."
+          );
         }
+      } finally {
+        if (active) setLoading(false);
       }
     };
 
     fetchProducts();
 
     return () => {
-      isMounted = false;
+      active = false;
+      controller.abort();
     };
-  }, []);
-
-  
+  }, [retryCount]);
 
   useEffect(() => {
-    setActiveCategory(
-      categoryFromUrl || "All"
-    );
-  }, [categoryFromUrl]);
-
-  
+    if (!cartNotice) return;
+    const timer = setTimeout(() => setCartNotice(""), 2500);
+    return () => clearTimeout(timer);
+  }, [cartNotice]);
 
   const categories = useMemo(() => {
-    const databaseCategories = products
-      .map((product) => product?.category)
-      .filter(Boolean);
+    const counts = new Map();
+
+    products.forEach((product) => {
+      const name = String(product.category || "").trim();
+      if (!name || name.toLowerCase() === "all") return;
+
+      const key = name.toLowerCase();
+      const existing = counts.get(key);
+
+      counts.set(key, {
+        name: existing?.name || name,
+        count: (existing?.count || 0) + 1,
+      });
+    });
+
+    if (
+      activeCategory.toLowerCase() !== "all" &&
+      !counts.has(activeCategory.toLowerCase())
+    ) {
+      counts.set(activeCategory.toLowerCase(), {
+        name: activeCategory,
+        count: 0,
+      });
+    }
 
     return [
-      "All",
-      ...new Set(databaseCategories),
+      { name: "All", count: products.length },
+      ...counts.values(),
     ];
-  }, [products]);
+  }, [products, activeCategory]);
 
-  
+  const filteredProducts = useMemo(() => {
+    const search = searchQuery.trim().toLowerCase();
 
-  const getImageUrl = (image) => {
-    if (
-      !image ||
-      typeof image !== "string"
-    ) {
-      return "";
+    const result = products.filter((product) => {
+      const category = String(product.category || "").trim().toLowerCase();
+      const searchable = [
+        product.name,
+        product.category,
+        product.description,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return (
+        (activeCategory.toLowerCase() === "all" ||
+          category === activeCategory.trim().toLowerCase()) &&
+        (!search || searchable.includes(search))
+      );
+    });
+
+    const price = (product) => {
+      const value = Number(product.price);
+      return Number.isFinite(value) ? value : 0;
+    };
+
+    const date = (product) => {
+      const value = new Date(product.createdAt || 0).getTime();
+      return Number.isFinite(value) ? value : 0;
+    };
+
+    return result.sort((a, b) => {
+      if (sortBy === "price-low") return price(a) - price(b);
+      if (sortBy === "price-high") return price(b) - price(a);
+      if (sortBy === "name-az") {
+        return String(a.name || "").localeCompare(String(b.name || ""));
+      }
+      return date(b) - date(a);
+    });
+  }, [products, activeCategory, searchQuery, sortBy]);
+
+  const selectCategory = (category) => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (category === "All") {
+      nextParams.delete("category");
+    } else {
+      nextParams.set("category", category);
     }
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
-
-    return `${API_BASE_URL}${image}`;
+    setSearchParams(nextParams, { preventScrollReset: true });
   };
 
-  
-
-  const formatPrice = (price) => {
-    const value = Number(price);
-
-    if (!Number.isFinite(value)) {
-      return "$0.00";
-    }
-
-    return `$${value.toFixed(2)}`;
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSortBy("newest");
+    selectCategory("All");
   };
-
-  
 
   const handleAddToCart = (product) => {
-    if (
-      !product ||
-      Number(product.stock) <= 0
-    ) {
-      return;
-    }
+    const id = getProductId(product);
+    if (!id || isUnavailable(product)) return;
 
     addToCart({
       ...product,
-      id: product._id,
-      image: getImageUrl(
-        product.images?.[0]
-      ),
+      id,
+      image: getImageUrl(product.images?.[0]),
     });
-  };
 
-  
-
-  const filteredProducts = useMemo(() => {
-    const search = searchQuery
-      .trim()
-      .toLowerCase();
-
-    let result = products.filter(
-      (product) => {
-        const category =
-          product?.category
-            ?.toString()
-            .toLowerCase() || "";
-
-        const name =
-          product?.name
-            ?.toString()
-            .toLowerCase() || "";
-
-        const description =
-          product?.description
-            ?.toString()
-            .toLowerCase() || "";
-
-        const matchesCategory =
-          activeCategory === "All" ||
-          category ===
-            activeCategory.toLowerCase();
-
-        const matchesSearch =
-          !search ||
-          name.includes(search) ||
-          category.includes(search) ||
-          description.includes(search);
-
-        return (
-          matchesCategory &&
-          matchesSearch
-        );
-      }
-    );
-
-    if (sortBy === "price-low") {
-      result = [...result].sort(
-        (a, b) =>
-          Number(a?.price || 0) -
-          Number(b?.price || 0)
-      );
-    }
-
-    if (sortBy === "price-high") {
-      result = [...result].sort(
-        (a, b) =>
-          Number(b?.price || 0) -
-          Number(a?.price || 0)
-      );
-    }
-
-    if (sortBy === "name-az") {
-      result = [...result].sort(
-        (a, b) =>
-          (a?.name || "").localeCompare(
-            b?.name || ""
-          )
-      );
-    }
-
-    if (sortBy === "newest") {
-      result = [...result].sort(
-        (a, b) => {
-          const dateA = new Date(
-            a?.createdAt || 0
-          ).getTime();
-
-          const dateB = new Date(
-            b?.createdAt || 0
-          ).getTime();
-
-          return dateB - dateA;
-        }
-      );
-    }
-
-    return result;
-  }, [
-    products,
-    activeCategory,
-    searchQuery,
-    sortBy,
-  ]);
-
-  
-
-  useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
-
-    if (!elements?.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
-  }, [loading, filteredProducts?.length]);
-
-  const handleCategoryChange = (
-    category
-  ) => {
-    setActiveCategory(category);
-    setShowFilters(false);
+    setCartNotice(`${product.name || "Product"} added to cart.`);
   };
 
   return (
-    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: opacity .75s cubic-bezier(.22,1,.36,1), transform .75s cubic-bezier(.22,1,.36,1);
-        }
-        [data-reveal="left"] { transform: translateX(-38px); }
-        [data-reveal="right"] { transform: translateX(38px); }
-        [data-reveal="scale"] { transform: scale(.97); }
-        [data-reveal].ectoo-visible { opacity: 1; transform: translate(0,0) scale(1); }
-        .ectoo-product { transition: transform .35s ease; }
-        .ectoo-product:hover { transform: translateY(-5px); }
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] { opacity: 1; transform: none; transition: none; }
-          .ectoo-product:hover { transform: none; }
-        }
-      `}</style>
+    <main className="fbshop-page">
+      <style>{styles}</style>
 
-      
-
-      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-20 lg:px-12 lg:py-20">
-        <div data-reveal="scale" className="relative mx-auto max-w-7xl">
-
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-            Ectoo Collection
-          </p>
-
-          <div className="mt-4 flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
-
-            <div className="max-w-3xl">
-
-              <h1 className="font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl lg:text-7xl">
-                Find your
-                <span className="block text-[#3F4C3A]">
-                  everyday carry.
-                </span>
-              </h1>
-
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-[#5E5B57] sm:mt-6 sm:text-base">
-                Explore handbags designed for
-                everyday use, practical
-                organization, and modern style.
-              </p>
-
-            </div>
-
-            <div className="flex items-center gap-3 rounded-full border border-[#1F2D22]/10 bg-white/60 px-5 py-3 text-[#1F2D22]">
-
-              <ShoppingBag
-                size={22}
-                aria-hidden="true"
-              />
-
-              <span className="text-sm font-medium">
-                {products.length}{" "}
-                {products.length === 1
-                  ? "Product"
-                  : "Products"}
-              </span>
-
-            </div>
-
-          </div>
-
+      <div className="fbshop-container">
+        <div className="fbshop-topline">
+          <span>{BUSINESS_INFO.businessName} / The collection</span>
+          <Link to="/cart">
+            Your cart
+            <ShoppingBag size={17} aria-hidden="true" />
+          </Link>
         </div>
-      </section>
 
-      
+        <div className="fbshop-layout">
+          <aside className="fbshop-sidebar">
+            <p className="fbshop-eyebrow">Find your favourite</p>
+            <h1>
+              The bag
+              <span>edit.</span>
+            </h1>
+            <p className="fbshop-sidebar-intro">
+              A style for your everyday routine. Explore the collection
+              and make it yours.
+            </p>
 
-      <section className="sticky top-0 z-30 border-b border-[#E4DED7] bg-[#FAF8F5]/95 backdrop-blur-xl">
+            <nav aria-label="Product categories" className="fbshop-categories">
+              {categories.map((category, index) => {
+                const selected =
+                  activeCategory.toLowerCase() === category.name.toLowerCase();
 
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+                return (
+                  <button
+                    key={category.name}
+                    type="button"
+                    onClick={() => selectCategory(category.name)}
+                    aria-pressed={selected}
+                    aria-controls="fbshop-products"
+                    className={selected ? "is-active" : ""}
+                  >
+                    <span className="fbshop-category-number">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="fbshop-category-name">
+                      {category.name === "All" ? "All bags" : category.name}
+                    </span>
+                    <span className="fbshop-category-count">
+                      {loading ? "…" : category.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </nav>
 
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-
-            
-
-            <div className="hidden max-w-full items-center gap-2 overflow-x-auto lg:flex">
-
-              {categories.map(
-                (category) => {
-                  const selected =
-                    activeCategory.toLowerCase() ===
-                    category.toLowerCase();
-
-                  return (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() =>
-                        handleCategoryChange(
-                          category
-                        )
-                      }
-                      aria-pressed={selected}
-                      className={`min-h-11 whitespace-nowrap rounded-full border px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition-all ${
-                        selected
-                          ? "border-[#1F2D22] bg-[#1F2D22] text-white"
-                          : "border-[#E4DED7] bg-white text-[#5E5B57] hover:border-[#1F2D22] hover:text-[#111311]"
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  );
-                }
-              )}
-
+            <div className="fbshop-sidebar-note">
+              <p className="fbshop-eyebrow">A little guidance</p>
+              <p>
+                Review each product page for its current details and
+                specifications.
+              </p>
+              <Link to="/contact">
+                Ask our team
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </Link>
             </div>
+          </aside>
 
-            
+          <section
+            id="fbshop-products"
+            className="fbshop-catalog"
+            aria-labelledby="fbshop-collection-title"
+            aria-busy={loading}
+          >
+            <header className="fbshop-collection-heading">
+              <div>
+                <p className="fbshop-eyebrow">
+                  {BUSINESS_INFO.businessName}
+                </p>
+                <h2 id="fbshop-collection-title">
+                  {activeCategory.toLowerCase() === "all"
+                    ? "Everyday, beautifully."
+                    : activeCategory}
+                </h2>
+              </div>
+              <span role="status" aria-live="polite" aria-atomic="true">
+                {loading
+                  ? "Loading collection…"
+                  : fetchError
+                  ? "Collection unavailable"
+                  : `${filteredProducts.length} ${
+                      filteredProducts.length === 1 ? "product" : "products"
+                    }`}
+              </span>
+            </header>
 
-            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-
-              <div className="relative min-w-0 flex-1 sm:min-w-[240px] lg:w-72">
-
-                <Search
-                  size={17}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#5E5B57]/70"
-                />
-
-                <label
-                  htmlFor="shop-search"
-                  className="sr-only"
-                >
+            <div className="fbshop-tools">
+              <div className="fbshop-search">
+                <Search size={18} aria-hidden="true" />
+                <label htmlFor="fbshop-search" className="fbshop-sr-only">
                   Search products
                 </label>
-
                 <input
-                  id="shop-search"
+                  id="fbshop-search"
                   type="search"
                   value={searchQuery}
-                  onChange={(event) =>
-                    setSearchQuery(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Search products..."
-                  className="min-h-12 w-full rounded-[14px] border border-[#E4DED7] bg-white py-3 pl-11 pr-11 text-base text-[#111311] outline-none transition-all placeholder:text-[#5E5B57]/60 focus:border-[#1F2D22] focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] sm:text-sm"
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Find a bag…"
                 />
-
                 {searchQuery && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setSearchQuery("")
-                    }
+                    onClick={() => setSearchQuery("")}
                     aria-label="Clear search"
-                    className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-[#5E5B57]/70 transition-colors hover:text-[#111311]"
                   >
-                    <X
-                      size={16}
-                      aria-hidden="true"
-                    />
+                    <X size={17} />
                   </button>
                 )}
-
               </div>
 
-              <div className="relative sm:min-w-[190px]">
-
-                <ArrowDownUp
-                  size={16}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#5E5B57]"
-                />
-
-                <label
-                  htmlFor="shop-sort"
-                  className="sr-only"
-                >
-                  Sort products
-                </label>
-
+              <div className="fbshop-sort">
+                <label htmlFor="fbshop-sort">Sort by</label>
                 <select
-                  id="shop-sort"
+                  id="fbshop-sort"
                   value={sortBy}
-                  onChange={(event) =>
-                    setSortBy(
-                      event.target.value
-                    )
-                  }
-                  className="min-h-12 w-full appearance-none rounded-[14px] border border-[#E4DED7] bg-white py-3 pl-9 pr-9 text-xs font-semibold text-[#111311] outline-none transition-colors hover:border-[#1F2D22] focus:border-[#1F2D22]"
+                  onChange={(event) => setSortBy(event.target.value)}
                 >
-                  <option value="newest">
-                    Newest
-                  </option>
-
-                  <option value="price-low">
-                    Price: Low to High
-                  </option>
-
-                  <option value="price-high">
-                    Price: High to Low
-                  </option>
-
-                  <option value="name-az">
-                    Name: A to Z
-                  </option>
+                  <option value="newest">Newest</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="name-az">Name: A to Z</option>
                 </select>
-
-                <ChevronDown
-                  size={15}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#5E5B57]/70"
-                />
-
               </div>
-
             </div>
 
-            
+            {(searchQuery || activeCategory.toLowerCase() !== "all") && (
+              <div className="fbshop-filter-summary">
+                <span>
+                  {activeCategory.toLowerCase() === "all"
+                    ? "All bags"
+                    : activeCategory}
+                  {searchQuery && ` / “${searchQuery}”`}
+                </span>
+                <button type="button" onClick={clearFilters}>
+                  Clear filters <X size={14} aria-hidden="true" />
+                </button>
+              </div>
+            )}
 
-            <button
-              type="button"
-              onClick={() =>
-                setShowFilters(
-                  (previous) => !previous
-                )
-              }
-              aria-expanded={showFilters}
-              aria-controls="mobile-shop-categories"
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] bg-[#1F2D22] px-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white lg:hidden"
-            >
-              <SlidersHorizontal
-                size={16}
-                aria-hidden="true"
-              />
-
-              Categories
-            </button>
-
-          </div>
-
-          
-
-          {showFilters && (
-            <div
-              id="mobile-shop-categories"
-              className="mt-4 flex flex-wrap gap-2 border-t border-[#E4DED7] pt-4 lg:hidden"
-            >
-              {categories.map(
-                (category) => {
-                  const selected =
-                    activeCategory.toLowerCase() ===
-                    category.toLowerCase();
+            {loading ? (
+              <div className="fbshop-state" role="status">
+                <Loader2
+                  size={30}
+                  className="fbshop-spin"
+                  aria-hidden="true"
+                />
+                <p>Loading your next favourite…</p>
+              </div>
+            ) : fetchError ? (
+              <div className="fbshop-state" role="alert">
+                <h3>We couldn’t load the collection.</h3>
+                <p>{fetchError}</p>
+                <button
+                  className="fbshop-button"
+                  type="button"
+                  onClick={() => setRetryCount((count) => count + 1)}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : filteredProducts.length ? (
+              <div className="fbshop-grid">
+                {filteredProducts.map((product, index) => {
+                  const id = getProductId(product);
+                  const unavailable = isUnavailable(product);
+                  const productLink = `/shop/${encodeURIComponent(id)}`;
+                  const imageContent = (
+                    <>
+                      <ProductImage
+                        image={product.images?.[0]}
+                        name={product.name}
+                      />
+                      {unavailable ? (
+                        <span className="fbshop-product-badge">Out of stock</span>
+                      ) : product.status && product.status !== "Active" ? (
+                        <span className="fbshop-product-badge">
+                          {product.status}
+                        </span>
+                      ) : null}
+                      {id && (
+                        <span className="fbshop-view-icon">
+                          <ArrowUpRight size={19} aria-hidden="true" />
+                        </span>
+                      )}
+                    </>
+                  );
 
                   return (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() =>
-                        handleCategoryChange(
-                          category
-                        )
-                      }
-                      aria-pressed={selected}
-                      className={`min-h-11 border px-4 py-2 text-xs font-semibold uppercase tracking-wide ${
-                        selected
-                          ? "border-[#1F2D22] bg-[#1F2D22] text-white"
-                          : "border-[#E4DED7] bg-white text-[#5E5B57]"
-                      }`}
+                    <article
+                      key={id || `product-${index}`}
+                      className="fbshop-product"
+                      style={{
+                        "--fbshop-delay": `${Math.min(index, 5) * 45}ms`,
+                      }}
                     >
-                      {category}
-                    </button>
+                      {id ? (
+                        <Link
+                          to={productLink}
+                          className="fbshop-product-image"
+                          aria-label={`View ${product.name || "product"}`}
+                        >
+                          {imageContent}
+                        </Link>
+                      ) : (
+                        <div className="fbshop-product-image">{imageContent}</div>
+                      )}
+
+                      <div className="fbshop-product-info">
+                        <p className="fbshop-product-category">
+                          {product.category || "The collection"}
+                        </p>
+                        {id ? (
+                          <Link to={productLink}>
+                            <h3>{product.name || "Product"}</h3>
+                          </Link>
+                        ) : (
+                          <h3>{product.name || "Product"}</h3>
+                        )}
+
+                        <div className="fbshop-product-meta">
+                          <strong>{formatPrice(product.price)}</strong>
+                          <span>{unavailable ? "Out of stock" : "In stock"}</span>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="fbshop-add"
+                          disabled={unavailable || !id}
+                          onClick={() => handleAddToCart(product)}
+                          aria-label={
+                            unavailable
+                              ? `${product.name || "Product"} is out of stock`
+                              : `Add ${product.name || "product"} to cart`
+                          }
+                        >
+                          {unavailable ? "Out of stock" : "Add to cart"}
+                          <ShoppingBag size={17} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </article>
                   );
-                }
-              )}
-            </div>
-          )}
-
-        </div>
-      </section>
-
-      
-
-      <section className="px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
-
-        <div className="mx-auto max-w-7xl">
-
-          
-
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-
-            <p
-              className="text-sm text-[#5E5B57]"
-              aria-live="polite"
-            >
-              Showing{" "}
-              <span className="font-bold text-[#111311]">
-                {filteredProducts.length}
-              </span>{" "}
-              {filteredProducts.length === 1
-                ? "product"
-                : "products"}
-            </p>
-
-            {activeCategory !== "All" && (
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveCategory("All")
-                }
-                className="min-h-11 px-2 text-xs font-semibold text-[#5E5B57] underline underline-offset-4 hover:text-[#111311]"
-              >
-                Clear category
-              </button>
-            )}
-
-          </div>
-
-          
-
-          {loading && (
-            <div
-              className="flex min-h-[350px] items-center justify-center"
-              role="status"
-            >
-              <div className="text-center">
-
-                <div
-                  className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-[#E4DED7] border-t-[#1F2D22]"
-                  aria-hidden="true"
-                />
-
-                <p className="mt-5 text-sm font-medium text-[#5E5B57]">
-                  Loading products...
-                </p>
-
+                })}
               </div>
-            </div>
-          )}
-
-          
-
-          {!loading && fetchError && (
-            <div
-              role="alert"
-              className="rounded-[26px] border border-red-200 bg-red-50 px-5 py-14 text-center sm:px-6 sm:py-16"
-            >
-
-              <div className="mx-auto flex h-16 w-16 items-center justify-center bg-red-100 text-red-600">
-                <X
-                  size={25}
-                  aria-hidden="true"
-                />
-              </div>
-
-              <h2 className="mt-6 font-display text-3xl text-[#111311]">
-                Unable to load products
-              </h2>
-
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#5E5B57]">
-                {fetchError}
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  window.location.reload()
-                }
-                className="mt-6 min-h-12 bg-[#1F2D22] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-[#3F4C3A]"
-              >
-                Try Again
-              </button>
-
-            </div>
-          )}
-
-          
-
-          {!loading &&
-            !fetchError &&
-            filteredProducts.length > 0 && (
-              <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-
-                {filteredProducts.map(
-                  (product) => {
-                    const productId =
-                      product?._id;
-
-                    const image =
-                      getImageUrl(
-                        product?.images?.[0]
-                      );
-
-                    const stock =
-                      Number(
-                        product?.stock || 0
-                      );
-
-                    const outOfStock =
-                      stock <= 0 ||
-                      product?.status ===
-                        "Out of Stock";
-
-                    return (
-                      <article
-                        key={productId}
-                        data-reveal className="ectoo-product group min-w-0 overflow-hidden rounded-[22px] border border-[#E4DED7] bg-white p-3 shadow-[0_10px_30px_rgba(31,45,34,0.035)]"
-                      >
-
-                        
-
-                        <div className="relative aspect-square overflow-hidden rounded-[17px] bg-[#F5F1EC]">
-
-                          <Link
-                            to={`/shop/${productId}`}
-                            aria-label={`View ${product?.name || "product"}`}
-                            className="block h-full w-full"
-                          >
-
-                            {image ? (
-                              <img
-                                src={image}
-                                alt={
-                                  product?.name ||
-                                  "Ectoo handbag"
-                                }
-                                loading="lazy"
-                                className="h-full w-full object-cover object-center transition-transform duration-500 motion-safe:group-hover:scale-[1.02]"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-[#5E5B57]/40">
-                                <ImageOff
-                                  size={30}
-                                  aria-hidden="true"
-                                />
-                              </div>
-                            )}
-
-                          </Link>
-
-                          
-
-                          {product?.status &&
-                            product.status !==
-                              "Active" && (
-                              <div
-                                className={`absolute left-3 top-3 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                                  outOfStock
-                                    ? "bg-red-600 text-white"
-                                    : "bg-[#F5F1EC] text-[#111311]"
-                                }`}
-                              >
-                                {
-                                  product.status
-                                }
-                              </div>
-                            )}
-
-                        </div>
-
-                        
-
-                        <div className="min-w-0 px-1 pb-1 pt-4">
-
-                          {product?.category && (
-                            <p className="truncate text-[10px] font-bold uppercase tracking-wider text-[#5E5B57]/70">
-                              {
-                                product.category
-                              }
-                            </p>
-                          )}
-
-                          <Link
-                            to={`/shop/${productId}`}
-                            className="block"
-                          >
-                            <h2 className="mt-1 line-clamp-2 break-words text-sm font-bold leading-5 text-[#111311] transition-colors hover:text-[#3F4C3A]">
-                              {product?.name ||
-                                "Product"}
-                            </h2>
-                          </Link>
-
-                          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-
-                            <span className="text-sm font-bold text-[#111311]">
-                              {formatPrice(
-                                product?.price
-                              )}
-                            </span>
-
-                            <span className="text-xs font-medium text-[#5E5B57]/80">
-                              {outOfStock
-                                ? "Out of Stock"
-                                : "In Stock"}
-                            </span>
-
-                          </div>
-
-                          
-
-                          <button
-                            type="button"
-                            disabled={outOfStock}
-                            onClick={() =>
-                              handleAddToCart(
-                                product
-                              )
-                            }
-                            className={`mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[13px] px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.13em] text-white transition-all ${
-                              outOfStock
-                                ? "cursor-not-allowed bg-[#1F2D22]/40"
-                                : "bg-[#1F2D22] hover:bg-[#3F4C3A]"
-                            }`}
-                          >
-                            <ShoppingBag
-                              size={16}
-                              aria-hidden="true"
-                            />
-
-                            {outOfStock
-                              ? "Out of Stock"
-                              : "Add to Cart"}
-                          </button>
-
-                        </div>
-
-                      </article>
-                    );
-                  }
-                )}
-
-              </div>
-            )}
-
-          
-
-          {!loading &&
-            !fetchError &&
-            filteredProducts.length === 0 && (
-              <div className="rounded-[26px] border border-[#E4DED7] bg-[#F5F1EC] px-5 py-16 text-center sm:px-6 sm:py-20">
-
-                <div className="mx-auto flex h-16 w-16 items-center justify-center bg-[#1F2D22] text-white">
-                  <Search
-                    size={25}
-                    aria-hidden="true"
-                  />
-                </div>
-
-                <h2 className="mt-6 font-display text-3xl text-[#111311]">
-                  No products found
-                </h2>
-
-                <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#5E5B57]">
-                  We couldn't find a product
-                  matching your search or selected
-                  category. Try another keyword or
-                  browse all products.
-                </p>
-
+            ) : (
+              <div className="fbshop-state">
+                <Search size={30} aria-hidden="true" />
+                <h3>No matching bags.</h3>
+                <p>Try another keyword or browse the full collection.</p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setActiveCategory(
-                      "All"
-                    );
-                  }}
-                  className="mt-6 min-h-12 bg-[#1F2D22] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-[#3F4C3A]"
+                  className="fbshop-button"
+                  onClick={clearFilters}
                 >
-                  View All Products
+                  View all products
                 </button>
-
               </div>
             )}
 
+            <footer className="fbshop-catalog-footer">
+              <span>A little style, wherever the day takes you.</span>
+              <span>{BUSINESS_INFO.businessName}</span>
+            </footer>
+          </section>
         </div>
-      </section>
+      </div>
 
-      
-
-      <section className="px-4 pb-14 sm:px-6 sm:pb-16 lg:px-8 lg:pb-24">
-
-        <div data-reveal="scale" className="mx-auto max-w-7xl rounded-[30px] bg-[#1F2D22] px-5 py-12 text-center shadow-[0_22px_55px_rgba(31,45,34,0.12)] sm:px-12 sm:py-14 lg:py-20">
-
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/60">
-            Ectoo
-          </p>
-
-          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl leading-tight text-white sm:text-4xl lg:text-5xl">
-            Find a bag for your everyday routine.
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/70">
-            Explore available styles and review
-            each product page for its current
-            details and specifications.
-          </p>
-
-        </div>
-
-      </section>
-
-    </div>
+      <div
+        className={`fbshop-cart-notice ${cartNotice ? "is-visible" : ""}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {cartNotice && (
+          <>
+            <Check size={19} aria-hidden="true" />
+            <span>{cartNotice}</span>
+            <Link to="/cart">View cart</Link>
+          </>
+        )}
+      </div>
+    </main>
   );
 };
+
+const styles = `
+  .fbshop-page {
+    --ink: #173f36;
+    --cream: #f5f0e6;
+    --paper: #fffdf5;
+    --lime: #d7e5a5;
+    --accent: #a56e4f;
+    --muted: #516b62;
+    --line: rgba(23, 63, 54, .23);
+    min-height: 100vh;
+    padding-bottom: clamp(45px, 6vw, 85px);
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui,
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+  }
+
+  .fbshop-page *,
+  .fbshop-page *::before,
+  .fbshop-page *::after { box-sizing: border-box; }
+
+  .fbshop-page a { color: inherit; text-decoration: none; }
+  .fbshop-page button,
+  .fbshop-page input,
+  .fbshop-page select { font: inherit; }
+  .fbshop-page button { cursor: pointer; }
+
+  .fbshop-page a:focus-visible,
+  .fbshop-page button:focus-visible,
+  .fbshop-page input:focus-visible,
+  .fbshop-page select:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 4px;
+  }
+
+  .fbshop-container {
+    width: min(100%, 1550px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4vw, 65px);
+  }
+
+  .fbshop-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+  }
+
+  .fbshop-topline a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+  }
+
+  .fbshop-layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(30px, 4vw, 65px);
+    padding-top: 45px;
+  }
+
+  .fbshop-sidebar { min-width: 0; }
+  .fbshop-eyebrow {
+    margin: 0;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .13em;
+  }
+
+  .fbshop-sidebar h1 {
+    margin: 20px 0;
+    font-size: clamp(58px, 5.5vw, 78px);
+    font-weight: 500;
+    line-height: .98;
+    letter-spacing: -.075em;
+  }
+
+  .fbshop-sidebar h1 span { display: block; color: var(--accent); }
+  .fbshop-sidebar-intro {
+    margin: 0 0 30px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.9;
+  }
+
+  .fbshop-categories { border-top: 1px solid var(--ink); }
+  .fbshop-categories button {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 60px;
+    padding: 14px 10px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+    text-align: left;
+    transition: background .2s ease;
+  }
+
+  .fbshop-categories button:hover,
+  .fbshop-categories button.is-active { background: var(--lime); }
+  .fbshop-category-number { color: var(--accent); font-size: 9px; }
+  .fbshop-category-name { font-size: 14px; }
+  .fbshop-category-count { color: var(--muted); font-size: 10px; }
+
+  .fbshop-sidebar-note {
+    margin-top: 30px;
+    padding: 23px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+  }
+
+  .fbshop-sidebar-note > p:last-of-type {
+    margin: 15px 0;
+    font-size: 11px;
+    line-height: 1.9;
+    color: var(--muted);
+  }
+
+  .fbshop-sidebar-note a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    min-height: 44px;
+    border-bottom: 1px solid var(--ink);
+    font-size: 12px;
+  }
+
+  .fbshop-catalog { min-width: 0; }
+  .fbshop-collection-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 25px 28px;
+    background: var(--lime);
+    border: 1px solid var(--ink);
+  }
+
+  .fbshop-collection-heading > div { min-width: 0; }
+  .fbshop-collection-heading h2 {
+    margin: 14px 0 0;
+    font-size: clamp(32px, 3.8vw, 52px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbshop-collection-heading > span {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .fbshop-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 30px;
+    padding-block: 25px;
+    margin-bottom: 5px;
+  }
+
+  .fbshop-search {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 12px;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .fbshop-search > svg { flex-shrink: 0; }
+  .fbshop-search input {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 10px 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 16px;
+  }
+
+  .fbshop-search input::placeholder { color: var(--muted); font-size: 12px; }
+  .fbshop-search input::-webkit-search-cancel-button { display: none; }
+  .fbshop-search button {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .fbshop-sort {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .fbshop-sort label { color: var(--muted); font-size: 10px; }
+  .fbshop-sort select {
+    max-width: 100%;
+    min-height: 48px;
+    padding: 10px 5px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+  }
+
+  .fbshop-filter-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+    font-size: 11px;
+  }
+
+  .fbshop-filter-summary > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .fbshop-filter-summary button {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 8px;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 11px;
+  }
+
+  .fbshop-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 35px 22px;
+  }
+
+  .fbshop-product {
+    min-width: 0;
+    animation: fbshopEnter .45s both;
+    animation-delay: var(--fbshop-delay, 0ms);
+  }
+
+  .fbshop-product-image {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: #ebe7db;
+    border: 1px solid var(--line);
+  }
+
+  .fbshop-product:nth-child(3n + 2) .fbshop-product-image {
+    background: #e5e9db;
+  }
+
+  .fbshop-product:nth-child(3n + 3) .fbshop-product-image {
+    background: #efe1d6;
+  }
+
+  .fbshop-product-image img {
+    width: 100%;
+    height: 100%;
+    padding: 18px;
+    object-fit: contain;
+    transition: transform .45s ease;
+  }
+
+  .fbshop-product-image:hover img { transform: scale(1.05); }
+  .fbshop-image-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .fbshop-product-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    max-width: calc(100% - 24px);
+    padding: 7px 10px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 9px;
+    overflow-wrap: anywhere;
+  }
+
+  .fbshop-view-icon {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+
+  .fbshop-product-info { padding-top: 16px; }
+  .fbshop-product-category {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbshop-product h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -.025em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbshop-product-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 13px;
+  }
+
+  .fbshop-product-meta strong { font-size: 14px; font-weight: 600; }
+  .fbshop-product-meta > span { font-size: 10px; color: var(--muted); }
+
+  .fbshop-add {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 15px;
+    margin-top: 16px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    transition: background .2s ease;
+  }
+
+  .fbshop-add:hover:not(:disabled) { background: #102e28; }
+  .fbshop-add:disabled { cursor: not-allowed; opacity: .5; }
+  .fbshop-add svg { flex-shrink: 0; }
+
+  .fbshop-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 350px;
+    padding: 35px 25px;
+    text-align: center;
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .fbshop-state h3 {
+    margin: 20px 0 0;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -.045em;
+    line-height: 1.2;
+  }
+
+  .fbshop-state p {
+    max-width: 420px;
+    margin: 15px 0;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+
+  .fbshop-button {
+    min-height: 48px;
+    margin-top: 10px;
+    padding: 13px 22px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+  }
+
+  .fbshop-catalog-footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 1px solid var(--ink);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .fbshop-cart-notice {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    gap: 14px;
+    width: max-content;
+    max-width: calc(100% - 40px);
+    padding: 16px 20px;
+    transform: translateX(-50%);
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 5px 5px 0 rgba(23, 63, 54, .12);
+    font-size: 12px;
+  }
+
+  .fbshop-cart-notice.is-visible { display: flex; }
+  .fbshop-cart-notice > svg { flex-shrink: 0; }
+  .fbshop-cart-notice > span { min-width: 0; overflow-wrap: anywhere; }
+  .fbshop-cart-notice a { flex-shrink: 0; text-decoration: underline; }
+
+  .fbshop-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @keyframes fbshopEnter {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fbshopSpin { to { transform: rotate(360deg); } }
+  .fbshop-spin { animation: fbshopSpin 1s linear infinite; }
+
+  @media (max-width: 1150px) {
+    .fbshop-layout { grid-template-columns: 220px minmax(0, 1fr); gap: 30px; }
+    .fbshop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fbshop-collection-heading { flex-direction: column; align-items: flex-start; }
+  }
+
+  @media (max-width: 800px) {
+    .fbshop-layout { grid-template-columns: minmax(0, 1fr); padding-top: 30px; }
+    .fbshop-sidebar h1 { font-size: 64px; }
+    .fbshop-sidebar h1 span { display: inline; margin-left: 12px; }
+    .fbshop-sidebar-intro { max-width: 450px; }
+    .fbshop-sidebar-note { display: none; }
+    .fbshop-categories {
+      display: flex;
+      gap: 8px;
+      padding-block: 12px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--ink);
+    }
+    .fbshop-categories button {
+      display: flex;
+      flex-shrink: 0;
+      width: auto;
+      min-height: 48px;
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    .fbshop-category-number { display: none; }
+    .fbshop-category-name { font-size: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    .fbshop-topline { font-size: 10px; }
+    .fbshop-sidebar h1 { font-size: 55px; }
+    .fbshop-collection-heading { padding: 24px 20px; }
+    .fbshop-collection-heading h2 { font-size: 35px; }
+    .fbshop-tools { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .fbshop-sort { justify-content: space-between; }
+    .fbshop-grid { gap: 28px 12px; }
+    .fbshop-product-image img { padding: 9px; }
+    .fbshop-product h3 { font-size: 14px; }
+    .fbshop-product-category { font-size: 8px; }
+    .fbshop-product-meta strong { font-size: 12px; }
+    .fbshop-product-meta > span { font-size: 9px; }
+    .fbshop-add { padding: 12px 10px; font-size: 10px; gap: 8px; }
+    .fbshop-product-badge { top: 8px; left: 8px; font-size: 8px; padding: 6px; }
+    .fbshop-view-icon { width: 30px; height: 30px; right: 8px; bottom: 8px; }
+    .fbshop-cart-notice { flex-wrap: wrap; gap: 10px; }
+  }
+
+  @media (max-width: 350px) {
+    .fbshop-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbshop-page *,
+    .fbshop-page *::before,
+    .fbshop-page *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .fbshop-product-image:hover img { transform: none; }
+  }
+`;
 
 export default Shop;

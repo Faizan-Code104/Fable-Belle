@@ -1,174 +1,196 @@
 @import "tailwindcss";
 
-
 @theme {
+  /* FableBelle typography */
+  --font-display: "Onest", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Onest", ui-sans-serif, system-ui, sans-serif;
 
-  --font-display: "Cormorant Garamond", Georgia, serif;
+  /* FableBelle palette */
+  --color-paper: #fffaf3;
+  --color-ivory: #fffaf3;
+  --color-champagne: #eadcc8;
+  --color-navy: #17243b;
+  --color-navy-dark: #101b2e;
+  --color-gold: #b58a50;
+  --color-ink: #17243b;
+  --color-line: #d6cfc4;
+  --color-mute: #535b67;
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-
-
-  --color-paper: #faf8f5;
-
-  --color-ink: #1c1c1a;
-
-  --color-bottle: #1f3d2e;
-
-  --color-bottle-dark: #16301f;
-
-  --color-line: #e5e0d8;
-
-  --color-mute: #b8b2a8;
-
+  /* Existing color names retained for current components */
+  --color-bottle: #17243b;
+  --color-bottle-dark: #101b2e;
 }
-
-
 
 /* ================= GLOBAL ================= */
 
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-
+  margin: 0;
   background-color: var(--color-paper);
-
   font-family: var(--font-sans);
-
   color: var(--color-ink);
-
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
 
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
 
-/* ================= LUXURY ANIMATIONS ================= */
+button:disabled {
+  cursor: not-allowed;
+}
 
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background-color: var(--color-navy);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 4px;
+}
+
+/* ================= ANIMATIONS ================= */
 
 @keyframes slideIn {
-
   from {
-
     opacity: 0;
-
     transform: translateX(-80px);
-
   }
-
 
   to {
-
     opacity: 1;
-
     transform: translateX(0);
-
   }
-
 }
-
-
 
 @keyframes fadeUp {
-
   from {
-
     opacity: 0;
-
     transform: translateY(80px);
-
   }
-
 
   to {
-
     opacity: 1;
-
     transform: translateY(0);
-
   }
-
 }
-
-
 
 @keyframes fadeDown {
-
   from {
-
     opacity: 0;
-
     transform: translateY(-40px);
-
   }
-
 
   to {
-
     opacity: 1;
-
     transform: translateY(0);
-
   }
-
 }
-
-
 
 @keyframes zoomImage {
-
   from {
-
     transform: scale(1);
-
   }
-
 
   to {
-
     transform: scale(1.08);
+  }
+}
 
+@keyframes orbit {
+  from {
+    transform: rotate(-25deg);
   }
 
+  to {
+    transform: rotate(335deg);
+  }
 }
 
+@keyframes unfold {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0.4;
+  }
 
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
 
-/* ================= CUSTOM CLASSES ================= */
-
+/* ================= ANIMATION CLASSES ================= */
 
 .animate-slide-in {
-
   animation: slideIn 1s ease-out forwards;
-
 }
-
-
 
 .animate-fade-up {
-
   animation: fadeUp 1s ease-out forwards;
-
 }
-
-
 
 .animate-fade-down {
-
   animation: fadeDown 0.8s ease-out forwards;
-
 }
-
-
 
 .animate-image-zoom {
-
   animation: zoomImage 8s ease-in-out infinite alternate;
-
 }
 
+.animate-orbit {
+  animation: orbit 24s linear infinite;
+}
 
+.animate-unfold {
+  animation: unfold 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
 
-/* Smooth scrolling */
+/* ================= REDUCED MOTION ================= */
 
-html {
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 
-  scroll-behavior: smooth;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 
+  .animate-unfold {
+    clip-path: none;
+    opacity: 1;
+  }
 }

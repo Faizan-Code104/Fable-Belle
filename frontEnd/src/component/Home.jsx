@@ -1,98 +1,141 @@
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-
-import {
-  Link,
-} from "react-router-dom";
-
-import {
-  ArrowRight,
-  Eye,
-  Gem,
-  ImageOff,
-  Leaf,
-  PackageCheck,
-  ShoppingBag,
-  Truck,
-} from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowDown, ArrowUpRight, ImageOff, Plus } from "lucide-react";
 
 import { API_BASE_URL } from "../config";
+import storeInfo from "../storeInfo";
 
-const API_URL = `${API_BASE_URL}/api/products`;
-const SERVER_URL = API_BASE_URL;
+const SERVER_URL = API_BASE_URL.replace(/\/+$/, "");
+const API_URL = `${SERVER_URL}/api/products`;
+
+const moments = [
+  {
+    id: "work",
+    name: "On the move",
+    description: "commute, errands, everything between",
+  },
+  {
+    id: "weekend",
+    name: "Open plans",
+    description: "time for wherever the day leads",
+  },
+  {
+    id: "evening",
+    name: "After hours",
+    description: "one reservation, many possibilities",
+  },
+];
+
+const carryOptions = [
+  { id: "essentials", name: "Just the essentials" },
+  { id: "more", name: "A little more" },
+];
+
+const getProductId = (product) => product?._id || product?.id;
+
+const getImageUrl = (image) => {
+  if (typeof image !== "string" || !image.trim()) return "";
+
+  const source = image.trim();
+
+  if (/^https?:\/\//i.test(source)) return source;
+
+  return `${SERVER_URL}/${source.replace(/^\/+/, "")}`;
+};
+
+const getCategory = (product) => {
+  if (typeof product?.category === "string") return product.category;
+
+  return product?.category?.name || "Handbag";
+};
+
+const getPrice = (product) => {
+  if (
+    product?.price === null ||
+    product?.price === undefined ||
+    product?.price === ""
+  ) {
+    return "";
+  }
+
+  const value = Number(product.price);
+
+  return Number.isFinite(value) ? `$${value.toFixed(2)}` : "";
+};
+
+const ProductImage = ({ product, className = "", eager = false }) => {
+  const source = getImageUrl(product?.images?.[0]);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [source]);
+
+  if (!source || failed) {
+    return (
+      <div
+        className={`flex items-center justify-center ${className}`}
+        role="img"
+        aria-label="Product image unavailable"
+      >
+        <ImageOff size={40} strokeWidth={1.3} className="opacity-40" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={source}
+      alt={product?.name || `${storeInfo.businessName} handbag`}
+      loading={eager ? "eager" : "lazy"}
+      fetchPriority={eager ? "high" : "auto"}
+      onError={() => setFailed(true)}
+      className={className}
+    />
+  );
+};
 
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const pageRef = useRef(null);
+  const [moment, setMoment] = useState("");
+  const [carry, setCarry] = useState("");
+  const [openId, setOpenId] = useState(null);
 
-  /* =========================================================
-     IMAGE URL
-  ========================================================= */
-
-  const getImageUrl = (image) => {
-    if (!image || typeof image !== "string") {
-      return "";
-    }
-
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
-
-    return `${SERVER_URL}${image}`;
-  };
-
-  /* =========================================================
-     FETCH PRODUCTS
-  ========================================================= */
+  const rowRefs = useRef({});
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
     const fetchProducts = async () => {
       try {
         setLoading(true);
         setLoadError("");
 
-        const response = await fetch(API_URL);
+        const response = await fetch(API_URL, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
-          throw new Error(
-            "Unable to load products."
-          );
+          throw new Error("Unable to load products.");
         }
 
         const data = await response.json();
 
-        if (!isMounted) {
-          return;
-        }
-
-        setProducts(
-          Array.isArray(data?.products)
-            ? data.products
-            : []
-        );
-      } catch {
         if (isMounted) {
+          setProducts(Array.isArray(data?.products) ? data.products : []);
+        }
+      } catch (error) {
+        if (isMounted && error.name !== "AbortError") {
           setProducts([]);
-
           setLoadError(
-            "Products are temporarily unavailable. Please try again later."
+            "Products are temporarily unavailable. Please try again later.",
           );
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -100,751 +143,534 @@ const Home = () => {
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, []);
 
-  /* =========================================================
-     SCROLL REVEAL ANIMATIONS
-  ========================================================= */
+  const latestProducts = useMemo(
+    () =>
+      [...products]
+        .sort((a, b) => {
+          const dateA = new Date(a?.createdAt || 0).getTime() || 0;
+          const dateB = new Date(b?.createdAt || 0).getTime() || 0;
 
-  useEffect(() => {
-    const elements =
-      pageRef.current?.querySelectorAll("[data-reveal]");
+          return dateB - dateA;
+        })
+        .slice(0, 10)
+        .filter((product) => getProductId(product)),
+    [products],
+  );
 
-    if (!elements?.length) {
-      return;
-    }
+  /*
+   * Each day selects a different product position.
+   * "A little more" displays the next product.
+   * This is a browsing interaction, not a size/occasion classification.
+   */
+  const finderMatch = useMemo(() => {
+    if (!latestProducts.length || !moment) return null;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.14,
-        rootMargin: "0px 0px -40px 0px",
-      }
-    );
-
-    elements.forEach((element) => {
-      observer.observe(element);
-    });
-
-    return () => {
-      observer.disconnect();
+    const momentIndex = {
+      work: 0,
+      weekend: 1,
+      evening: 2,
     };
-  }, [loading, products.length]);
 
-  /* =========================================================
-     LATEST PRODUCTS
-  ========================================================= */
+    const baseIndex = momentIndex[moment] ?? 0;
+    const carryOffset = carry === "more" ? 1 : 0;
+    const productIndex =
+      (baseIndex + carryOffset) % latestProducts.length;
 
-  const latestProducts = useMemo(() => {
-    return [...products]
-      .sort((a, b) => {
-        const dateA = new Date(
-          a?.createdAt || 0
-        ).getTime();
+    return latestProducts[productIndex];
+  }, [moment, carry, latestProducts]);
 
-        const dateB = new Date(
-          b?.createdAt || 0
-        ).getTime();
+  const stageProduct = finderMatch || latestProducts[0];
+  const stageId = getProductId(stageProduct);
 
-        return dateB - dateA;
-      })
-      .slice(0, 10);
-  }, [products]);
+  const stageIndex = latestProducts.findIndex(
+    (product) => getProductId(product) === stageId,
+  );
 
+  const finderHint = loading
+    ? "Loading the collection..."
+    : loadError
+      ? "The collection is temporarily unavailable."
+      : !latestProducts.length
+        ? "Your next favourite is coming soon."
+        : !moment
+          ? "Choose the kind of day to explore a piece."
+          : !carry
+            ? "Now choose what comes along to explore another view of the collection."
+            : "Explore this piece and check its full details for size and fit.";
+
+  const handleMomentChange = (id) => {
+    setMoment(id);
+    setCarry("");
+  };
+
+  const showStageProduct = () => {
+    if (!stageId) return;
+
+    setOpenId(stageId);
+
+    requestAnimationFrame(() => {
+      const row = rowRefs.current[stageId];
+
+      if (!row) return;
+
+      row.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+          .matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+
+      row.querySelector("button")?.focus({ preventScroll: true });
+    });
+  };
 
   return (
-    <div
-      ref={pageRef}
-      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
-    >
-
-      {/* =====================================================
-          ANIMATIONS
-      ===================================================== */}
-
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(42px);
-          transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-          will-change: opacity, transform;
-        }
-
-        [data-reveal="left"] {
-          transform: translateX(-45px);
-        }
-
-        [data-reveal="right"] {
-          transform: translateX(45px);
-        }
-
-        [data-reveal="scale"] {
-          transform: scale(0.96);
-        }
-
-        [data-reveal].ectoo-visible {
-          opacity: 1;
-          transform: translate(0, 0) scale(1);
-        }
-
-        .home-image-zoom {
-          transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .home-image-wrap:hover .home-image-zoom {
-          transform: scale(1.035);
-        }
-
-        .home-hover-card {
-          transition:
-            transform 0.4s ease,
-            box-shadow 0.4s ease,
-            background-color 0.4s ease;
-        }
-
-        [data-reveal].ectoo-visible.home-hover-card:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 20px 45px rgba(31, 45, 34, 0.08);
-        }
-
-        @keyframes homeFloat {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-
-          50% {
-            transform: translateY(-6px);
-          }
-        }
-
-        @keyframes homeArrowMove {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-
-          50% {
-            transform: translateX(5px);
-          }
-        }
-
-        .home-floating {
-          animation: homeFloat 4.5s ease-in-out infinite;
-        }
-
-        .home-cta:hover .home-arrow {
-          animation: homeArrowMove 0.8s ease infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] {
-            opacity: 1;
-            transform: none;
-            transition: none;
-          }
-
-          *,
-          *::before,
-          *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
-        }
-      `}</style>
-
-      {/* =====================================================
-          HERO
-      ===================================================== */}
-
-      <section className="relative overflow-hidden bg-[#EEE7DF]">
-
-        <div className="mx-auto grid min-h-[520px] max-w-[1600px] lg:grid-cols-[0.95fr_1.05fr] lg:min-h-[590px]">
-
-          {/* LEFT CONTENT */}
-
-          <div data-reveal="left" className="relative z-10 flex items-center px-6 py-14 sm:px-10 lg:px-16 xl:px-20">
-
-            <div className="max-w-xl">
-
-              <p className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#5E5B57] sm:text-[11px]">
-                Bags For A Brighter You
+    <div className="min-w-0 bg-paper text-navy">
+      {/* BAG FINDER */}
+      <section
+        id="finder"
+        className="bg-champagne px-5 py-12 sm:px-6 sm:py-16 lg:px-10 lg:py-24"
+      >
+        <div className="mx-auto max-w-[1520px]">
+          <div className="mb-10 grid gap-6 lg:mb-14 lg:grid-cols-[1.4fr_0.6fr] lg:items-end lg:gap-12">
+            <div className="min-w-0">
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.15em] sm:text-xs">
+                {storeInfo.businessName} / The bag finder
               </p>
 
-              <h1 className="mt-5 font-display text-[48px] leading-[0.95] tracking-[-0.025em] text-[#111311] sm:text-[62px] lg:text-[70px] xl:text-[76px]">
-                Carry More
-                <br />
-                Than Essentials
+              <h1 className="text-[clamp(3.2rem,8vw,8rem)] font-medium leading-[0.98] tracking-[-0.075em]">
+                Where are we
+                <span className="block text-gold lg:ml-[8%]">
+                  going?
+                </span>
               </h1>
+            </div>
 
-              <p className="mt-6 max-w-md text-sm leading-7 text-[#5E5B57] sm:text-[16px]">
-                Thoughtfully selected handbags
-                designed for the moments that matter.
+            <div className="max-w-sm">
+              <p className="text-sm leading-7 text-navy/85 sm:text-base">
+                Start with the day ahead. Click through pieces from the
+                collection, then compare their full details below.
+              </p>
+
+              <a
+                href="#collection"
+                className="mt-5 inline-flex min-h-11 items-center gap-5 border-b border-navy text-sm font-semibold"
+              >
+                Or browse the collection
+                <ArrowDown size={17} aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+
+          <div className="grid border border-navy shadow-[8px_8px_0_rgba(23,36,59,0.14)] lg:grid-cols-2 lg:shadow-[14px_14px_0_rgba(23,36,59,0.14)]">
+            {/* FINDER CONTROLS */}
+            <div className="flex min-w-0 flex-col bg-paper p-6 sm:p-9 xl:p-12">
+              <fieldset className="min-w-0">
+                <legend className="mb-5 flex items-center gap-3 text-lg font-semibold tracking-tight">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-navy text-[10px]">
+                    01
+                  </span>
+                  What kind of day?
+                </legend>
+
+                <div className="border-t border-navy/25">
+                  {moments.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={moment === item.id}
+                      onClick={() => handleMomentChange(item.id)}
+                      className={`flex min-h-20 w-full items-center justify-between gap-4 border-b border-navy/25 px-3 py-4 text-left transition-colors ${
+                        moment === item.id
+                          ? "bg-navy text-white"
+                          : "hover:bg-champagne"
+                      }`}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-xl font-medium tracking-tight">
+                          {item.name}
+                        </span>
+
+                        <span className="mt-1 block text-xs leading-5 opacity-80">
+                          {item.description}
+                        </span>
+                      </span>
+
+                      <ArrowUpRight
+                        size={20}
+                        className="shrink-0"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset
+                disabled={!moment}
+                className="mt-8 min-w-0 disabled:opacity-45"
+              >
+                <legend className="mb-5 flex items-center gap-3 text-lg font-semibold tracking-tight">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-navy text-[10px]">
+                    02
+                  </span>
+                  What comes along?
+                </legend>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  {carryOptions.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-pressed={carry === item.id}
+                      onClick={() => setCarry(item.id)}
+                      className={`inline-flex min-h-12 items-center justify-between gap-4 border border-navy px-4 py-3 text-sm font-semibold transition-colors ${
+                        carry === item.id
+                          ? "bg-navy text-white"
+                          : "hover:bg-champagne"
+                      }`}
+                    >
+                      {item.name}
+                      <ArrowUpRight size={16} aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <p
+                role="status"
+                className="mt-auto pt-8 text-xs leading-6 text-mute"
+              >
+                {finderHint}
+              </p>
+            </div>
+
+            {/* PRODUCT STAGE */}
+            <div className="relative flex min-w-0 flex-col overflow-hidden bg-navy p-6 text-paper sm:p-9 xl:p-12">
+              <div
+                aria-live="polite"
+                aria-atomic="true"
+                className="relative z-10 flex items-start justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-champagne">
+                    {finderMatch
+                      ? "A piece to explore"
+                      : "Your starting point"}
+                  </p>
+
+                  <p className="mt-2 break-words text-xl font-medium tracking-tight sm:text-2xl">
+                    {stageProduct?.name ||
+                      (loading
+                        ? "Loading collection..."
+                        : "The collection")}
+                  </p>
+
+                  {stageProduct && (
+                    <p className="mt-1 text-sm text-champagne">
+                      {getPrice(stageProduct)}
+                    </p>
+                  )}
+                </div>
+
+                {!!latestProducts.length && (
+                  <span className="shrink-0 text-[10px] tracking-widest">
+                    {String(stageIndex + 1).padStart(2, "0")} /{" "}
+                    {String(latestProducts.length).padStart(2, "0")}
+                  </span>
+                )}
+              </div>
+
+              <div className="relative my-5 grid min-h-[280px] flex-1 place-items-center sm:min-h-[380px] lg:min-h-[420px]">
+                <div
+                  aria-hidden="true"
+                  className="absolute aspect-square w-[74%] max-w-[420px] rounded-full bg-[radial-gradient(circle_at_35%_25%,#FFFAF3,#EADCC8_70%,#C8B797)]"
+                />
+
+                <div
+                  aria-hidden="true"
+                  className="animate-orbit absolute aspect-square w-[85%] max-w-[480px] rounded-full border border-champagne/30"
+                />
+
+                {stageProduct ? (
+                  <div
+                    key={stageId}
+                    className="animate-fade-down relative z-10 w-full"
+                  >
+                    <ProductImage
+                      product={stageProduct}
+                      eager
+                      className="h-[280px] w-full object-contain p-3 text-navy drop-shadow-[12px_22px_18px_rgba(0,0,0,0.25)] sm:h-[380px] lg:h-[420px]"
+                    />
+                  </div>
+                ) : (
+                  <p className="relative z-10 px-6 text-center text-sm text-navy">
+                    {loading
+                      ? "Loading products..."
+                      : loadError
+                        ? "Please check back shortly."
+                        : "New pieces are coming soon."}
+                  </p>
+                )}
+              </div>
+
+              <div className="relative z-10 border-t border-paper/35 pt-5">
+                <p className="text-xs uppercase tracking-widest text-champagne">
+                  {stageProduct
+                    ? getCategory(stageProduct)
+                    : storeInfo.businessName}
+                </p>
+
+                <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
+                  <p className="min-w-0 flex-1 break-words text-2xl font-medium tracking-tight sm:text-3xl">
+                    {stageProduct?.name || "Find your way to carry"}
+                  </p>
+
+                  {stageProduct && (
+                    <span className="text-lg font-semibold">
+                      {getPrice(stageProduct)}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={!stageId}
+                  onClick={showStageProduct}
+                  className="mt-5 inline-flex min-h-11 items-center gap-4 border-b border-champagne text-left text-sm font-semibold text-champagne disabled:opacity-50"
+                >
+                  See this bag in the collection
+                  <ArrowUpRight
+                    size={18}
+                    className="shrink-0"
+                    aria-hidden="true"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* COLLECTION LEDGER */}
+      <section
+        id="collection"
+        className="scroll-mt-6 px-5 py-16 sm:px-6 sm:py-20 lg:px-10 lg:py-28"
+      >
+        <div className="mx-auto max-w-[1520px]">
+          <div className="mb-10 flex flex-col gap-6 lg:mb-14 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-mute sm:text-xs">
+                {storeInfo.businessName} / Latest collection
+              </p>
+
+              <h2 className="mt-4 text-[clamp(2.6rem,5vw,5.8rem)] font-medium leading-none tracking-[-0.065em]">
+                The carry ledger.
+              </h2>
+            </div>
+
+            <div className="max-w-sm">
+              <p className="text-sm leading-7 text-mute sm:text-base">
+                Ways to take the day with you. Open any line to see the
+                piece, then explore its full product details.
               </p>
 
               <Link
                 to="/shop"
-                className="group mt-7 inline-flex min-h-12 items-center justify-center gap-3 rounded-[5px] bg-[#1F2D22] px-7 text-[11px] font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#3F4C3A]"
+                className="mt-3 inline-flex min-h-11 items-center gap-4 text-sm font-semibold"
               >
-                Shop Now
-
-                <ArrowRight
-                  size={15}
-                  strokeWidth={1.7}
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
+                View all products
+                <ArrowUpRight size={18} aria-hidden="true" />
               </Link>
-
-              {/* HERO FEATURES */}
-
-              <div className="mt-10 grid max-w-xl grid-cols-1 gap-5 border-t border-[#111311]/10 pt-7 sm:grid-cols-3">
-
-                <div data-reveal className="flex items-center gap-3">
-                  <Gem
-                    size={24}
-                    strokeWidth={1.45}
-                    className="shrink-0"
-                  />
-
-                  <div>
-                    <p className="text-[11px] font-semibold">
-                      Thoughtful Style
-                    </p>
-
-                    <p className="mt-0.5 text-[10px] text-[#5E5B57]">
-                      Everyday designs
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  data-reveal
-                  className="flex items-center gap-3"
-                  style={{
-                    transitionDelay: "100ms",
-                  }}
-                >
-                  <Truck
-                    size={25}
-                    strokeWidth={1.45}
-                    className="shrink-0"
-                  />
-
-                  <div>
-                    <p className="text-[11px] font-semibold">
-                      Free Shipping
-                    </p>
-
-                    <p className="mt-0.5 text-[10px] text-[#5E5B57]">
-                      U.S. Orders
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  data-reveal
-                  className="flex items-center gap-3"
-                  style={{
-                    transitionDelay: "200ms",
-                  }}
-                >
-                  <PackageCheck
-                    size={25}
-                    strokeWidth={1.45}
-                    className="shrink-0"
-                  />
-
-                  <div>
-                    <p className="text-[11px] font-semibold">
-                      Easy Returns
-                    </p>
-
-                    <p className="mt-0.5 text-[10px] text-[#5E5B57]">
-                      Within 30 Days
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
             </div>
-
           </div>
-
-          {/* RIGHT HERO IMAGE */}
-
-          <div data-reveal="scale" className="home-image-wrap relative min-h-[400px] overflow-hidden lg:min-h-full">
-
-            <img
-              src="/hero-banner.png"
-              alt="Ectoo handbag collection"
-              className="home-image-zoom absolute inset-0 h-full w-full object-cover object-center"
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-r from-[#EEE7DF]/10 via-transparent to-black/5" />
-
-            {/* EDITORIAL TEXT */}
-
-            <div data-reveal="right" className="absolute right-5 top-10 hidden border-l border-white/30 pl-5 text-white lg:block xl:right-8 xl:top-20">
-
-              <p className="font-display text-[13px] uppercase leading-6 tracking-[0.26em]">
-                Style
-                <br />
-                Function
-                <br />
-                Confidence
-              </p>
-
-              <div className="mt-4 h-px w-10 bg-white/50" />
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* =====================================================
-          PRODUCTS
-      ===================================================== */}
-
-      <section className="bg-white px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
-
-        <div className="mx-auto max-w-[1500px]">
-
-          {/* TITLE */}
-
-          <div data-reveal className="mb-7 flex items-end justify-between gap-5">
-
-            <div>
-
-              <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-                Discover Ectoo
-              </p>
-
-              <h2 className="font-display text-3xl leading-none sm:text-4xl">
-                Our Handbags
-              </h2>
-
-            </div>
-
-            <Link
-              to="/shop"
-              className="group hidden items-center gap-2 text-[10px] font-semibold sm:flex"
-            >
-              View All Products
-
-              <ArrowRight
-                size={14}
-                className="transition-transform duration-300 group-hover:translate-x-1"
-              />
-            </Link>
-
-          </div>
-
-          {/* LOADING */}
 
           {loading ? (
             <div
-              className="py-20 text-center text-sm text-[#5E5B57]"
               role="status"
+              className="border-y border-navy/25 py-16 text-center text-sm text-mute"
             >
               Loading products...
             </div>
           ) : loadError ? (
-            <div className="rounded-[18px] border border-[#E4DED7] bg-[#FAF8F5] px-5 py-14 text-center">
-
-              <p className="text-sm text-[#5E5B57]">
-                {loadError}
-              </p>
+            <div
+              role="alert"
+              className="border border-navy/25 bg-champagne/30 px-6 py-14 text-center"
+            >
+              <p className="text-sm leading-7 text-mute">{loadError}</p>
 
               <Link
                 to="/shop"
-                className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-[4px] bg-[#1F2D22] px-6 text-xs font-semibold text-white"
+                className="mt-6 inline-flex min-h-12 items-center gap-4 bg-navy px-6 py-3 text-sm font-semibold text-white"
               >
-                Visit Shop
-
-                <ArrowRight size={15} />
+                Visit shop
+                <ArrowUpRight size={17} />
               </Link>
-
             </div>
-          ) : latestProducts.length === 0 ? (
-            <div className="rounded-[18px] border border-[#E4DED7] bg-[#FAF8F5] px-5 py-14 text-center">
-
-              <ShoppingBag
-                size={30}
-                strokeWidth={1.5}
-                className="mx-auto text-[#5E5B57]"
-              />
-
-              <h3 className="mt-4 font-display text-2xl">
-                Collection Coming Soon
+          ) : !latestProducts.length ? (
+            <div className="border border-navy/25 px-6 py-14 text-center">
+              <h3 className="text-2xl font-medium tracking-tight">
+                Collection coming soon
               </h3>
 
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#5E5B57]">
-                Products are being prepared for the
-                Ectoo collection. Please check back soon.
+              <p className="mt-4 text-sm leading-7 text-mute">
+                Products are being prepared for the{" "}
+                {storeInfo.businessName} collection. Please check back soon.
               </p>
-
             </div>
           ) : (
+            <>
+              <div
+                aria-hidden="true"
+                className="hidden grid-cols-[6%_44%_27%_16%_7%] px-4 pb-4 text-[10px] font-bold uppercase tracking-[0.14em] text-mute md:grid"
+              >
+                <span>No.</span>
+                <span>Piece</span>
+                <span>Collection</span>
+                <span>Price</span>
+                <span className="text-right">Details</span>
+              </div>
 
-            /* PRODUCT GRID */
-
-            <div className="grid grid-cols-2 gap-x-3 gap-y-9 sm:gap-x-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-
-              {latestProducts.map(
-                (product, index) => {
-                  const id =
-                    product?._id || product?.id;
-
-                  if (!id) {
-                    return null;
-                  }
-
-                  const mainImage =
-                    getImageUrl(
-                      product?.images?.[0]
-                    );
+              <div className="border-b border-navy">
+                {latestProducts.map((product, index) => {
+                  const id = getProductId(product);
+                  const expanded = openId === id;
+                  const detailId = `product-detail-${id}`;
+                  const triggerId = `product-trigger-${id}`;
 
                   return (
                     <article
                       key={id}
-                      data-reveal
-                      className="home-hover-card group min-w-0"
-                      style={{
-                        transitionDelay: `${
-                          index * 55
-                        }ms`,
+                      ref={(element) => {
+                        if (element) {
+                          rowRefs.current[id] = element;
+                        } else {
+                          delete rowRefs.current[id];
+                        }
                       }}
+                      className="scroll-mt-6 border-t border-navy"
                     >
-
-                      {/* IMAGE */}
-
-                      <Link
-                        to={`/shop/${id}`}
-                        className="relative block aspect-[1/1] overflow-hidden rounded-[16px] bg-[#F5F1EC]"
-                      >
-
-                        {mainImage ? (
-                          <img
-                            src={mainImage}
-                            alt={
-                              product?.name
-                                ? `${product.name} handbag`
-                                : "Ectoo handbag"
-                            }
-                            loading="lazy"
-                            className="absolute inset-0 h-full w-full object-contain object-center p-3 transition-all duration-700 group-hover:scale-[1.035]"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[#5E5B57]/40">
-
-                            <ImageOff
-                              size={28}
-                              strokeWidth={1.5}
-                            />
-
-                          </div>
-                        )}
-
-                        {/* VIEW ICON */}
-
-                        <span className="absolute bottom-3 right-3 flex h-9 w-9 translate-y-2 items-center justify-center rounded-full bg-white/95 text-[#111311] opacity-0 shadow-sm transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-
-                          <Eye
-                            size={15}
-                            strokeWidth={1.7}
-                          />
-
-                        </span>
-
-                      </Link>
-
-                      {/* DETAILS */}
-
-                      <div className="mt-3 px-0.5">
-
-                        <Link
-                          to={`/shop/${id}`}
+                      <h3>
+                        <button
+                          id={triggerId}
+                          type="button"
+                          aria-expanded={expanded}
+                          aria-controls={detailId}
+                          onClick={() =>
+                            setOpenId(expanded ? null : id)
+                          }
+                          className={`grid min-h-24 w-full grid-cols-[24px_minmax(0,1fr)_30px] items-center gap-x-3 gap-y-2 px-2 py-5 text-left transition-colors md:min-h-28 md:grid-cols-[6%_44%_27%_16%_7%] md:gap-0 md:px-4 ${
+                            expanded
+                              ? "bg-champagne"
+                              : "hover:bg-champagne/50"
+                          }`}
                         >
+                          <span className="row-span-2 text-xs font-semibold text-mute md:row-span-1">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
 
-                          <h3 className="line-clamp-1 text-[11px] font-medium text-[#111311] transition-colors duration-300 hover:text-[#9A5937] sm:text-[12px]">
+                          <span className="min-w-0 break-words pr-3 text-xl font-medium leading-tight tracking-[-0.045em] sm:text-2xl lg:text-3xl">
                             {product?.name ||
-                              "Ectoo Handbag"}
-                          </h3>
+                              `${storeInfo.businessName} Handbag`}
+                          </span>
 
-                        </Link>
+                          <span className="col-start-2 row-start-2 min-w-0 break-words text-xs text-mute md:col-start-auto md:row-start-auto md:pr-4 md:text-sm">
+                            {getCategory(product)}
+                          </span>
 
-                        {Number.isFinite(
-                          Number(product?.price)
-                        ) && (
-                          <p className="mt-1 text-[11px] font-semibold text-[#111311] sm:text-[12px]">
-                            $
-                            {Number(
-                              product.price
-                            ).toFixed(2)}
-                          </p>
-                        )}
+                          <span className="col-start-2 row-start-3 text-sm font-semibold md:col-start-auto md:row-start-auto">
+                            {getPrice(product)}
+                          </span>
 
-                        {/* BRAND */}
+                          <span className="col-start-3 row-span-3 row-start-1 flex h-7 w-7 items-center justify-center justify-self-end rounded-full border border-navy md:col-start-auto md:row-span-1 md:row-start-auto md:h-9 md:w-9">
+                            <Plus
+                              size={18}
+                              className={`transition-transform ${
+                                expanded ? "rotate-45" : ""
+                              }`}
+                              aria-hidden="true"
+                            />
+                          </span>
+                        </button>
+                      </h3>
 
-                        {product?.brand && (
-                          <p className="mt-1 truncate text-[9px] uppercase tracking-[0.12em] text-[#5E5B57]">
-                            {product.brand}
-                          </p>
-                        )}
-
-                        {/* PRODUCT ACTION */}
-
-                        <Link
-                          to={`/shop/${id}`}
-                          className="mt-3 flex min-h-[38px] w-full items-center justify-center gap-2 rounded-[6px] bg-[#1F2D22] px-3 text-[9px] font-semibold uppercase tracking-[0.07em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#3F4C3A] sm:text-[10px]"
-                        >
-                          <ShoppingBag
-                            size={13}
-                            strokeWidth={1.7}
+                      <div
+                        id={detailId}
+                        hidden={!expanded}
+                        role="region"
+                        aria-labelledby={triggerId}
+                        className="animate-unfold grid bg-paper md:grid-cols-2"
+                      >
+                        <div className="relative grid min-h-[300px] place-items-center overflow-hidden bg-champagne/75 sm:min-h-[380px] lg:min-h-[480px]">
+                          <div
+                            aria-hidden="true"
+                            className="absolute aspect-square w-[65%] rounded-full border border-navy/20"
                           />
 
-                          View Product
-                        </Link>
+                          <ProductImage
+                            product={product}
+                            className="relative h-[280px] w-[90%] object-contain p-5 drop-shadow-[10px_18px_16px_rgba(23,36,59,0.15)] sm:h-[350px] lg:h-[430px]"
+                          />
+                        </div>
 
+                        <div className="flex min-w-0 flex-col items-start justify-center p-6 sm:p-9 lg:p-12">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-mute">
+                            A closer look
+                          </p>
+
+                          <h4 className="mt-4 break-words text-2xl font-medium leading-tight tracking-[-0.045em] lg:text-3xl">
+                            {product?.name ||
+                              `${storeInfo.businessName} Handbag`}
+                          </h4>
+
+                          <dl className="mb-7 mt-7 w-full border-t border-navy/25 text-sm">
+                            <div className="flex justify-between gap-5 border-b border-navy/25 py-3">
+                              <dt className="font-semibold">
+                                Collection
+                              </dt>
+                              <dd className="min-w-0 break-words text-right text-mute">
+                                {getCategory(product)}
+                              </dd>
+                            </div>
+
+                            {getPrice(product) && (
+                              <div className="flex justify-between gap-5 border-b border-navy/25 py-3">
+                                <dt className="font-semibold">Price</dt>
+                                <dd>{getPrice(product)}</dd>
+                              </div>
+                            )}
+                          </dl>
+
+                          <Link
+                            to={`/shop/${id}`}
+                            className="inline-flex min-h-12 w-full items-center justify-between gap-5 bg-navy px-5 py-4 text-sm font-semibold text-white transition-colors hover:bg-navy-dark sm:w-auto"
+                          >
+                            View product
+                            <ArrowUpRight
+                              size={19}
+                              aria-hidden="true"
+                            />
+                          </Link>
+
+                          <p className="mt-4 text-xs leading-6 text-mute">
+                            See available options and full details on
+                            the product page.
+                          </p>
+                        </div>
                       </div>
-
                     </article>
                   );
-                }
-              )}
-
-            </div>
+                })}
+              </div>
+            </>
           )}
-
-          {/* MOBILE VIEW ALL */}
-
-          {!loading &&
-            !loadError &&
-            latestProducts.length > 0 && (
-              <div className="mt-9 text-center sm:hidden">
-
-                <Link
-                  to="/shop"
-                  className="inline-flex items-center gap-2 text-[11px] font-semibold"
-                >
-                  View All Products
-
-                  <ArrowRight size={14} />
-                </Link>
-
-              </div>
-            )}
-
         </div>
-
       </section>
-
-      {/* =====================================================
-          FEATURES STRIP
-      ===================================================== */}
-
-      <section className="bg-white px-4 pb-10 sm:px-6 lg:px-8">
-
-        <div data-reveal="scale" className="mx-auto max-w-[1500px] rounded-[18px] bg-[#F5F1EC] px-5 py-7 sm:px-8">
-
-          <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-[#111311]/10">
-
-            <div data-reveal className="flex items-center gap-4 lg:px-6">
-
-              <Leaf
-                size={31}
-                strokeWidth={1.35}
-              />
-
-              <div>
-                <h3 className="text-[11px] font-semibold">
-                  Thoughtful Design
-                </h3>
-
-                <p className="mt-1 text-[10px] text-[#5E5B57]">
-                  For Modern Living
-                </p>
-              </div>
-
-            </div>
-
-            <div data-reveal style={{ transitionDelay: "100ms" }} className="flex items-center gap-4 lg:px-6">
-
-              <Gem
-                size={31}
-                strokeWidth={1.35}
-              />
-
-              <div>
-                <h3 className="text-[11px] font-semibold">
-                  Curated Selection
-                </h3>
-
-                <p className="mt-1 text-[10px] text-[#5E5B57]">
-                  Everyday Style
-                </p>
-              </div>
-
-            </div>
-
-            <div data-reveal style={{ transitionDelay: "200ms" }} className="flex items-center gap-4 lg:px-6">
-
-              <Truck
-                size={32}
-                strokeWidth={1.35}
-              />
-
-              <div>
-                <h3 className="text-[11px] font-semibold">
-                  Free Shipping
-                </h3>
-
-                <p className="mt-1 text-[10px] text-[#5E5B57]">
-                  Across The U.S.
-                </p>
-              </div>
-
-            </div>
-
-            <div data-reveal style={{ transitionDelay: "300ms" }} className="flex items-center gap-4 lg:px-6">
-
-              <PackageCheck
-                size={31}
-                strokeWidth={1.35}
-              />
-
-              <div>
-                <h3 className="text-[11px] font-semibold">
-                  Easy Returns
-                </h3>
-
-                <p className="mt-1 text-[10px] text-[#5E5B57]">
-                  Within 30 Days
-                </p>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* =====================================================
-          NEWSLETTER / JOURNEY
-      ===================================================== */}
-
-      <section className="relative overflow-hidden bg-[#EEE7DF]">
-
-        <div className="mx-auto grid max-w-[1600px] lg:grid-cols-[1fr_0.95fr]">
-
-          {/* LEFT */}
-
-        <div
-  data-reveal="left"
-  className="flex items-center px-6 py-14 sm:px-10 lg:px-16 xl:px-20"
->
-  <div className="w-full max-w-xl">
-
-    <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-      The Ectoo Philosophy
-    </p>
-
-    <h2 className="mt-3 font-display text-3xl leading-tight sm:text-4xl lg:text-[44px]">
-      Style Made For
-      <br />
-      Everyday Moments
-    </h2>
-
-    <p className="mt-5 max-w-lg text-sm leading-7 text-[#5E5B57]">
-      At Ectoo, we believe the right bag should feel as good as it
-      looks. Our collection brings together modern design, practical
-      details, and versatile style for your everyday routine.
-    </p>
-
-    <div className="mt-7 flex flex-wrap items-center gap-3">
-
-      <Link
-        to="/about"
-        className="home-cta group inline-flex h-12 items-center justify-center gap-3 rounded-[5px] bg-[#1F2D22] px-7 text-[10px] font-semibold uppercase tracking-[0.12em] text-white transition-colors duration-300 hover:bg-[#3F4C3A]"
-      >
-        Our Story
-
-        <ArrowRight
-          size={13}
-          className="home-arrow transition-transform duration-300 group-hover:translate-x-1"
-        />
-      </Link>
-
-      <Link
-        to="/shop"
-        className="group inline-flex h-12 items-center justify-center gap-3 rounded-[5px] border border-[#1F2D22] px-7 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#1F2D22] transition-all duration-300 hover:bg-[#1F2D22] hover:text-white"
-      >
-        Explore Collection
-
-        <ArrowRight
-          size={13}
-          className="transition-transform duration-300 group-hover:translate-x-1"
-        />
-      </Link>
-
-    </div>
-
-  </div>
-</div>
-
-          {/* RIGHT IMAGE */}
-
-          <div data-reveal="scale" className="home-image-wrap relative hidden min-h-[290px] overflow-hidden lg:block">
-
-            <img
-              src="/newsletter-banner.png"
-              alt="Ectoo handbag"
-              className="home-image-zoom absolute inset-0 h-full w-full object-cover object-center"
-            />
-
-            <div className="absolute inset-0 bg-gradient-to-r from-[#EEE7DF]/25 to-[#1F2D22]/20" />
-
-            <div className="home-floating absolute right-12 top-1/2 -translate-y-1/2 rounded-[38px] bg-[#1F2D22]/90 px-8 py-8 text-white backdrop-blur-sm">
-
-              <p className="font-display text-[14px] uppercase leading-7 tracking-[0.26em]">
-                More
-                <br />
-                Than
-                <br />
-                A Bag
-              </p>
-
-              <div className="my-4 h-px w-10 bg-white/50" />
-
-              <p className="text-[8px] uppercase tracking-[0.2em] text-white/70">
-                Everyday Confidence
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
     </div>
   );
 };

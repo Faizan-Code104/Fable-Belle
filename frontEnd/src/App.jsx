@@ -253,32 +253,60 @@ const App = () => {
           <Route
             path="*"
             element={
-              <div className="flex min-h-screen items-center justify-center bg-[#FAF8F5] px-5">
-                <div className="w-full max-w-xl rounded-[30px] border border-[#E4DED7] bg-white px-6 py-14 text-center shadow-[0_20px_55px_rgba(31,45,34,0.06)] sm:px-10 sm:py-16">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-                    Ectoo
-                  </p>
+              <main
+                className="flex min-h-screen items-center justify-center bg-[#FFFAF3] px-5 py-12 text-[#17243B]"
+                style={{
+                  fontFamily: "'Onest', sans-serif",
+                }}
+              >
+                <div className="w-full max-w-2xl border border-[#17243B]/25 bg-[#FFFAF3] shadow-[10px_10px_0_#EADCC8] sm:shadow-[16px_16px_0_#EADCC8]">
+                  <div className="flex items-center justify-between gap-4 border-b border-[#17243B]/25 px-6 py-5 sm:px-10">
+                    <Link
+                      to="/"
+                      className="text-sm font-semibold tracking-tight transition-colors hover:text-[#B58A50] sm:text-base"
+                    >
+                      FableBelle.com
+                    </Link>
 
-                  <h1 className="mt-4 font-display text-7xl leading-none text-[#1F2D22] sm:text-8xl">
-                    404
-                  </h1>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#535B67]">
+                      Page unavailable
+                    </span>
+                  </div>
 
-                  <h2 className="mt-5 font-display text-3xl text-[#111311]">
-                    Page not found
-                  </h2>
+                  <div className="px-6 py-12 sm:px-10 sm:py-16">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#B58A50] sm:text-xs">
+                      A little off course
+                    </p>
 
-                  <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#5E5B57]">
-                    The page you&apos;re looking for doesn&apos;t exist or may have been moved.
-                  </p>
+                    <h1 className="mt-5 text-[100px] font-medium leading-none tracking-[-0.08em] sm:text-[150px]">
+                      404<span className="text-[#B58A50]">.</span>
+                    </h1>
 
-                  <Link
-                    to="/"
-                    className="mt-8 inline-flex min-h-12 items-center justify-center rounded-[14px] bg-[#1F2D22] px-7 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#3F4C3A]"
-                  >
-                    Back to Home
-                  </Link>
+                    <h2 className="mt-6 text-3xl font-medium leading-tight tracking-[-0.05em] sm:text-4xl">
+                      Let&apos;s find your way back.
+                    </h2>
+
+                    <p className="mt-4 max-w-md text-sm leading-7 text-[#535B67] sm:text-base">
+                      The page you&apos;re looking for doesn&apos;t exist or
+                      may have been moved.
+                    </p>
+
+                    <Link
+                      to="/"
+                      className="mt-8 inline-flex min-h-12 items-center justify-between gap-10 border border-[#17243B] bg-[#17243B] px-6 py-4 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#263956] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#B58A50]"
+                    >
+                      Back to home
+                      <span aria-hidden="true">↗</span>
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-[#17243B]/25 bg-[#EADCC8] px-6 py-4 sm:px-10">
+                    <p className="text-xs text-[#17243B]">
+                      Thoughtfully carried, clearly explained.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </main>
             }
           />
         </Routes>

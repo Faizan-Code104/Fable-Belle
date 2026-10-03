@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -8,37 +9,117 @@ import React, {
 
 const CartContext = createContext(null);
 
-const getProductId = (product) =>
-  product?.id || product?._id || "";
+const CART_STORAGE_KEY = "fablebelle-cart";
+const LEGACY_CART_STORAGE_KEY = "fablebelle-cart";
 
-export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const savedCart = localStorage.getItem("ectoo-cart");
-      const parsedCart = savedCart
-        ? JSON.parse(savedCart)
-        : [];
+const getProductId = (product) => {
+  const id = product?.id ?? product?._id;
 
-      return Array.isArray(parsedCart)
-        ? parsedCart
-        : [];
-    } catch {
-      return [];
+  return id == null ? "" : String(id).trim();
+};
+
+const getSafeQuantity = (value) => {
+  const quantity = Number(value);
+
+  return Number.isFinite(quantity)
+    ? Math.max(1, Math.floor(quantity))
+    : 1;
+};
+
+const getSafePrice = (value) => {
+  const price = Number(value);
+
+  return Number.isFinite(price)
+    ? Math.max(0, price)
+    : 0;
+};
+
+const normalizeCart = (items) => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  const normalizedItems = new Map();
+
+  items.forEach((item) => {
+    if (!item || typeof item !== "object") {
+      return;
     }
+
+    const id = getProductId(item);
+
+    if (!id) {
+      return;
+    }
+
+    const quantity = getSafeQuantity(item.quantity);
+    const existingItem = normalizedItems.get(id);
+
+    if (existingItem) {
+      normalizedItems.set(id, {
+        ...existingItem,
+        quantity: existingItem.quantity + quantity,
+      });
+
+      return;
+    }
+
+    normalizedItems.set(id, {
+      ...item,
+      id,
+      price: getSafePrice(item.price),
+      quantity,
+    });
   });
 
+  return Array.from(normalizedItems.values());
+};
+
+const readStoredCart = () => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const savedCart = window.localStorage.getItem(
+      CART_STORAGE_KEY
+    );
+
+    if (savedCart !== null) {
+      return normalizeCart(JSON.parse(savedCart));
+    }
+
+    const legacyCart = window.localStorage.getItem(
+      LEGACY_CART_STORAGE_KEY
+    );
+
+    return legacyCart
+      ? normalizeCart(JSON.parse(legacyCart))
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+export const CartProvider = ({ children }) => {
+  const [cartItems, setCartItems] = useState(readStoredCart);
+
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     try {
-      localStorage.setItem(
-        "ectoo-cart",
+      window.localStorage.setItem(
+        CART_STORAGE_KEY,
         JSON.stringify(cartItems)
       );
     } catch {
-      return;
+      // Cart remains available in memory if storage is unavailable.
     }
   }, [cartItems]);
 
-  const addToCart = (product) => {
+  const addToCart = useCallback((product) => {
     const productId = getProductId(product);
 
     if (!productId) {
@@ -47,17 +128,15 @@ export const CartProvider = ({ children }) => {
 
     setCartItems((currentItems) => {
       const existingItem = currentItems.find(
-        (item) => getProductId(item) === productId
+        (item) => item.id === productId
       );
 
       if (existingItem) {
         return currentItems.map((item) =>
-          getProductId(item) === productId
+          item.id === productId
             ? {
                 ...item,
-                id: productId,
-                quantity:
-                  Number(item.quantity || 0) + 1,
+                quantity: getSafeQuantity(item.quantity) + 1,
               }
             : item
         );
@@ -68,57 +147,64 @@ export const CartProvider = ({ children }) => {
         {
           ...product,
           id: productId,
+          price: getSafePrice(product.price),
           quantity: 1,
         },
       ];
     });
-  };
+  }, []);
 
-  const removeFromCart = (productId) => {
-    setCartItems((currentItems) =>
-      currentItems.filter(
-        (item) => getProductId(item) !== productId
-      )
-    );
-  };
+  const removeFromCart = useCallback((productId) => {
+    const id = getProductId({ id: productId });
 
-  const updateQuantity = (
-    productId,
-    quantity
-  ) => {
-    const safeQuantity = Number(quantity);
-
-    if (
-      !Number.isFinite(safeQuantity) ||
-      safeQuantity <= 0
-    ) {
-      removeFromCart(productId);
+    if (!id) {
       return;
     }
 
     setCartItems((currentItems) =>
-      currentItems.map((item) =>
-        getProductId(item) === productId
-          ? {
-              ...item,
-              id: productId,
-              quantity: safeQuantity,
-            }
-          : item
-      )
+      currentItems.filter((item) => item.id !== id)
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const updateQuantity = useCallback(
+    (productId, quantity) => {
+      const id = getProductId({ id: productId });
+      const numericQuantity = Number(quantity);
+
+      if (!id || !Number.isFinite(numericQuantity)) {
+        return;
+      }
+
+      const wholeQuantity = Math.floor(numericQuantity);
+
+      if (wholeQuantity <= 0) {
+        removeFromCart(id);
+        return;
+      }
+
+      setCartItems((currentItems) =>
+        currentItems.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                quantity: wholeQuantity,
+              }
+            : item
+        )
+      );
+    },
+    [removeFromCart]
+  );
+
+  const clearCart = useCallback(() => {
     setCartItems([]);
-  };
+  }, []);
 
   const cartCount = useMemo(
     () =>
       cartItems.reduce(
         (total, item) =>
-          total +
-          Number(item.quantity || 0),
+          total + getSafeQuantity(item.quantity),
         0
       ),
     [cartItems]
@@ -129,8 +215,8 @@ export const CartProvider = ({ children }) => {
       cartItems.reduce(
         (total, item) =>
           total +
-          Number(item.price || 0) *
-            Number(item.quantity || 0),
+          getSafePrice(item.price) *
+            getSafeQuantity(item.quantity),
         0
       ),
     [cartItems]
@@ -146,7 +232,15 @@ export const CartProvider = ({ children }) => {
       updateQuantity,
       clearCart,
     }),
-    [cartItems, cartCount, cartSubtotal]
+    [
+      cartItems,
+      cartCount,
+      cartSubtotal,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+    ]
   );
 
   return (

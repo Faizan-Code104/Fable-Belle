@@ -1,716 +1,1253 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  Heart,
+  ArrowLeft,
+  ArrowUpRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  ImageOff,
+  Loader2,
   Minus,
   Plus,
+  RotateCcw,
   ShoppingBag,
   Truck,
-  Clock3,
-  RotateCcw,
-  ChevronDown,
-  ArrowLeft,
-  Loader2,
-  ImageOff,
+  X,
 } from "lucide-react";
-
-import {
-  Link,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
 
 import { useCart } from "./CartContext";
 import { API_BASE_URL } from "../config";
+import { BUSINESS_INFO } from "../storeInfo";
 
-const API_URL = `${API_BASE_URL}/api/products`;
-const SERVER_URL = API_BASE_URL;
+const apiBase = String(API_BASE_URL || "").replace(/\/+$/, "");
+
+const getProductId = (product) =>
+  String(product?._id || product?.id || "");
+
+const getImageUrl = (image) => {
+  if (typeof image !== "string" || !image.trim()) return "";
+
+  const value = image.trim();
+
+  return /^https?:\/\//i.test(value)
+    ? value
+    : `${apiBase}/${value.replace(/^\/+/, "")}`;
+};
+
+const formatPrice = (price) => {
+  if (price === null || price === undefined || price === "") return "—";
+
+  const value = Number(price);
+
+  return Number.isFinite(value) && value >= 0
+    ? new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(value)
+    : "—";
+};
+
+const ProductImage = ({ image, alt, thumbnail = false }) => {
+  const src = getImageUrl(image);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return src && !failed ? (
+    <img
+      src={src}
+      alt={alt}
+      decoding="async"
+      loading={thumbnail ? "lazy" : "eager"}
+      onError={() => setFailed(true)}
+    />
+  ) : (
+    <span className="fbdetail-image-fallback">
+      <ImageOff size={thumbnail ? 20 : 36} aria-hidden="true" />
+      {!thumbnail && <span>Image unavailable</span>}
+    </span>
+  );
+};
 
 const ShopDetails = () => {
-  const pageRef = useRef(null);
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, cartItems = [] } = useCart();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] =
-    useState("");
-
-  const [activeImage, setActiveImage] =
-    useState(0);
-
+  const [errorMessage, setErrorMessage] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
+  const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [notice, setNotice] = useState("");
 
-  const [isWishlisted, setIsWishlisted] =
-    useState(false);
-
-  const [openSection, setOpenSection] =
-    useState("description");
-
-  const getImageUrl = (image) => {
-    if (!image) return "";
-
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
-      return image;
-    }
-
-    return `${SERVER_URL}${image}`;
-  };
+  const noticeTimer = useRef(null);
 
   useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    clearTimeout(noticeTimer.current);
+    setNotice("");
+    setProduct(null);
+    setActiveImage(0);
+    setQuantity(1);
+    setLoading(true);
+    setErrorMessage("");
+
     const fetchProduct = async () => {
       try {
-        setLoading(true);
-        setErrorMessage("");
-        setProduct(null);
-        setActiveImage(0);
+        if (!id) throw new Error("The product link is incomplete.");
 
         const response = await fetch(
-          `${API_URL}/${id}`
+          `${apiBase}/api/products/${encodeURIComponent(id)}`,
+          { signal: controller.signal }
         );
 
-        let data = {};
-
-        try {
-          data = await response.json();
-        } catch {
-          data = {};
-        }
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          throw new Error(
-            data?.message ||
-              "Product not found."
-          );
+          throw new Error(data.message || "Unable to load this product.");
         }
 
-        setProduct(data.product);
+        if (
+          !data.product ||
+          typeof data.product !== "object" ||
+          Array.isArray(data.product) ||
+          !getProductId(data.product)
+        ) {
+          throw new Error("Product details are unavailable.");
+        }
+
+        if (active) setProduct(data.product);
       } catch (error) {
-        setErrorMessage(
-          error?.message ||
-            "Unable to load this product."
-        );
+        if (active && error.name !== "AbortError") {
+          setErrorMessage(error.message || "Unable to load this product.");
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
-    if (id) {
-      fetchProduct();
-    }
-  }, [id]);
+    fetchProduct();
 
-  const increaseQuantity = () => {
-    setQuantity((prev) => prev + 1);
-  };
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [id, retryCount]);
 
-  const decreaseQuantity = () => {
-    setQuantity((prev) =>
-      Math.max(1, prev - 1)
+  useEffect(() => {
+    return () => clearTimeout(noticeTimer.current);
+  }, []);
+
+  const productId = getProductId(product);
+  const rawStock = Number(product?.stock);
+  const stock = Number.isFinite(rawStock)
+    ? Math.max(0, Math.floor(rawStock))
+    : 0;
+
+  const inStock =
+    stock > 0 &&
+    String(product?.status || "").trim().toLowerCase() !== "out of stock";
+
+  const alreadyInCart = cartItems.reduce((total, item) => {
+    if (getProductId(item) !== productId) return total;
+
+    const value = Number(item.quantity);
+    return total + (Number.isFinite(value) ? Math.max(0, value) : 0);
+  }, 0);
+
+  const availableQuantity = inStock
+    ? Math.max(0, Math.floor(stock - alreadyInCart))
+    : 0;
+
+  const selectedQuantity = availableQuantity
+    ? Math.min(Math.max(1, quantity), availableQuantity)
+    : 1;
+
+  const canPurchase = Boolean(productId) && availableQuantity > 0;
+
+  const images = Array.isArray(product?.images)
+    ? product.images.filter(
+        (image) => typeof image === "string" && image.trim()
+      )
+    : [];
+
+  if (!images.length && typeof product?.image === "string") {
+    if (product.image.trim()) images.push(product.image);
+  }
+
+  const imageIndex = Math.min(activeImage, Math.max(0, images.length - 1));
+
+  const changeImage = (direction) => {
+    if (images.length < 2) return;
+
+    setActiveImage(
+      (current) => (current + direction + images.length) % images.length
     );
   };
 
-  const buildCartItem = () => ({
-    id: product._id || product.id,
-    name: product.name,
-    category: product.category,
-    price: Number(product.price),
-    image: getImageUrl(
-      product.images?.[0]
-    ),
-    quantity,
-  });
+  const dismissNotice = () => {
+    clearTimeout(noticeTimer.current);
+    setNotice("");
+  };
+
+  const addSelectedItems = () => {
+    if (!product || !canPurchase) return false;
+
+    const cartProduct = {
+      ...product,
+      id: productId,
+      price: Number(product.price),
+      image: getImageUrl(images[0]),
+    };
+
+    // CartContext adds one unit per call.
+    for (let index = 0; index < selectedQuantity; index += 1) {
+      addToCart(cartProduct);
+    }
+
+    return true;
+  };
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!addSelectedItems()) return;
 
-    const cartProduct =
-      buildCartItem();
+    clearTimeout(noticeTimer.current);
+    setNotice(
+      `${selectedQuantity} ${
+        selectedQuantity === 1 ? "item" : "items"
+      } added to cart.`
+    );
+    setQuantity(1);
 
-    addToCart(cartProduct);
+    noticeTimer.current = setTimeout(() => setNotice(""), 3000);
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
-
-    const checkoutProduct =
-      buildCartItem();
-
-    addToCart(checkoutProduct);
-
-    navigate("/cart");
+    if (addSelectedItems()) navigate("/cart");
   };
 
-
-  useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
-
-    if (!elements?.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
-  }, [product]);
-
-  const toggleSection = (section) => {
-    setOpenSection((prev) =>
-      prev === section ? "" : section
-    );
-  };
-
-  
-
-  if (loading) {
-    return (
-      <section className="flex min-h-[70vh] flex-col items-center justify-center gap-3 bg-white px-4">
-        <Loader2
-          size={30}
-          className="animate-spin text-[#111311]"
-        />
-
-        <p className="text-sm font-medium text-[#5E5B57]">
-          Loading product...
-        </p>
-      </section>
-    );
-  }
-
-  
-
-  if (errorMessage || !product) {
-    return (
-      <section className="flex min-h-[70vh] flex-col items-center justify-center gap-4 bg-white px-4 text-center">
-        <div className="flex h-16 w-16 items-center justify-center bg-[#F5F1EC] text-[#5E5B57]/70">
-          <ShoppingBag size={26} />
-        </div>
-
-        <h1 className="font-display text-3xl text-[#111311]">
-          Product not found
-        </h1>
-
-        <p className="max-w-md text-sm leading-6 text-[#5E5B57]">
-          {errorMessage ||
-            "This product may have been removed or the link is incorrect."}
-        </p>
-
-        <Link
-          to="/shop"
-          className="mt-2 inline-flex items-center gap-2 bg-[#1F2D22] px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-[#3F4C3A]"
-        >
-          <ArrowLeft size={16} />
-
-          Back to Shop
-        </Link>
-      </section>
-    );
-  }
-
-  const images =
-    product.images &&
-    product.images.length > 0
-      ? product.images
-      : [];
-
-  const currentImage =
-    images[activeImage] ||
-    images[0];
-
-  const inStock =
-    Number(product.stock) > 0;
+  const specifications = [
+    ["SKU", product?.sku],
+    ["Material", product?.material],
+    ["Weight", product?.weight],
+  ];
 
   return (
-    <section ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5]">
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1);
-        }
-        [data-reveal="left"] { transform: translateX(-38px); }
-        [data-reveal="right"] { transform: translateX(38px); }
-        [data-reveal="scale"] { transform: scale(.97); }
-        [data-reveal].ectoo-visible { opacity: 1; transform: translate(0,0) scale(1); }
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] { opacity: 1; transform: none; transition: none; }
-        }
-      `}</style>
-      {}
+    <main className="fbdetail">
+      <style>{styles}</style>
 
-      <div className="border-b border-[#E4DED7] bg-[#EEE7DF]">
-        <div className="mx-auto flex max-w-7xl items-center px-5 py-4 sm:px-8 lg:px-12">
-          <Link
-            to="/shop"
-            className="group inline-flex items-center gap-2 text-sm font-medium text-[#5E5B57] transition-colors hover:text-[#111311]"
-          >
-            <ArrowLeft
-              size={17}
-              className="transition-transform duration-300 group-hover:-translate-x-1"
-            />
-
-            Back to Shop
+      <div className="fbdetail-wrap">
+        <nav className="fbdetail-top" aria-label="Product navigation">
+          <Link to="/shop">
+            <ArrowLeft size={17} aria-hidden="true" />
+            Back to collection
           </Link>
-        </div>
-      </div>
 
-      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-20">
-        <div className="grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
+          <span>{BUSINESS_INFO.businessName}</span>
+        </nav>
 
-          {}
+        {loading ? (
+          <div className="fbdetail-state" role="status">
+            <Loader2 size={30} className="fbdetail-spin" aria-hidden="true" />
+            <p>Loading product details…</p>
+          </div>
+        ) : errorMessage || !product ? (
+          <div className="fbdetail-state" role="alert">
+            <ShoppingBag size={32} aria-hidden="true" />
+            <h1>Product unavailable</h1>
+            <p>{errorMessage || "This product is currently unavailable."}</p>
 
-          <div>
-            {}
-
-            <div className="group relative aspect-square overflow-hidden bg-[#F5F1EC]">
-              {currentImage ? (
-                <img
-                  src={getImageUrl(
-                    currentImage
-                  )}
-                  alt={product.name}
-                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-[#5E5B57]/35">
-                  <ImageOff
-                    size={40}
-                  />
-                </div>
-              )}
-
-              {product.isFeatured && (
-                <div className="absolute left-5 top-5 bg-[#1F2D22] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white">
-                  Featured
-                </div>
-              )}
-
-              {}
-
+            <div className="fbdetail-state-actions">
               <button
                 type="button"
-                onClick={() =>
-                  setIsWishlisted(
-                    !isWishlisted
-                  )
-                }
-                className={`absolute right-5 top-5 flex h-12 w-12 items-center justify-center rounded-full bg-white/95 shadow-sm backdrop-blur transition-all duration-300 hover:scale-105 ${
-                  isWishlisted
-                    ? "text-red-500"
-                    : "text-[#5E5B57]"
-                }`}
-                aria-label="Add to wishlist"
+                className="fbdetail-primary"
+                onClick={() => setRetryCount((value) => value + 1)}
               >
-                <Heart
-                  size={20}
-                  fill={
-                    isWishlisted
-                      ? "currentColor"
-                      : "none"
-                  }
-                />
+                Try again
               </button>
+
+              <Link to="/shop" className="fbdetail-text-link">
+                Browse the collection
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </Link>
             </div>
+          </div>
+        ) : (
+          <>
+            <header className="fbdetail-heading">
+              <div>
+                <p className="fbdetail-eyebrow">
+                  {product.category || "The collection"}
+                </p>
+                <h1>{product.name || "Product"}</h1>
+              </div>
 
-            {}
+              <div className="fbdetail-heading-meta">
+                <p className="fbdetail-price">{formatPrice(product.price)}</p>
+                <span className="fbdetail-stock">
+                  <span aria-hidden="true" />
+                  {inStock ? "In stock" : "Out of stock"}
+                </span>
+              </div>
+            </header>
 
-            {images.length > 1 && (
-              <div className="mt-4 grid grid-cols-4 gap-3">
-                {images.map(
-                  (image, index) => (
+            <section
+              className="fbdetail-gallery"
+              aria-label="Product image gallery"
+            >
+              <div className="fbdetail-main-image">
+                <ProductImage
+                  image={images[imageIndex]}
+                  alt={`${product.name || "Product"} — view ${imageIndex + 1}`}
+                />
+
+                {product.isFeatured && (
+                  <span className="fbdetail-featured">Featured</span>
+                )}
+
+                {images.length > 1 && (
+                  <div className="fbdetail-image-controls">
                     <button
                       type="button"
-                      key={`${image}-${index}`}
-                      onMouseEnter={() =>
-                        setActiveImage(
-                          index
-                        )
+                      onClick={() => changeImage(-1)}
+                      aria-label="Previous product image"
+                    >
+                      <ChevronLeft size={20} aria-hidden="true" />
+                    </button>
+
+                    <span aria-live="polite" aria-atomic="true">
+                      {String(imageIndex + 1).padStart(2, "0")}
+                      <span> / </span>
+                      {String(images.length).padStart(2, "0")}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => changeImage(1)}
+                      aria-label="Next product image"
+                    >
+                      <ChevronRight size={20} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <aside className="fbdetail-gallery-side">
+                <div className="fbdetail-gallery-intro">
+                  <p className="fbdetail-eyebrow">A closer look</p>
+                  <h2>Every angle.<br />Every detail.</h2>
+                  <p>Explore the available product views.</p>
+                </div>
+
+                {images.length > 1 && (
+                  <div className="fbdetail-thumbnails">
+                    {images.map((image, index) => (
+                      <button
+                        key={`${image}-${index}`}
+                        type="button"
+                        className={imageIndex === index ? "is-active" : ""}
+                        onClick={() => setActiveImage(index)}
+                        aria-label={`Show product image ${index + 1}`}
+                        aria-pressed={imageIndex === index}
+                      >
+                        <ProductImage
+                          image={image}
+                          alt=""
+                          thumbnail
+                        />
+                        <span aria-hidden="true">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="fbdetail-gallery-signature">
+                  <span>{BUSINESS_INFO.businessName}</span>
+                  <span>Carry your style.</span>
+                </div>
+              </aside>
+            </section>
+
+            <section
+              className="fbdetail-purchase"
+              aria-labelledby="fbdetail-purchase-title"
+            >
+              <div className="fbdetail-purchase-intro">
+                <p className="fbdetail-eyebrow">Make it yours</p>
+                <h2 id="fbdetail-purchase-title">Your next everyday companion.</h2>
+                <p>
+                  Select your quantity and add this bag to your cart.
+                </p>
+              </div>
+
+              <div className="fbdetail-purchase-controls">
+                <div className="fbdetail-quantity-row">
+                  <span id="fbdetail-quantity-label">Quantity</span>
+
+                  <div
+                    className="fbdetail-quantity"
+                    role="group"
+                    aria-labelledby="fbdetail-quantity-label"
+                  >
+                    <button
+                      type="button"
+                      disabled={!canPurchase || selectedQuantity <= 1}
+                      onClick={() =>
+                        setQuantity(Math.max(1, selectedQuantity - 1))
                       }
-                      onFocus={() =>
-                        setActiveImage(
-                          index
-                        )
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus size={16} aria-hidden="true" />
+                    </button>
+
+                    <span aria-live="polite">{selectedQuantity}</span>
+
+                    <button
+                      type="button"
+                      disabled={
+                        !canPurchase || selectedQuantity >= availableQuantity
                       }
                       onClick={() =>
-                        setActiveImage(
-                          index
+                        setQuantity(
+                          Math.min(availableQuantity, selectedQuantity + 1)
                         )
                       }
-                      className={`group aspect-square overflow-hidden rounded-[14px] border-2 transition-all duration-300 ${
-                        activeImage ===
-                        index
-                          ? "border-[#1F2D22]"
-                          : "border-transparent hover:border-[#E4DED7]"
-                      }`}
+                      aria-label="Increase quantity"
                     >
-                      <img
-                        src={getImageUrl(
-                          image
-                        )}
-                        alt={`${product.name} ${
-                          index + 1
-                        }`}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
+                      <Plus size={16} aria-hidden="true" />
                     </button>
-                  )
+                  </div>
+                </div>
+
+                <div className="fbdetail-buy-buttons">
+                  <button
+                    type="button"
+                    className="fbdetail-primary"
+                    disabled={!canPurchase}
+                    onClick={handleAddToCart}
+                  >
+                    {!inStock
+                      ? "Out of stock"
+                      : !availableQuantity
+                      ? "Available stock in cart"
+                      : "Add to cart"}
+                    <ShoppingBag size={18} aria-hidden="true" />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="fbdetail-secondary"
+                    disabled={!canPurchase}
+                    onClick={handleBuyNow}
+                  >
+                    Buy it now
+                    <ArrowUpRight size={18} aria-hidden="true" />
+                  </button>
+                </div>
+
+                {inStock && !availableQuantity && (
+                  <Link to="/cart" className="fbdetail-cart-hint">
+                    Review this item in your cart
+                    <ArrowUpRight size={16} aria-hidden="true" />
+                  </Link>
                 )}
               </div>
-            )}
-          </div>
+            </section>
 
-          {}
-
-          <div data-reveal="right" className="lg:pt-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#9A5937]">
-              {product.category}
-            </p>
-
-            <h1 className="mt-3 font-display text-5xl leading-[1.02] text-[#111311] sm:text-6xl">
-              {product.name}
-            </h1>
-
-            {}
-
-            <div className="mt-6 flex items-center gap-4">
-              <span className="text-2xl font-bold text-[#111311]">
-                $
-                {Number(
-                  product.price
-                ).toFixed(2)}
-              </span>
-            </div>
-
-            {}
-
-           <p className="mt-3 text-xs font-bold">
-  {inStock ? (
-    <span className="text-emerald-600">
-      In Stock
-    </span>
-  ) : (
-    <span className="text-red-500">
-      Out of Stock
-    </span>
-  )}
-</p>
-
-            {}
-
-            <p className="mt-7 text-sm leading-7 text-[#5E5B57] sm:text-base">
-              {product.description}
-            </p>
-
-            {}
-            <div className="mt-7 overflow-hidden rounded-[20px] border border-[#E4DED7] bg-white px-5">
-              <div className="grid grid-cols-[110px_1fr] gap-4 border-b border-[#E4DED7] py-3 text-sm">
-                <span className="font-bold text-[#111311]">SKU</span>
-                <span className="text-[#5E5B57]">{product.sku || "Not provided"}</span>
-              </div>
-              <div className="grid grid-cols-[110px_1fr] gap-4 border-b border-[#E4DED7] py-3 text-sm">
-                <span className="font-bold text-[#111311]">Material</span>
-                <span className="text-[#5E5B57]">{product.material || "Not provided"}</span>
-              </div>
-              <div className="grid grid-cols-[110px_1fr] gap-4 py-3 text-sm">
-                <span className="font-bold text-[#111311]">Weight</span>
-                <span className="text-[#5E5B57]">{product.weight || "Not provided"}</span>
-              </div>
-            </div>
-
-            <div className="my-8 h-px bg-[#E4DED7]" />
-
-            {}
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <div className="flex h-14 items-center justify-between rounded-[14px] border border-[#E4DED7] bg-[#F5F1EC] px-2 sm:w-36">
-                <button
-                  type="button"
-                  onClick={
-                    decreaseQuantity
-                  }
-                  className="flex h-10 w-10 items-center justify-center text-[#5E5B57] transition-colors hover:bg-white hover:text-[#111311]"
-                  aria-label="Decrease quantity"
-                >
-                  <Minus size={16} />
-                </button>
-
-                <span className="text-sm font-bold text-[#111311]">
-                  {quantity}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={
-                    increaseQuantity
-                  }
-                  className="flex h-10 w-10 items-center justify-center text-[#5E5B57] transition-colors hover:bg-white hover:text-[#111311]"
-                  aria-label="Increase quantity"
-                >
-                  <Plus size={16} />
-                </button>
+            <section
+              className="fbdetail-information"
+              aria-labelledby="fbdetail-info-title"
+            >
+              <div className="fbdetail-description">
+                <p className="fbdetail-eyebrow">About this bag</p>
+                <h2 id="fbdetail-info-title">The details that matter.</h2>
+                <p className="fbdetail-description-text">
+                  {product.description || "A description has not been provided."}
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={
-                  handleAddToCart
-                }
-                disabled={!inStock}
-                className="flex h-14 flex-1 items-center justify-center gap-3 rounded-[14px] bg-[#1F2D22] px-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#3F4C3A] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <ShoppingBag
-                  size={18}
-                />
+              <div className="fbdetail-specifications">
+                <h3>Product specifications</h3>
 
-                {inStock
-                  ? "Add to Cart"
-                  : "Out of Stock"}
-              </button>
-            </div>
+                <dl>
+                  {specifications.map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>
+                        {value !== null &&
+                        value !== undefined &&
+                        String(value).trim()
+                          ? String(value)
+                          : "Not provided"}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </section>
 
-            {}
+            <section
+              className="fbdetail-service"
+              aria-label="Shipping and returns information"
+            >
+              <div>
+                <Truck size={23} aria-hidden="true" />
+                <h3>Free standard shipping</h3>
+                <p>On eligible orders within the contiguous United States.</p>
+              </div>
 
+              <div>
+                <Clock3 size={23} aria-hidden="true" />
+                <h3>1–2 business-day processing</h3>
+                <p>
+                  Standard transit is generally 3–7 business days after
+                  processing.
+                </p>
+              </div>
+
+              <div>
+                <RotateCcw size={23} aria-hidden="true" />
+                <h3>30-day returns</h3>
+                <p>
+                  Eligible items may be returned within 30 days of confirmed
+                  delivery, in accordance with our Return and Refund Policy.
+                </p>
+              </div>
+            </section>
+
+            <footer className="fbdetail-footer">
+              <div>
+                <p className="fbdetail-eyebrow">{BUSINESS_INFO.businessName}</p>
+                <h2>Find more to fall for.</h2>
+              </div>
+
+              <Link to="/shop" className="fbdetail-text-link">
+                Explore the collection
+                <ArrowUpRight size={21} aria-hidden="true" />
+              </Link>
+            </footer>
+          </>
+        )}
+      </div>
+
+      <div
+        className={`fbdetail-toast ${notice ? "is-visible" : ""}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {notice && (
+          <>
+            <Check size={19} aria-hidden="true" />
+            <span>{notice}</span>
+            <Link to="/cart">View cart</Link>
             <button
               type="button"
-              onClick={handleBuyNow}
-              disabled={!inStock}
-              className="mt-3 flex h-14 w-full items-center justify-center rounded-[14px] border border-[#1F2D22] bg-transparent text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:bg-[#1F2D22] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={dismissNotice}
+              aria-label="Dismiss cart notification"
             >
-              Buy It Now
+              <X size={17} aria-hidden="true" />
             </button>
-
-            {}
-
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-              <div className="rounded-[18px] border border-[#E4DED7] bg-[#F5F1EC] p-4">
-                <Truck
-                  size={20}
-                  className="text-[#111311]"
-                />
-
-                <p className="mt-3 text-xs font-bold text-[#111311]">
-                  Free Standard Shipping
-                </p>
-
-                <p className="mt-1 text-[10px] leading-4 text-[#5E5B57]/80">
-                  Eligible U.S. orders
-                </p>
-              </div>
-
-              <div className="rounded-[18px] border border-[#E4DED7] bg-[#F5F1EC] p-4">
-                <Clock3
-                  size={20}
-                  className="text-[#111311]"
-                />
-
-                <p className="mt-3 text-xs font-bold text-[#111311]">
-                  1–2 Business-Day
-                  Processing
-                </p>
-
-                <p className="mt-1 text-[10px] leading-4 text-[#5E5B57]/80">
-                  Before shipment
-                </p>
-              </div>
-
-              <div className="rounded-[18px] border border-[#E4DED7] bg-[#F5F1EC] p-4">
-                <RotateCcw
-                  size={20}
-                  className="text-[#111311]"
-                />
-
-                <p className="mt-3 text-xs font-bold text-[#111311]">
-                  30-Day Returns
-                </p>
-
-                <p className="mt-1 text-[10px] leading-4 text-[#5E5B57]/80">
-                  Eligible items
-                </p>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {}
-
-        <div data-reveal className="mt-16 rounded-[28px] border border-[#E4DED7] bg-white p-6 sm:p-8 lg:mt-24 lg:p-10">
-          <div className="grid gap-12 lg:grid-cols-[280px_1fr]">
-
-            {}
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#9A5937]">
-                Product Details
-              </p>
-
-              <h2 className="mt-3 font-display text-3xl text-[#111311]">
-                Everything you need
-                to know.
-              </h2>
-            </div>
-
-            {}
-
-            <div className="divide-y divide-[#E4DED7]">
-
-              {}
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    toggleSection(
-                      "description"
-                    )
-                  }
-                  className="flex w-full items-center justify-between py-5 text-left"
-                >
-                  <span className="text-sm font-bold text-[#111311]">
-                    Description
-                  </span>
-
-                  <ChevronDown
-                    size={18}
-                    className={`text-[#5E5B57]/70 transition-transform duration-300 ${
-                      openSection ===
-                      "description"
-                        ? "rotate-180"
-                        : ""
-                    }`}
-                  />
-                </button>
-
-                {openSection ===
-                  "description" && (
-                  <div className="pb-6 text-sm leading-7 text-[#5E5B57]">
-                    <p>
-                      {
-                        product.description
-                      }
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {}
-
-              <div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    toggleSection(
-                      "shipping"
-                    )
-                  }
-                  className="flex w-full items-center justify-between py-5 text-left"
-                >
-                  <span className="text-sm font-bold text-[#111311]">
-                    Shipping & Returns
-                  </span>
-
-                  <ChevronDown
-                    size={18}
-                    className={`text-[#5E5B57]/70 transition-transform duration-300 ${
-                      openSection ===
-                      "shipping"
-                        ? "rotate-180"
-                        : ""
-                    }`}
-                  />
-                </button>
-
-                {openSection ===
-                  "shipping" && (
-                  <div className="pb-6 text-sm leading-7 text-[#5E5B57]">
-                    <p>
-                      Orders are
-                      processed within
-                      1–2 business days.
-                    </p>
-
-                    <p className="mt-3">
-                      Standard transit
-                      time is generally
-                      3–7 business days
-                      after processing.
-                    </p>
-
-                    <p className="mt-3">
-                      Free standard
-                      shipping is
-                      available on
-                      eligible orders
-                      within the
-                      contiguous United
-                      States.
-                    </p>
-
-                    <p className="mt-3">
-                      Eligible products
-                      may be returned
-                      within 30 days of
-                      confirmed delivery
-                      in accordance with
-                      our Return and
-                      Refund Policy.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        {}
-
-        <div data-reveal="scale" className="mt-16 rounded-[30px] bg-[#1F2D22] px-6 py-12 text-center text-white shadow-[0_22px_55px_rgba(31,45,34,0.12)] sm:px-10 lg:mt-24 lg:py-16">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-white/60">
-            Ectoo
-          </p>
-
-          <h2 className="mx-auto mt-3 max-w-2xl font-display text-3xl sm:text-4xl">
-            Carry your style.
-            Wherever life takes
-            you.
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-white/70">
-            Discover more
-            thoughtfully designed
-            bags made for modern
-            everyday life.
-          </p>
-
-          <Link
-            to="/shop"
-            className="mt-7 inline-flex items-center gap-2 rounded-[14px] bg-[#F1EEE8] px-7 py-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
-          >
-            Explore Collection
-
-            <ShoppingBag
-              size={17}
-            />
-          </Link>
-        </div>
+          </>
+        )}
       </div>
-    </section>
+    </main>
   );
 };
+
+const styles = `
+  .fbdetail {
+    --ink: #173f36;
+    --deep: #102e28;
+    --paper: #fffdf5;
+    --bone: #f5f0e6;
+    --brass: #a56e4f;
+    --muted: #626e67;
+    --line: rgba(23, 63, 54, .16);
+
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .fbdetail *,
+  .fbdetail *::before,
+  .fbdetail *::after { box-sizing: border-box; }
+
+  .fbdetail a { color: inherit; text-decoration: none; }
+  .fbdetail button { font: inherit; cursor: pointer; }
+  .fbdetail button:disabled { cursor: not-allowed; opacity: .45; }
+
+  .fbdetail a:focus-visible,
+  .fbdetail button:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 4px;
+  }
+
+  .fbdetail-wrap {
+    width: min(100%, 1320px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 64px);
+  }
+
+  .fbdetail-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    min-height: 78px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+  }
+
+  .fbdetail-top a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+  }
+
+  .fbdetail-top > span { font-weight: 600; }
+
+  .fbdetail-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 35px;
+    padding-block: 44px 36px;
+    animation: fbdetailEnter .45s ease both;
+  }
+
+  .fbdetail-heading > div:first-child { min-width: 0; }
+
+  .fbdetail-eyebrow {
+    margin: 0;
+    color: var(--brass);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .fbdetail-heading h1 {
+    max-width: 850px;
+    margin: 14px 0 0;
+    font-size: clamp(34px, 4.8vw, 62px);
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -.055em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbdetail-heading-meta {
+    flex-shrink: 0;
+    padding-bottom: 3px;
+    text-align: right;
+  }
+
+  .fbdetail-price {
+    margin: 0 0 9px;
+    font-size: 25px;
+    font-weight: 500;
+    letter-spacing: -.035em;
+  }
+
+  .fbdetail-stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .fbdetail-stock > span {
+    width: 5px;
+    height: 5px;
+    background: currentColor;
+    border-radius: 50%;
+  }
+
+  .fbdetail-gallery {
+    display: grid;
+    grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr);
+    border: 1px solid var(--line);
+    animation: fbdetailEnter .5s ease both;
+  }
+
+  .fbdetail-main-image {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    min-height: 540px;
+    background: #eeece5;
+    overflow: hidden;
+  }
+
+  .fbdetail-main-image > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 55px 50px 90px;
+    object-fit: contain;
+    transition: transform .5s ease;
+  }
+
+  .fbdetail-main-image:hover > img { transform: scale(1.025); }
+
+  .fbdetail-featured {
+    position: absolute;
+    top: 22px;
+    left: 24px;
+    padding: 7px 12px;
+    background: var(--paper);
+    font-size: 10px;
+    letter-spacing: .06em;
+  }
+
+  .fbdetail-image-controls {
+    position: absolute;
+    bottom: 22px;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 5px;
+    transform: translateX(-50%);
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+
+  .fbdetail-image-controls button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .fbdetail-image-controls button:hover { background: var(--bone); }
+  .fbdetail-image-controls > span { font-size: 11px; white-space: nowrap; }
+  .fbdetail-image-controls > span > span { color: var(--muted); }
+
+  .fbdetail-gallery-side {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 30px;
+    border-left: 1px solid var(--line);
+  }
+
+  .fbdetail-gallery-intro h2 {
+    margin: 16px 0 12px;
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -.045em;
+  }
+
+  .fbdetail-gallery-intro > p:last-child {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .fbdetail-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    max-height: 300px;
+    margin-top: 25px;
+    padding: 3px;
+    overflow-y: auto;
+  }
+
+  .fbdetail-thumbnails button {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    aspect-ratio: 1;
+    padding: 12px;
+    border: 1px solid transparent;
+    background: #f1eee7;
+    color: var(--ink);
+    transition: border-color .2s ease;
+  }
+
+  .fbdetail-thumbnails button:hover,
+  .fbdetail-thumbnails button.is-active { border-color: var(--ink); }
+
+  .fbdetail-thumbnails img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .fbdetail-thumbnails button > span:not(.fbdetail-image-fallback) {
+    position: absolute;
+    bottom: 4px;
+    left: 7px;
+    font-size: 8px;
+    color: var(--muted);
+  }
+
+  .fbdetail-image-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .fbdetail-gallery-signature {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 25px;
+    font-size: 10px;
+  }
+
+  .fbdetail-gallery-signature > span:last-child { color: var(--muted); }
+
+  .fbdetail-purchase {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 60px;
+    padding: 38px;
+    margin-top: 28px;
+    background: var(--bone);
+    border: 1px solid var(--line);
+  }
+
+  .fbdetail-purchase h2,
+  .fbdetail-information h2,
+  .fbdetail-footer h2 {
+    margin: 14px 0 0;
+    font-size: clamp(27px, 3vw, 36px);
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -.045em;
+  }
+
+  .fbdetail-purchase-intro > p:last-child {
+    margin: 14px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .fbdetail-purchase-controls { min-width: 0; }
+
+  .fbdetail-quantity-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 16px;
+    font-size: 12px;
+  }
+
+  .fbdetail-quantity {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .fbdetail-quantity button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .fbdetail-quantity button:hover:not(:disabled) { background: #ece8dd; }
+
+  .fbdetail-quantity > span {
+    min-width: 32px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .fbdetail-buy-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .fbdetail-primary,
+  .fbdetail-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 52px;
+    padding: 14px 18px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    transition: background .2s ease;
+  }
+
+  .fbdetail-primary:hover:not(:disabled) { background: var(--deep); }
+  .fbdetail-secondary { background: #a56e4f; border-color: #a56e4f; }
+  .fbdetail-secondary:hover:not(:disabled) { background: #8d5c40; }
+  .fbdetail-primary > svg,
+  .fbdetail-secondary > svg { flex-shrink: 0; }
+
+  .fbdetail-cart-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    margin-top: 8px;
+    font-size: 11px;
+    text-decoration: underline !important;
+    text-underline-offset: 4px;
+  }
+
+  .fbdetail-information {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: clamp(30px, 7vw, 100px);
+    padding-block: 65px;
+  }
+
+  .fbdetail-description-text {
+    margin: 24px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.95;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .fbdetail-specifications h3 {
+    margin: 0 0 20px;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .fbdetail-specifications dl { margin: 0; }
+
+  .fbdetail-specifications dl > div {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    gap: 20px;
+    padding-block: 17px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+  }
+
+  .fbdetail-specifications dl > div:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbdetail-specifications dt { font-weight: 500; }
+
+  .fbdetail-specifications dd {
+    margin: 0;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+  }
+
+  .fbdetail-service {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 30px;
+    padding-block: 34px;
+    border-block: 1px solid var(--line);
+  }
+
+  .fbdetail-service > div {
+    min-width: 0;
+    padding-right: 25px;
+    border-right: 1px solid var(--line);
+  }
+
+  .fbdetail-service > div:last-child { border-right: 0; padding-right: 0; }
+  .fbdetail-service svg { color: var(--brass); }
+
+  .fbdetail-service h3 {
+    margin: 16px 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .fbdetail-service p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.9;
+  }
+
+  .fbdetail-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    padding-block: 45px 60px;
+  }
+
+  .fbdetail-text-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    min-height: 48px;
+    border-bottom: 1px solid var(--ink);
+    font-size: 12px;
+  }
+
+  .fbdetail-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 65vh;
+    padding: 45px 20px;
+    text-align: center;
+  }
+
+  .fbdetail-state h1 {
+    margin: 20px 0 0;
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -.045em;
+  }
+
+  .fbdetail-state p {
+    max-width: 440px;
+    color: var(--muted);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  .fbdetail-state-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 16px;
+  }
+
+  .fbdetail-toast {
+    position: fixed;
+    right: 22px;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    z-index: 50;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    max-width: calc(100% - 36px);
+    padding: 10px 12px 10px 18px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    box-shadow: 0 8px 32px rgba(16, 46, 40, .12);
+    font-size: 12px;
+  }
+
+  .fbdetail-toast.is-visible { display: flex; }
+  .fbdetail-toast > svg { flex-shrink: 0; }
+
+  .fbdetail-toast > a {
+    flex-shrink: 0;
+    padding-block: 12px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .fbdetail-toast button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .fbdetail-spin { animation: fbdetailSpin 1s linear infinite; }
+
+  @keyframes fbdetailSpin { to { transform: rotate(360deg); } }
+
+  @keyframes fbdetailEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 1000px) {
+    .fbdetail-gallery {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+
+    .fbdetail-gallery-side { padding: 22px; }
+    .fbdetail-gallery-intro h2 { font-size: 25px; }
+    .fbdetail-main-image { min-height: 480px; }
+    .fbdetail-purchase { gap: 30px; padding: 28px; }
+    .fbdetail-buy-buttons { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  @media (max-width: 720px) {
+    .fbdetail-top { min-height: 68px; gap: 15px; font-size: 10px; }
+
+    .fbdetail-heading {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 22px;
+      padding-block: 32px 26px;
+    }
+
+    .fbdetail-heading h1 { font-size: 38px; }
+
+    .fbdetail-heading-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 20px;
+      text-align: left;
+    }
+
+    .fbdetail-price { margin: 0; font-size: 23px; }
+    .fbdetail-gallery { grid-template-columns: minmax(0, 1fr); }
+
+    .fbdetail-main-image {
+      min-height: 0;
+      aspect-ratio: 1 / 1;
+    }
+
+    .fbdetail-main-image > img { padding: 35px 28px 80px; }
+
+    .fbdetail-gallery-side {
+      padding: 18px;
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+
+    .fbdetail-gallery-intro { display: none; }
+
+    .fbdetail-thumbnails {
+      display: flex;
+      gap: 10px;
+      max-height: none;
+      margin-top: 0;
+      padding: 4px;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .fbdetail-thumbnails button { flex: 0 0 80px; }
+
+    .fbdetail-gallery-signature {
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 15px;
+      padding-top: 16px;
+    }
+
+    .fbdetail-purchase {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 25px;
+      padding: 26px 22px;
+      margin-top: 22px;
+    }
+
+    .fbdetail-buy-buttons {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fbdetail-information {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 34px;
+      padding-block: 42px;
+    }
+
+    .fbdetail-service {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 22px;
+      padding-block: 28px;
+    }
+
+    .fbdetail-service > div {
+      padding: 0 0 22px;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .fbdetail-service > div:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .fbdetail-service h3 { margin-top: 12px; }
+
+    .fbdetail-footer {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 25px;
+      padding-block: 35px 45px;
+    }
+
+    .fbdetail-footer > a { width: 100%; }
+  }
+
+  @media (max-width: 420px) {
+    .fbdetail-heading h1 { font-size: 32px; }
+    .fbdetail-buy-buttons { grid-template-columns: minmax(0, 1fr); }
+    .fbdetail-purchase { padding: 24px 18px; }
+    .fbdetail-thumbnails button { flex-basis: 70px; }
+    .fbdetail-main-image > img { padding: 30px 18px 75px; }
+    .fbdetail-featured { top: 16px; left: 16px; }
+    .fbdetail-image-controls { bottom: 16px; gap: 14px; }
+
+    .fbdetail-specifications dl > div {
+      grid-template-columns: 80px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .fbdetail-toast { right: 18px; flex-wrap: wrap; gap: 8px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbdetail *,
+    .fbdetail *::before,
+    .fbdetail *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    .fbdetail-main-image:hover > img { transform: none; }
+  }
+`;
 
 export default ShopDetails;

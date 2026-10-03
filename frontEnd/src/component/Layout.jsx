@@ -1,820 +1,602 @@
 import React, { useEffect, useRef, useState } from "react";
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
 import {
-  ArrowRight,
+  ArrowUpRight,
   Clock,
-  Gem,
-  Leaf,
   Mail,
   MapPin,
   Menu,
-  PackageCheck,
   Phone,
   Search,
-  ShoppingBag,
-  Truck,
   User,
   X,
 } from "lucide-react";
 
-import { useCart } from "../component/CartContext";
-import EctooLogo from "../component/Logo.jsx";
+import { useCart } from "./CartContext";
+import storeInfo, { getFullAddress } from "../storeInfo";
 
-const BUSINESS_INFO = {
-  businessName: import.meta.env.VITE_BUSINESS_NAME || "Ectoo",
+const navigation = [
+  { name: "Home", path: "/" },
+  { name: "Shop", path: "/shop" },
+  { name: "Collection", path: "/categories" },
+  { name: "About", path: "/about" },
+  { name: "Contact", path: "/contact" },
+];
 
-  email: import.meta.env.VITE_SUPPORT_EMAIL || "info@ectoo.us",
+const referenceLinks = [
+  { name: "FAQ", note: "Quick answers", path: "/faqs" },
+  {
+    name: "Shipping policy",
+    note: "Delivery information",
+    path: "/shipping-policy",
+  },
+  {
+    name: "Returns & refunds",
+    note: "Before you purchase",
+    path: "/return-policy",
+  },
+  {
+    name: "Privacy policy",
+    note: "Your information",
+    path: "/privacy-policy",
+  },
+  {
+    name: "Terms of use",
+    note: "Site information",
+    path: "/terms-and-conditions",
+  },
+];
 
-  phoneDisplay:
-    import.meta.env.VITE_SUPPORT_PHONE_DISPLAY || "+1 (832) 347-8821",
-
-  phoneHref: import.meta.env.VITE_SUPPORT_PHONE_HREF || "+19176952303",
-
-  addressLine1:
-    import.meta.env.VITE_BUSINESS_ADDRESS_1 || "1825 Dickinson Ave Ste D",
-
-  addressLine2:
-    import.meta.env.VITE_BUSINESS_ADDRESS_2 || "Dickinson, TX 77539",
-
-  country: import.meta.env.VITE_BUSINESS_COUNTRY || "United States",
-
-  businessDays: import.meta.env.VITE_SUPPORT_DAYS || "Monday – Friday",
-
-  supportHours: import.meta.env.VITE_SUPPORT_HOURS || "9:00 AM – 5:00 PM",
-
-  timeZone: import.meta.env.VITE_SUPPORT_TIMEZONE || "CT",
-};
+const extraLinks = [
+  { name: "Payment policy", path: "/payment-policy" },
+  {
+    name: "Order cancellation",
+    path: "/order-cancellation-policy",
+  },
+  { name: "Cookie policy", path: "/cookie-policy" },
+  { name: "Track your order", path: "/track-order" },
+];
 
 const Layout = ({ children }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const [searchFocused, setSearchFocused] = useState(false);
-
   const [searchTerm, setSearchTerm] = useState("");
-
-  const [footerVisible, setFooterVisible] = useState(false);
-
-  const footerRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
   const { cartCount } = useCart();
-
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navigation = [
-    {
-      name: "Home",
-      path: "/",
-    },
-    {
-      name: "Shop",
-      path: "/shop",
-    },
-    {
-      name: "Collection",
-      path: "/categories",
-    },
-    {
-      name: "About",
-      path: "/about",
-    },
-    {
-      name: "Contact",
-      path: "/contact",
-    },
-  ];
+  const address = getFullAddress();
+  const hours = [
+    storeInfo.businessDays,
+    [storeInfo.supportHours, storeInfo.timeZone]
+      .filter(Boolean)
+      .join(" "),
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
-  const quickLinks = [
-    {
-      name: "Home",
-      path: "/",
-    },
-    {
-      name: "Shop",
-      path: "/shop",
-    },
-    {
-      name: "Collection",
-      path: "/categories",
-    },
-    {
-      name: "About",
-      path: "/about",
-    },
-    {
-      name: "Contact",
-      path: "/contact",
-    },
-  ];
+  const phoneHref =
+    storeInfo.phoneHref ||
+    storeInfo.phoneDisplay.replace(/[^\d+]/g, "");
 
-  const customerCare = [
-    {
-      name: "Shipping Policy",
-      path: "/shipping-policy",
-    },
-    {
-      name: "Return Policy",
-      path: "/return-policy",
-    },
-    {
-      name: "Privacy Policy",
-      path: "/privacy-policy",
-    },
-    {
-      name: "Terms & Conditions",
-      path: "/terms-and-conditions",
-    },
-    {
-      name: "Payment Policy",
-      path: "/payment-policy",
-    },
-    {
-      name: "Order Cancellation Policy",
-      path: "/order-cancellation-policy",
-    },
-    {
-      name: "Cookie Policy",
-      path: "/cookie-policy",
-    },
-    {
-      name: "FAQs",
-      path: "/faqs",
-    },
-    {
-      name: "Track Your Order",
-      path: "/track-order",
-    },
-  ];
+  const isActive = (path) =>
+    path === "/"
+      ? location.pathname === "/"
+      : location.pathname === path ||
+        location.pathname.startsWith(`${path}/`);
 
-  const isActive = (path) => {
-    const cleanPath = path.split("?")[0];
-
-    if (cleanPath === "/") {
-      return location.pathname === "/";
-    }
-
-    return location.pathname === cleanPath;
+  const closeMenu = () => {
+    menuRef.current?.close();
   };
 
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-
+  const handleSearch = (event) => {
+    event.preventDefault();
     const query = searchTerm.trim();
 
-    if (!query) {
-      return;
-    }
+    if (!query) return;
 
     navigate(`/shop?search=${encodeURIComponent(query)}`);
-
-    setMobileMenuOpen(false);
-    setSearchFocused(false);
+    closeMenu();
   };
 
   useEffect(() => {
-    closeMobileMenu();
-    setSearchFocused(false);
-  }, [location.pathname]);
+    menuRef.current?.close();
+  }, [location.pathname, location.search, location.hash]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
-
-    return () => {
-      document.body.style.overflow = "";
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    const handleResize = () => {
+      if (desktop.matches) menuRef.current?.close();
     };
-  }, [mobileMenuOpen]);
 
-  useEffect(() => {
-    const footerElement = footerRef.current;
-
-    if (!footerElement) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setFooterVisible(true);
-          observer.disconnect();
-        }
-      },
-      {
-        threshold: 0.08,
-      },
-    );
-
-    observer.observe(footerElement);
-
-    return () => {
-      observer.disconnect();
-    };
+    desktop.addEventListener("change", handleResize);
+    return () => desktop.removeEventListener("change", handleResize);
   }, []);
 
-  const hasAddress =
-    BUSINESS_INFO.addressLine1 ||
-    BUSINESS_INFO.addressLine2 ||
-    BUSINESS_INFO.country;
-
-  const hasHours =
-    BUSINESS_INFO.businessDays ||
-    BUSINESS_INFO.supportHours ||
-    BUSINESS_INFO.timeZone;
-
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]">
-      {}
-
+    <div className="min-h-screen bg-paper font-sans text-navy">
       <style>{`
-        @keyframes ectooFadeDown {
-          from {
-            opacity: 0;
-            transform: translateY(-18px);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        .fb-mobile-dialog {
+          position: fixed;
+          inset: 0 0 0 auto;
+          margin: 0;
+          width: min(100%, 440px);
+          height: 100dvh;
+          max-width: 100%;
+          max-height: 100dvh;
+          padding: 0;
+          border: 0;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          background: #FFFAF3;
+          color: #17243B;
         }
 
-        @keyframes ectooSlideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-18px) scale(0.985);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+        .fb-mobile-dialog::backdrop {
+          background: rgba(16, 27, 46, 0.65);
+          backdrop-filter: blur(3px);
         }
 
-        @keyframes ectooFadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(45px);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes ectooBadgePop {
-          0% {
-            opacity: 0;
-            transform: scale(0.55);
-          }
-
-          70% {
-            opacity: 1;
-            transform: scale(1.15);
-          }
-
-          100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        @keyframes ectooLogoReveal {
-          from {
-            opacity: 0;
-            letter-spacing: 0.12em;
-          }
-
-          to {
-            opacity: 1;
-            letter-spacing: 0.28em;
-          }
-        }
-
-        @keyframes ectooFloat {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-
-          50% {
-            transform: translateY(-5px);
-          }
-        }
-
-        .ectoo-header-enter {
-          animation: ectooFadeDown 0.7s ease both;
-        }
-
-        .ectoo-mobile-menu {
-          animation: ectooSlideDown 0.3s ease both;
-          transform-origin: top center;
-        }
-
-        .ectoo-footer-enter {
-          animation: ectooFadeUp 0.85s ease both;
-        }
-
-        .ectoo-cart-badge {
-          animation: ectooBadgePop 0.35s ease both;
-        }
-
-        .ectoo-logo-text {
-          animation: ectooLogoReveal 0.75s ease both;
-        }
-
-        .ectoo-leaf-float {
-          animation: ectooFloat 4s ease-in-out infinite;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          *,
-          *::before,
-          *::after {
-            scroll-behavior: auto !important;
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
+        body:has(.fb-mobile-dialog[open]) {
+          overflow: hidden;
         }
       `}</style>
 
-      {}
+      <a
+        href="#main-content"
+        className="sr-only z-[100] bg-navy px-5 py-3 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        Skip to content
+      </a>
 
-      <div className="bg-[#1F2D22] text-white">
-        <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-10">
-          <div className="flex min-h-[35px] items-center justify-center text-[10px] font-medium sm:text-[11px]">
-            <div className="flex items-center gap-2 lg:w-1/3 lg:justify-start">
-              <Truck size={14} strokeWidth={1.7} />
+      {/* HEADER */}
+      <header className="border-b border-navy/25 bg-paper">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-10 xl:min-h-24">
+          <nav
+            aria-label="Main navigation"
+            className="hidden min-w-0 items-center gap-6 xl:flex"
+          >
+            {navigation.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                aria-current={isActive(item.path) ? "page" : undefined}
+                className={`inline-flex min-h-11 items-center gap-1 border-b text-sm font-semibold transition-colors ${
+                  isActive(item.path)
+                    ? "border-gold text-navy"
+                    : "border-transparent hover:border-gold"
+                }`}
+              >
+                {item.name}
+                {item.path === "/shop" && (
+                  <ArrowUpRight
+                    size={13}
+                    className="text-gold"
+                    aria-hidden="true"
+                  />
+                )}
+              </Link>
+            ))}
+          </nav>
 
-              <span>Free Shipping on All U.S. Orders</span>
-            </div>
+          <Link
+            to="/"
+            aria-label={`${storeInfo.businessName} home`}
+            className="min-w-0 shrink-0 xl:order-last"
+          >
+            <img
+              src="/logo-mark.png"
+              alt={storeInfo.businessName}
+              width="196"
+              height="56"
+              className="h-auto w-[128px] -rotate-3 transition-transform hover:rotate-0 sm:w-[170px] xl:w-[196px]"
+              style={{
+                filter:
+                  "brightness(0) saturate(100%) invert(12%) sepia(19%) saturate(1500%) hue-rotate(179deg) brightness(94%) contrast(95%)",
+              }}
+            />
+          </Link>
 
-            <div className="hidden items-center justify-center gap-2 lg:flex lg:w-1/3">
-              <Gem size={13} strokeWidth={1.7} />
-
-              <span>Elegant Styles. Everyday Confidence.</span>
-            </div>
-
-            <div className="hidden items-center justify-end gap-2 lg:flex lg:w-1/3">
-              <PackageCheck size={14} strokeWidth={1.7} />
-
-              <span>30-Day Hassle-Free Returns</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {}
-
-      <header className="ectoo-header-enter sticky top-0 z-50 bg-[#FAF8F5]/95 px-2 py-2 backdrop-blur-xl">
-        <div className="mx-auto max-w-[1600px]">
-          <div className="relative flex min-h-[70px] items-center overflow-visible rounded-[9px] bg-white shadow-[0_8px_35px_rgba(31,45,34,0.06)]">
-            {}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+            <form
+              onSubmit={handleSearch}
+              role="search"
+              className="hidden h-11 w-[175px] items-center border-b border-navy/30 md:flex 2xl:w-[210px]"
+            >
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search bags..."
+                aria-label="Search products"
+                className="h-full min-w-0 flex-1 bg-transparent px-2 text-sm placeholder:text-mute"
+              />
+              <button
+                type="submit"
+                aria-label="Search"
+                className="flex h-11 w-11 shrink-0 items-center justify-center hover:text-gold"
+              >
+                <Search size={18} />
+              </button>
+            </form>
 
             <Link
-              to="/"
-              aria-label="Ectoo home"
-              className="group relative z-20 flex h-[70px] min-w-[165px] shrink-0 items-center overflow-visible pl-7 pr-6 text-white sm:min-w-[225px] sm:pl-11 lg:min-w-[260px]"
+              to="/login"
+              aria-label="My account"
+              className="hidden h-11 w-11 items-center justify-center hover:text-gold sm:flex"
             >
-              <div
-                className="absolute inset-y-0 left-0 right-0 bg-[#1F2D22]"
-                style={{
-                  borderTopLeftRadius: "8px",
-                  borderBottomLeftRadius: "8px",
-                  borderTopRightRadius: "52px",
-                  borderBottomRightRadius: "14px",
-                }}
-              />
-
-              <div
-                className="absolute -bottom-[5px] right-[-27px] hidden h-[45px] w-[82px] bg-[#1F2D22] sm:block"
-                style={{
-                  borderBottomRightRadius: "65px",
-                  transform: "skewX(26deg)",
-                  transformOrigin: "left bottom",
-                }}
-              />
-
-              <div
-                className="absolute -right-[51px] -top-[1px] hidden h-[50px] w-[66px] bg-white sm:block"
-                style={{
-                  borderBottomLeftRadius: "52px",
-                }}
-              />
-
-              <div className="relative z-10 flex items-center">
-                <EctooLogo size="lg" className="brightness-0 invert" />
-              </div>
+              <User size={19} strokeWidth={1.7} />
             </Link>
 
-            {}
+            <Link
+  to="/cart"
+  aria-label={`Shopping cart with ${cartCount || 0} items`}
+  className="inline-flex min-h-11 items-center gap-1 px-2 text-xs font-semibold hover:text-gold sm:text-sm"
+>
+  Cart
+  <span>({cartCount || 0})</span>
+</Link>
 
-            <nav
-              aria-label="Main navigation"
-              className="hidden flex-1 items-center justify-center gap-5 pl-12 pr-3 lg:flex xl:gap-7 xl:pl-16"
+            <a
+              href="#help"
+              className="hidden min-h-11 items-center px-2 text-sm font-semibold hover:text-gold xl:inline-flex"
             >
-              {navigation.map((item) => {
-                const active = isActive(item.path);
+              Help
+            </a>
 
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.path}
-                    className={`group relative whitespace-nowrap py-6 text-[11px] font-semibold transition-colors duration-300 ${
-                      active
-                        ? "text-[#9A5937]"
-                        : "text-[#111311] hover:text-[#9A5937]"
-                    }`}
-                  >
-                    {item.name}
-
-                    <span
-                      className={`absolute bottom-[15px] left-0 h-[1.5px] bg-[#9A5937] transition-all duration-300 ${
-                        active ? "w-full" : "w-0 group-hover:w-full"
-                      }`}
-                    />
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {}
-
-            <div className="ml-auto hidden shrink-0 items-center gap-1 pr-4 md:flex">
-              <form
-                onSubmit={handleSearch}
-                className={`relative flex h-[43px] items-center rounded-full bg-[#F5F1EC] transition-all duration-500 ${
-                  searchFocused
-                    ? "w-[235px] xl:w-[265px]"
-                    : "w-[190px] xl:w-[220px]"
-                }`}
-              >
-                <input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  placeholder="Search bags..."
-                  aria-label="Search products"
-                  className="h-full w-full bg-transparent pl-5 pr-11 text-[11px] text-[#111311] outline-none placeholder:text-[#5E5B57]/70"
-                />
-
-                <button
-                  type="submit"
-                  aria-label="Search"
-                  className="absolute right-1 flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300 hover:bg-white"
-                >
-                  <Search size={18} strokeWidth={1.8} />
-                </button>
-              </form>
-
-              <Link
-                to="/login"
-                aria-label="Account"
-                className="group flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:bg-[#F5F1EC]"
-              >
-                <User
-                  size={19}
-                  strokeWidth={1.7}
-                  className="transition-transform duration-300 group-hover:-translate-y-0.5"
-                />
-              </Link>
-
-              <Link
-                to="/cart"
-                aria-label={`Shopping bag${
-                  cartCount > 0 ? ` with ${cartCount} items` : ""
-                }`}
-                className="group relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:bg-[#F5F1EC]"
-              >
-                <ShoppingBag
-                  size={19}
-                  strokeWidth={1.7}
-                  className="transition-transform duration-300 group-hover:-translate-y-0.5"
-                />
-
-                {cartCount > 0 && (
-                  <span className="ectoo-cart-badge absolute -right-0.5 -top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#1F2D22] px-1 text-[8px] font-bold text-white">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
-              </Link>
-            </div>
-
-            {}
-
-            <div className="ml-auto flex items-center pr-2 md:hidden">
-              <Link
-                to="/cart"
-                aria-label="Shopping bag"
-                className="relative flex h-10 w-10 items-center justify-center"
-              >
-                <ShoppingBag size={19} strokeWidth={1.7} />
-
-                {cartCount > 0 && (
-                  <span className="ectoo-cart-badge absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#1F2D22] px-1 text-[8px] font-bold text-white">
-                    {cartCount > 99 ? "99+" : cartCount}
-                  </span>
-                )}
-              </Link>
-
-              <button
-                type="button"
-                aria-label={
-                  mobileMenuOpen ? "Close navigation" : "Open navigation"
-                }
-                aria-expanded={mobileMenuOpen}
-                onClick={() => setMobileMenuOpen((previous) => !previous)}
-                className="flex h-10 w-10 items-center justify-center"
-              >
-                {mobileMenuOpen ? (
-                  <X size={22} strokeWidth={1.7} />
-                ) : (
-                  <Menu size={22} strokeWidth={1.7} />
-                )}
-              </button>
-            </div>
+            <button
+              ref={menuButtonRef}
+              type="button"
+              aria-label="Open navigation"
+              aria-haspopup="dialog"
+              aria-controls="fablebelle-navigation"
+              onClick={() => menuRef.current?.showModal()}
+              className="flex h-11 w-11 items-center justify-center hover:text-gold xl:hidden"
+            >
+              <Menu size={23} strokeWidth={1.7} />
+            </button>
           </div>
-
-          {}
-
-          {mobileMenuOpen && (
-            <div className="ectoo-mobile-menu absolute left-2 right-2 top-[calc(100%+2px)] overflow-hidden rounded-b-[20px] border border-[#E4DED7] bg-white shadow-[0_22px_60px_rgba(31,45,34,0.14)] md:hidden">
-              <div className="p-5">
-                <form onSubmit={handleSearch} className="relative mb-5">
-                  <input
-                    type="search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search handbags..."
-                    className="h-12 w-full rounded-full bg-[#F5F1EC] px-5 pr-12 text-sm outline-none"
-                  />
-
-                  <button
-                    type="submit"
-                    aria-label="Search"
-                    className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center"
-                  >
-                    <Search size={18} strokeWidth={1.7} />
-                  </button>
-                </form>
-
-                <nav className="flex flex-col">
-                  {navigation.map((item, index) => (
-                    <Link
-                      key={item.name}
-                      to={item.path}
-                      onClick={closeMobileMenu}
-                      style={{
-                        transitionDelay: `${index * 20}ms`,
-                      }}
-                      className={`group flex min-h-[54px] items-center justify-between border-b border-[#E4DED7] text-[12px] font-semibold transition-all duration-300 hover:pl-2 ${
-                        isActive(item.path)
-                          ? "text-[#9A5937]"
-                          : "text-[#111311] hover:text-[#9A5937]"
-                      }`}
-                    >
-                      {item.name}
-
-                      <ArrowRight
-                        size={15}
-                        strokeWidth={1.7}
-                        className="transition-transform duration-300 group-hover:translate-x-1"
-                      />
-                    </Link>
-                  ))}
-                </nav>
-
-                <Link
-                  to="/login"
-                  onClick={closeMobileMenu}
-                  className="mt-5 flex h-12 items-center justify-center gap-2 rounded-[5px] border border-[#1F2D22] text-[11px] font-semibold uppercase tracking-[0.12em] transition-all duration-300 hover:bg-[#1F2D22] hover:text-white"
-                >
-                  <User size={16} strokeWidth={1.7} />
-                  My Account
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
       </header>
 
-      {}
+      {/* MOBILE AND TABLET NAVIGATION */}
+      <dialog
+        ref={menuRef}
+        id="fablebelle-navigation"
+        aria-labelledby="fablebelle-menu-title"
+        className="fb-mobile-dialog"
+        onClose={() => menuButtonRef.current?.focus()}
+        onClick={(event) => {
+          if (event.target !== event.currentTarget) return;
 
-      <main>{children}</main>
+          const bounds = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < bounds.left ||
+            event.clientX > bounds.right ||
+            event.clientY < bounds.top ||
+            event.clientY > bounds.bottom
+          ) {
+            closeMenu();
+          }
+        }}
+      >
+        <div className="p-6 sm:p-8">
+          <div className="mb-8 flex items-center justify-between gap-4">
+            <h2
+              id="fablebelle-menu-title"
+              className="text-xl font-semibold tracking-tight"
+            >
+              {storeInfo.businessName}
+            </h2>
 
-      {}
-
-      <div ref={footerRef} className="relative mt-[95px] bg-[#FAF8F5] pt-8">
-        <section className="relative z-20 mx-auto max-w-[1500px] px-4 sm:px-7 lg:px-10">
-          <div className="overflow-hidden rounded-[30px] bg-[#EDE5DA] shadow-[0_24px_70px_rgba(31,45,34,0.10)]">
-            <div className="grid min-h-[285px] lg:grid-cols-[1.08fr_0.92fr]">
-              <div className="flex flex-col justify-center px-7 py-12 sm:px-12 lg:px-16">
-                <span className="mb-4 text-[9px] font-bold uppercase tracking-[0.34em] text-[#9A5937]">
-                  The Ectoo Edit
-                </span>
-                <h2 className="font-display text-[38px] leading-[1.02] text-[#17231A] sm:text-[52px] lg:text-[60px]">
-                  Carry Your Style.
-                  <br />
-                  Own Every Moment.
-                </h2>
-                <div className="mt-7 flex flex-wrap gap-3">
-                  <Link
-                    to="/shop"
-                    className="group inline-flex h-11 items-center gap-3 rounded-full bg-[#1F2D22] px-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-[#354739]"
-                  >
-                    Shop Collection{" "}
-                    <ArrowRight
-                      size={14}
-                      className="transition-transform group-hover:translate-x-1"
-                    />
-                  </Link>
-                  <Link
-                    to="/about"
-                    className="inline-flex h-11 items-center rounded-full border border-[#1F2D22]/25 px-6 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition hover:border-[#1F2D22]"
-                  >
-                    Our Story
-                  </Link>
-                </div>
-              </div>
-              <div className="relative min-h-[260px] overflow-hidden lg:min-h-[285px]">
-                <img
-                  src="/Crossbody Bags.png"
-                  alt="ECTOO crossbody bag"
-                  className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 hover:scale-[1.03]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#EDE5DA]/25 via-transparent to-[#1F2D22]/10" />
-                <span className="absolute bottom-6 right-6 rounded-full border border-white/40 bg-white/75 px-4 py-2 text-[8px] font-bold uppercase tracking-[0.22em] text-[#1F2D22] backdrop-blur-md">
-                  Everyday Icons
-                </span>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={closeMenu}
+              aria-label="Close navigation"
+              className="flex h-11 w-11 items-center justify-center border border-navy/30"
+            >
+              <X size={21} />
+            </button>
           </div>
-        </section>
 
-        <footer
-          className={`relative -mt-10 overflow-hidden bg-[#1F2D22] pt-24 text-white ${footerVisible ? "ectoo-footer-enter" : "opacity-0"}`}
-        >
-          <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full border border-white/[0.05]" />
-          <div className="pointer-events-none absolute right-[-90px] top-[-40px] h-80 w-80 rounded-full bg-white/[0.025]" />
-          <div className="relative mx-auto max-w-[1500px] px-6 pb-7 sm:px-8 lg:px-10">
-            <div className="grid gap-10 border-b border-white/15 pb-10 lg:grid-cols-[1.35fr_0.72fr_1fr] lg:gap-12">
-              <div>
-                <Link to="/" className="inline-block">
-                  <EctooLogo
-                    size="xl"
-                    showTagline={true}
-                    className="brightness-0 invert"
-                  />
-                </Link>
-                <p className="mt-6 max-w-[390px] text-[12px] leading-7 text-white/65">
-                  Thoughtfully selected handbags for modern routines, refined
-                  looks, and the moments you carry with you every day.
-                </p>
+          <form
+            onSubmit={handleSearch}
+            role="search"
+            className="mb-7 flex min-h-12 border border-navy/30"
+          >
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search handbags..."
+              aria-label="Search products"
+              className="min-w-0 flex-1 bg-transparent px-4 text-sm"
+            />
+            <button
+              type="submit"
+              aria-label="Search"
+              className="flex w-12 shrink-0 items-center justify-center"
+            >
+              <Search size={19} />
+            </button>
+          </form>
+
+          <nav aria-label="Mobile navigation">
+            {navigation.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={closeMenu}
+                aria-current={isActive(item.path) ? "page" : undefined}
+                className={`flex min-h-16 items-center justify-between gap-4 border-b border-navy/20 px-2 text-xl tracking-tight transition-colors ${
+                  isActive(item.path)
+                    ? "bg-champagne"
+                    : "hover:bg-champagne"
+                }`}
+              >
+                {item.name}
+                <ArrowUpRight size={20} aria-hidden="true" />
+              </Link>
+            ))}
+          </nav>
+
+          <Link
+            to="/login"
+            onClick={closeMenu}
+            className="mt-8 flex min-h-12 items-center justify-center gap-3 bg-navy px-5 py-3 text-sm font-semibold text-white hover:bg-navy-dark"
+          >
+            <User size={17} />
+            My account
+          </Link>
+
+          <Link
+            to="/track-order"
+            onClick={closeMenu}
+            className="mt-3 flex min-h-12 items-center justify-center border border-navy/30 px-5 py-3 text-sm"
+          >
+            Track your order
+          </Link>
+        </div>
+      </dialog>
+
+      {/* PAGE CONTENT */}
+      <main id="main-content" tabIndex={-1} className="min-w-0">
+        {children}
+      </main>
+
+      {/* BRAND STRIP */}
+      <section
+        aria-label="FableBelle approach"
+        className="bg-gold text-white"
+      >
+        <div className="mx-auto flex max-w-[1600px] items-center gap-5 px-5 py-8 sm:px-6 lg:gap-8 lg:px-10 lg:py-10">
+          <span
+            aria-hidden="true"
+            className="shrink-0 text-4xl font-bold tracking-[-0.12em]"
+          >
+            f<span className="text-champagne">.</span>b
+          </span>
+
+          <p className="text-lg font-medium leading-snug tracking-[-0.04em] sm:text-2xl lg:text-3xl">
+            Good design leaves room for your life.
+          </p>
+
+          <span className="ml-auto hidden shrink-0 text-[10px] font-bold uppercase tracking-[0.15em] xl:block">
+            Make it yours / Carry it your way
+          </span>
+        </div>
+      </section>
+
+      {/* SERVICE DESK */}
+      <footer id="help" className="scroll-mt-6 bg-navy-dark text-paper">
+        <div className="mx-auto max-w-[1600px] px-5 pb-6 pt-16 sm:px-6 sm:pt-20 lg:px-10 lg:pt-28">
+          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.6fr_0.6fr] lg:gap-10">
+            <p className="flex items-start gap-3 pt-2 text-[10px] font-bold uppercase tracking-[0.13em] sm:text-xs">
+              <span
+                aria-hidden="true"
+                className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-champagne"
+              />
+              {storeInfo.businessName} / Service desk
+            </p>
+
+            <div className="min-w-0">
+              <h2 className="text-[clamp(2.5rem,6vw,6rem)] font-medium leading-[1.04] tracking-[-0.065em]">
+                Need a hand
+                <br />
+                with the details?
+              </h2>
+
+              <p className="mt-5 max-w-md text-sm leading-7 text-paper/80 sm:text-base">
+                Start with a question. Product and order information should
+                feel straightforward from the first look.
+              </p>
+            </div>
+
+            <Link
+              to="/contact"
+              className="flex h-28 w-28 flex-col justify-center gap-3 rounded-full bg-champagne p-5 text-sm font-bold leading-tight text-navy transition-transform hover:rotate-0 sm:h-32 sm:w-32 lg:rotate-6 lg:self-end lg:justify-self-end"
+            >
+              Contact
+              <br />
+              details
+              <ArrowUpRight size={22} aria-hidden="true" />
+            </Link>
+          </div>
+
+          {/* REFERENCE BOARD */}
+          <div className="mt-14 bg-champagne text-navy shadow-[7px_9px_0_rgba(0,0,0,0.16)] sm:mt-20 lg:mt-24">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/40 px-5 py-4 text-[10px] font-bold uppercase tracking-[0.14em] sm:px-7">
+              <span>Your reference sheet</span>
+              <span>01—05</span>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-6">
+              {referenceLinks.map((item, index) => (
                 <Link
-                  to="/shop"
-                  className="group mt-7 inline-flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.24em] text-white"
+                  key={item.path}
+                  to={item.path}
+                  className={`group flex min-h-28 min-w-0 flex-col justify-between gap-5 border-b border-navy/40 p-5 transition-colors hover:bg-navy hover:text-paper sm:p-7 ${
+                    index < 3 ? "lg:col-span-2" : "lg:col-span-3"
+                  } ${index % 2 === 0 ? "sm:border-r" : ""} ${
+                    index === 4 ? "sm:col-span-2 lg:col-span-3" : ""
+                  }`}
                 >
-                  Explore Ectoo{" "}
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/25 transition group-hover:bg-white group-hover:text-[#1F2D22]">
-                    <ArrowRight size={13} />
+                  <span className="text-xl font-medium leading-tight tracking-[-0.04em] sm:text-2xl">
+                    {item.name}
+                  </span>
+
+                  <span className="flex items-center justify-between gap-4">
+                    <span className="text-xs">{item.note}</span>
+                    <ArrowUpRight
+                      size={21}
+                      className="shrink-0 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
+                      aria-hidden="true"
+                    />
                   </span>
                 </Link>
-              </div>
-              <div>
-                <p className="mb-6 text-[9px] font-bold uppercase tracking-[0.28em] text-[#C99A79]">
-                  Navigate
-                </p>
-                <ul className="space-y-3.5">
-                  {quickLinks.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        to={item.path}
-                        className="group inline-flex items-center gap-2 text-[12px] text-white/68 transition hover:text-white"
-                      >
-                        <span className="h-px w-0 bg-[#C99A79] transition-all group-hover:w-4" />
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="mb-6 text-[9px] font-bold uppercase tracking-[0.28em] text-[#C99A79]">
-                  Get In Touch
-                </p>
-                <div className="space-y-4 text-[11px] leading-6 text-white/68">
-                  {BUSINESS_INFO.phoneDisplay && (
-                    <a
-                      href={`tel:${BUSINESS_INFO.phoneHref}`}
-                      className="flex gap-3 hover:text-white"
-                    >
-                      <Phone
-                        size={15}
-                        className="mt-1 shrink-0 text-[#C99A79]"
-                      />
-                      {BUSINESS_INFO.phoneDisplay}
-                    </a>
-                  )}
-                  {BUSINESS_INFO.email && (
-                    <a
-                      href={`mailto:${BUSINESS_INFO.email}`}
-                      className="flex min-w-0 gap-3 hover:text-white"
-                    >
-                      <Mail
-                        size={15}
-                        className="mt-1 shrink-0 text-[#C99A79]"
-                      />
-                      <span className="break-all">{BUSINESS_INFO.email}</span>
-                    </a>
-                  )}
-                  {hasAddress && (
-                    <div className="flex items-start gap-3">
-                      <MapPin
-                        size={15}
-                        className="mt-1 shrink-0 text-[#C99A79]"
-                      />
-                      <span>
-                        {BUSINESS_INFO.addressLine1}
-                        {BUSINESS_INFO.addressLine1 &&
-                          BUSINESS_INFO.addressLine2 && <br />}
-                        {BUSINESS_INFO.addressLine2}
-                        {(BUSINESS_INFO.addressLine1 ||
-                          BUSINESS_INFO.addressLine2) &&
-                          BUSINESS_INFO.country && <br />}
-                        {BUSINESS_INFO.country}
-                      </span>
-                    </div>
-                  )}
-                  {hasHours && (
-                    <div className="flex items-start gap-3">
-                      <Clock
-                        size={15}
-                        className="mt-1 shrink-0 text-[#C99A79]"
-                      />
-                      <span>
-                        {BUSINESS_INFO.businessDays}
-                        {BUSINESS_INFO.businessDays &&
-                          BUSINESS_INFO.supportHours && <br />}
-                        {BUSINESS_INFO.supportHours}
-                        {BUSINESS_INFO.timeZone && (
-                          <> ({BUSINESS_INFO.timeZone})</>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  {!BUSINESS_INFO.email &&
-                    !BUSINESS_INFO.phoneDisplay &&
-                    !hasAddress &&
-                    !hasHours && (
-                      <Link
-                        to="/contact"
-                        className="inline-flex items-center gap-2 text-white"
-                      >
-                        Contact Support <ArrowRight size={13} />
-                      </Link>
-                    )}
-                </div>
-              </div>
-            </div>
-            <div className="border-b border-white/15 py-7">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
-                <p className="shrink-0 text-[9px] font-bold uppercase tracking-[0.28em] text-[#C99A79]">
-                  Customer Care
-                </p>
-                <div className="hidden h-px flex-1 bg-white/10 lg:block" />
-                <ul className="flex flex-wrap gap-x-5 gap-y-3">
-                  {customerCare.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        to={item.path}
-                        className="whitespace-nowrap text-[10px] text-white/55 transition hover:text-white"
-                      >
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            <div className="flex flex-col gap-4 pt-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-              <p className="text-[11px] text-white/45">
-                © {new Date().getFullYear()} Ectoo. All rights reserved.
-              </p>
-              <p className="font-display text-[15px] italic tracking-wide text-white/70">
-                More than a bag — a brighter you.
-              </p>
+              ))}
             </div>
           </div>
-        </footer>
-      </div>
+
+          {/* BUSINESS DETAILS AND LINKS */}
+          <div className="mt-14 grid gap-10 border-b border-paper/25 pb-10 md:grid-cols-2 lg:grid-cols-3">
+            <div className="min-w-0">
+              <Link
+                to="/"
+                className="text-2xl font-semibold tracking-[-0.05em]"
+              >
+                {storeInfo.businessName}
+              </Link>
+
+              <p className="mt-4 max-w-sm text-sm leading-7 text-paper/75">
+                Find your way to carry. Explore shapes for your daily
+                routines and the moments in between.
+              </p>
+
+              <Link
+                to="/shop"
+                className="mt-5 inline-flex min-h-11 items-center gap-4 text-sm font-semibold"
+              >
+                Explore the collection
+                <ArrowUpRight size={18} aria-hidden="true" />
+              </Link>
+            </div>
+
+            <div className="min-w-0">
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-champagne">
+                Explore
+              </h3>
+
+              <nav
+                aria-label="Footer navigation"
+                className="flex flex-wrap gap-x-6 gap-y-1"
+              >
+                {navigation.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="inline-flex min-h-11 items-center text-sm text-paper/80 hover:text-white"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <div className="min-w-0 md:col-span-2 lg:col-span-1">
+              <h3 className="mb-4 text-xs font-bold uppercase tracking-[0.14em] text-champagne">
+                Get in touch
+              </h3>
+
+              <div className="space-y-4 text-sm leading-6 text-paper/80">
+                {storeInfo.email && (
+                  <a
+                    href={`mailto:${storeInfo.email}`}
+                    className="flex min-w-0 items-start gap-3 hover:text-white"
+                  >
+                    <Mail size={17} className="mt-1 shrink-0" />
+                    <span className="break-all">{storeInfo.email}</span>
+                  </a>
+                )}
+
+                {storeInfo.phoneDisplay && (
+                  <a
+                    href={`tel:${phoneHref}`}
+                    className="flex items-start gap-3 hover:text-white"
+                  >
+                    <Phone size={17} className="mt-1 shrink-0" />
+                    <span>{storeInfo.phoneDisplay}</span>
+                  </a>
+                )}
+
+                {address && (
+                  <div className="flex items-start gap-3">
+                    <MapPin size={17} className="mt-1 shrink-0" />
+                    <p className="min-w-0 break-words">{address}</p>
+                  </div>
+                )}
+
+                {hours && (
+                  <div className="flex items-start gap-3">
+                    <Clock size={17} className="mt-1 shrink-0" />
+                    <p className="min-w-0 break-words">{hours}</p>
+                  </div>
+                )}
+
+                <Link
+                  to="/contact"
+                  className="inline-flex min-h-11 items-center gap-3 font-semibold text-white"
+                >
+                  Contact support
+                  <ArrowUpRight size={17} aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <nav
+            aria-label="Additional customer policies"
+            className="flex flex-wrap gap-x-6 gap-y-1 border-b border-paper/25 py-5"
+          >
+            {extraLinks.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="inline-flex min-h-11 items-center text-xs text-paper/80 hover:text-white"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex flex-col gap-4 pt-6 text-xs text-paper/75 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <p>
+              © {new Date().getFullYear()} {storeInfo.businessName}.
+              All rights reserved.
+            </p>
+
+            <p>Thoughtfully carried, clearly explained.</p>
+
+            <button
+              type="button"
+              onClick={() =>
+                window.scrollTo({
+                  top: 0,
+                  behavior: window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                  ).matches
+                    ? "auto"
+                    : "smooth",
+                })
+              }
+              className="inline-flex min-h-11 items-center self-start font-semibold text-champagne"
+            >
+              Back to top ↑
+            </button>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

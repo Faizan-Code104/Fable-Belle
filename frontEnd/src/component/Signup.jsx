@@ -1,605 +1,1082 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  ArrowLeft,
+  ArrowUpRight,
   Check,
   Eye,
   EyeOff,
-  LockKeyhole,
-  Mail,
-  User,
+  Loader2,
 } from "lucide-react";
 
 import { API_BASE_URL } from "../config";
+import { BUSINESS_INFO } from "../storeInfo";
+
+const apiBase = String(API_BASE_URL || "").replace(/\/+$/, "");
+
+const initialForm = {
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  terms: false,
+};
 
 const Signup = () => {
-  const pageRef = useRef(null);
   const navigate = useNavigate();
+  const formRef = useRef(null);
+  const requestRef = useRef(null);
+  const redirectRef = useRef(null);
+  const mountedRef = useRef(true);
+  const submittingRef = useRef(false);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    terms: false,
-  });
-
+  const [formData, setFormData] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
-
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
   useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+    mountedRef.current = true;
 
-    if (!elements?.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.08, rootMargin: "0px 0px -25px 0px" }
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
+    return () => {
+      mountedRef.current = false;
+      requestRef.current?.abort();
+      clearTimeout(redirectRef.current);
+    };
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
 
-    setFormData((currentData) => ({
-      ...currentData,
+    setFormData((current) => ({
+      ...current,
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    setErrors((currentErrors) => ({
-      ...currentErrors,
-      [name]: "",
-    }));
-
+    setErrors((current) => ({ ...current, [name]: "" }));
     setServerError("");
-    setSuccessMessage("");
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const nextErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
+      nextErrors.name = "Name is required.";
     } else if (formData.name.trim().length < 2) {
-      newErrors.name =
-        "Name must be at least 2 characters";
+      nextErrors.name = "Name must be at least 2 characters.";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      nextErrors.email = "Email is required.";
     } else if (
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-        formData.email.trim()
-      )
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())
     ) {
-      newErrors.email =
-        "Please enter a valid email address";
+      nextErrors.email = "Please enter a valid email address.";
     }
 
     if (!formData.password) {
-      newErrors.password = "Password is required";
+      nextErrors.password = "Password is required.";
     } else if (formData.password.length < 6) {
-      newErrors.password =
-        "Password must be at least 6 characters";
+      nextErrors.password = "Password must be at least 6 characters.";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword =
-        "Please confirm your password";
-    } else if (
-      formData.password !== formData.confirmPassword
-    ) {
-      newErrors.confirmPassword =
-        "Passwords do not match";
+      nextErrors.confirmPassword = "Please confirm your password.";
+    } else if (formData.password !== formData.confirmPassword) {
+      nextErrors.confirmPassword = "Passwords do not match.";
     }
 
     if (!formData.terms) {
-      newErrors.terms =
-        "You must accept the Terms & Conditions and Privacy Policy";
+      nextErrors.terms =
+        "Please accept the Terms & Conditions and Privacy Policy.";
     }
 
-    setErrors(newErrors);
+    setErrors(nextErrors);
 
-    return Object.keys(newErrors).length === 0;
+    const firstInvalidField = Object.keys(nextErrors)[0];
+
+    if (firstInvalidField) {
+      formRef.current?.elements.namedItem(firstInvalidField)?.focus();
+      return false;
+    }
+
+    return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (submittingRef.current || successMessage) return;
 
     setServerError("");
-    setSuccessMessage("");
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
+
+    submittingRef.current = true;
+    setIsSubmitting(true);
+
+    const controller = new AbortController();
+    requestRef.current = controller;
 
     try {
-      setIsSubmitting(true);
+      const response = await fetch(`${apiBase}/api/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+        }),
+      });
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/auth/register`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            name: formData.name.trim(),
-            email: formData.email.trim().toLowerCase(),
-            password: formData.password,
-          }),
-        }
-      );
-
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
-          data?.message ||
-            "Unable to create your account. Please try again."
+          data.message || "Unable to create your account. Please try again."
         );
       }
 
+      if (!mountedRef.current) return;
+
       setSuccessMessage(
-        "Your Ectoo account has been created successfully."
+        `Your ${BUSINESS_INFO.businessName} account has been created successfully.`
       );
 
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        terms: false,
-      });
-
+      setFormData(initialForm);
       setErrors({});
+      setShowPassword(false);
+      setShowConfirmPassword(false);
 
-      setTimeout(() => {
-        navigate("/login");
-      }, 1200);
+      redirectRef.current = setTimeout(() => {
+        navigate("/login", { replace: true });
+      }, 1500);
     } catch (error) {
-      setServerError(
-        error.message ||
-          "Unable to create your account. Please try again."
-      );
+      if (mountedRef.current && error.name !== "AbortError") {
+        setServerError(
+          error.message || "Unable to create your account. Please try again."
+        );
+      }
     } finally {
-      setIsSubmitting(false);
+      submittingRef.current = false;
+
+      if (mountedRef.current) {
+        setIsSubmitting(false);
+      }
+
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+      }
     }
   };
 
+  const fields = [
+    {
+      name: "name",
+      label: "Full name",
+      type: "text",
+      placeholder: "Enter your full name",
+      autoComplete: "name",
+    },
+    {
+      name: "email",
+      label: "Email address",
+      type: "email",
+      placeholder: "you@example.com",
+      autoComplete: "email",
+    },
+    {
+      name: "password",
+      label: "Password",
+      type: showPassword ? "text" : "password",
+      placeholder: "Minimum 6 characters",
+      autoComplete: "new-password",
+      visible: showPassword,
+      toggle: () => setShowPassword((current) => !current),
+    },
+    {
+      name: "confirmPassword",
+      label: "Confirm password",
+      type: showConfirmPassword ? "text" : "password",
+      placeholder: "Re-enter your password",
+      autoComplete: "new-password",
+      visible: showConfirmPassword,
+      toggle: () => setShowConfirmPassword((current) => !current),
+    },
+  ];
+
   return (
-    <div ref={pageRef} className="min-h-screen overflow-x-hidden bg-[#FAF8F5]">
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(28px);
-          transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1);
-        }
-        [data-reveal="left"] { transform: translateX(-38px); }
-        [data-reveal="right"] { transform: translateX(38px); }
-        [data-reveal="scale"] { transform: scale(.97); }
-        [data-reveal].ectoo-visible { opacity: 1; transform: translate(0,0) scale(1); }
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] { opacity: 1; transform: none; transition: none; }
-        }
-      `}</style>
-      <div className="grid min-h-screen lg:grid-cols-2">
+    <main className="fbsignup">
+      <style>{styles}</style>
 
-        {}
-        <div className="relative hidden overflow-hidden bg-[#1F2D22] lg:flex">
-<div className="absolute inset-0 bg-[#1F2D22]/70" />
+      <div className="fbsignup-wrap">
+        <nav className="fbsignup-top" aria-label="Account navigation">
+          <Link to="/" className="fbsignup-brand">
+            {BUSINESS_INFO.businessName}
+            <span aria-hidden="true">.</span>
+          </Link>
 
-          <div className="relative z-10 flex w-full flex-col justify-between p-12 xl:p-16">
+          <Link to="/shop" className="fbsignup-back">
+            <ArrowLeft size={16} aria-hidden="true" />
+            Back to shopping
+          </Link>
+        </nav>
 
-            <Link
-              to="/"
-              className="font-display text-3xl text-[#FAF8F5]"
-            >
-              Ectoo
-            </Link>
+        <header className="fbsignup-heading">
+          <p className="fbsignup-eyebrow">Your style starts here</p>
 
-            <div className="max-w-xl text-[#FAF8F5]">
+          <h1>
+            A little more <span>you.</span>
+          </h1>
 
-              <p className="mb-5 text-xs font-bold uppercase tracking-[0.3em] text-[#FAF8F5]/60">
-                Welcome to Ectoo
-              </p>
+          <p>
+            Create your {BUSINESS_INFO.businessName} account for a faster,
+            more convenient shopping experience.
+          </p>
+        </header>
 
-              <h1 className="font-display text-5xl leading-[1.1] xl:text-6xl">
-                Carry your style.
-                <br />
-
-                <span className="text-[#FAF8F5]/60">
-                  Own your journey.
-                </span>
-              </h1>
-
-              <p className="mt-7 max-w-lg text-sm leading-7 text-[#FAF8F5]/70">
-                Discover thoughtfully selected handbags
-                designed for everyday life, work, travel,
-                and every moment in between.
-              </p>
-
-              <div className="mt-9 flex items-center gap-3 text-sm font-semibold text-[#FAF8F5]">
-
-                <div className="flex h-9 w-9 items-center justify-center border border-[#FAF8F5]/20 bg-[#FAF8F5]/10">
-                  <Check size={16} />
-                </div>
-
-                Quality handbags. Timeless style.
-              </div>
+        <section
+          className="fbsignup-registration"
+          aria-labelledby="fbsignup-form-title"
+        >
+          <div className="fbsignup-form-heading">
+            <div>
+              <span className="fbsignup-section-number" aria-hidden="true">
+                01
+              </span>
+              <h2 id="fbsignup-form-title">Create your account</h2>
             </div>
 
-            <p className="text-xs font-medium text-[#FAF8F5]/50">
-              © 2026 Ectoo. All rights reserved.
+            <p>
+              Already registered? <Link to="/login">Sign in</Link>
             </p>
           </div>
-        </div>
 
-        {}
-        <div data-reveal="right" className="flex items-center justify-center px-5 py-10 sm:px-8 lg:px-12">
-
-          <div className="w-full max-w-[480px] rounded-[28px] border border-[#E4DED7] bg-white p-6 shadow-[0_18px_55px_rgba(31,45,34,0.055)] sm:p-8 lg:p-9">
-
-            {}
-            <div className="mb-8 lg:hidden">
-              <Link
-                to="/"
-                className="font-display text-3xl text-[#111311]"
-              >
-                Ectoo
-              </Link>
+          {serverError && (
+            <div className="fbsignup-error-banner" role="alert">
+              {serverError}
             </div>
+          )}
 
-            {}
-            <div className="mb-8">
-
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-[#3F4C3A]">
-                Create Account
-              </p>
-
-              <h2 className="font-display text-4xl text-[#111311]">
-                Join Ectoo
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-[#5E5B57]">
-                Create your account for a faster and more
-                convenient shopping experience.
-              </p>
-            </div>
-
-            {}
-            {serverError && (
-              <div className="mb-5 rounded-[12px] border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                {serverError}
-              </div>
-            )}
-
-            {}
-            {successMessage && (
-              <div className="mb-5 rounded-[12px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                {successMessage}
-              </div>
-            )}
-
-            <form
-              onSubmit={handleSubmit}
-              noValidate
-              className="space-y-5"
-            >
-
-              {}
-              <div>
-
-                <label
-                  htmlFor="name"
-                  className="mb-2 block text-xs font-bold text-[#111311]/70"
-                >
-                  Full Name
-                </label>
-
-                <div className="relative">
-
-                  <User
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#111311]/40"
-                  />
-
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleChange}
-                    autoComplete="name"
-                    placeholder="Enter your full name"
-                    className={`w-full min-h-[54px] rounded-[12px] border bg-[#F5F1EC] py-3.5 pl-11 pr-4 text-sm text-[#111311] outline-none transition placeholder:text-[#111311]/40 focus:bg-white focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] ${
-                      errors.name
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-[#E4DED7] focus:border-[#1F2D22]"
-                    }`}
-                  />
-                </div>
-
-                {errors.name && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {errors.name}
-                  </p>
-                )}
-              </div>
-
-              {}
-              <div>
-
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-xs font-bold text-[#111311]/70"
-                >
-                  Email Address
-                </label>
-
-                <div className="relative">
-
-                  <Mail
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#111311]/40"
-                  />
-
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    className={`w-full min-h-[54px] rounded-[12px] border bg-[#F5F1EC] py-3.5 pl-11 pr-4 text-sm text-[#111311] outline-none transition placeholder:text-[#111311]/40 focus:bg-white focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] ${
-                      errors.email
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-[#E4DED7] focus:border-[#1F2D22]"
-                    }`}
-                  />
-                </div>
-
-                {errors.email && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-
-              {}
-              <div>
-
-                <label
-                  htmlFor="password"
-                  className="mb-2 block text-xs font-bold text-[#111311]/70"
-                >
-                  Password
-                </label>
-
-                <div className="relative">
-
-                  <LockKeyhole
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#111311]/40"
-                  />
-
-                  <input
-                    id="password"
-                    name="password"
-                    type={
-                      showPassword
-                        ? "text"
-                        : "password"
-                    }
-                    value={formData.password}
-                    onChange={handleChange}
-                    autoComplete="new-password"
-                    placeholder="Minimum 6 characters"
-                    className={`w-full min-h-[54px] rounded-[12px] border bg-[#F5F1EC] py-3.5 pl-11 pr-12 text-sm text-[#111311] outline-none transition placeholder:text-[#111311]/40 focus:bg-white focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] ${
-                      errors.password
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-[#E4DED7] focus:border-[#1F2D22]"
-                    }`}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowPassword(
-                        (value) => !value
-                      )
-                    }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#111311]/40 transition hover:text-[#111311]"
-                    aria-label={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
-                    }
-                  >
-                    {showPassword ? (
-                      <EyeOff size={18} />
-                    ) : (
-                      <Eye size={18} />
-                    )}
-                  </button>
-                </div>
-
-                {errors.password && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {errors.password}
-                  </p>
-                )}
-              </div>
-
-              {}
-              <div>
-
-                <label
-                  htmlFor="confirmPassword"
-                  className="mb-2 block text-xs font-bold text-[#111311]/70"
-                >
-                  Confirm Password
-                </label>
-
-                <div className="relative">
-
-                  <LockKeyhole
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-[#111311]/40"
-                  />
-
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={
-                      showConfirmPassword
-                        ? "text"
-                        : "password"
-                    }
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    autoComplete="new-password"
-                    placeholder="Confirm your password"
-                    className={`w-full min-h-[54px] rounded-[12px] border bg-[#F5F1EC] py-3.5 pl-11 pr-12 text-sm text-[#111311] outline-none transition placeholder:text-[#111311]/40 focus:bg-white focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] ${
-                      errors.confirmPassword
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-[#E4DED7] focus:border-[#1F2D22]"
-                    }`}
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowConfirmPassword(
-                        (value) => !value
-                      )
-                    }
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#111311]/40 transition hover:text-[#111311]"
-                    aria-label={
-                      showConfirmPassword
-                        ? "Hide confirm password"
-                        : "Show confirm password"
-                    }
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff size={18} />
-                    ) : (
-                      <Eye size={18} />
-                    )}
-                  </button>
-                </div>
-
-                {errors.confirmPassword && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
-
-              {}
-              <div>
-
-                <label className="flex cursor-pointer items-start gap-3">
-
-                  <input
-                    name="terms"
-                    type="checkbox"
-                    checked={formData.terms}
-                    onChange={handleChange}
-                    className="mt-1 h-4 w-4 accent-[#1F2D22]"
-                  />
-
-                  <span className="text-sm leading-6 text-[#5E5B57]">
-
-                    I agree to the{" "}
-
-                    <Link
-                      to="/terms-and-conditions"
-                      className="font-semibold text-[#111311] hover:underline"
-                    >
-                      Terms & Conditions
-                    </Link>
-
-                    {" "}and{" "}
-
-                    <Link
-                      to="/privacy-policy"
-                      className="font-semibold text-[#111311] hover:underline"
-                    >
-                      Privacy Policy
-                    </Link>
-                    .
-                  </span>
-                </label>
-
-                {errors.terms && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {errors.terms}
-                  </p>
-                )}
-              </div>
-
-              {}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-[13px] bg-[#1F2D22] px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#3F4C3A] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSubmitting
-                  ? "Creating Account..."
-                  : "Create Account"}
-              </button>
-            </form>
-
-            {}
-            <div className="my-7 flex items-center gap-4">
-
-              <div className="h-px flex-1 bg-[#E4DED7]" />
-
-              <span className="text-xs font-medium uppercase tracking-wider text-[#111311]/40">
-                Already a member?
+          {successMessage ? (
+            <div className="fbsignup-success">
+              <span className="fbsignup-success-icon" aria-hidden="true">
+                <Check size={25} />
               </span>
 
-              <div className="h-px flex-1 bg-[#E4DED7]" />
+              <h3>You’re all set.</h3>
+
+              <p role="status" aria-live="polite">
+                {successMessage}
+              </p>
+
+              <p className="fbsignup-redirect">
+                Taking you to sign in…
+              </p>
+
+              <Link to="/login" className="fbsignup-submit">
+                Continue to sign in
+                <ArrowUpRight size={19} aria-hidden="true" />
+              </Link>
             </div>
-
-            <Link
-              to="/login"
-              className="flex min-h-[52px] w-full items-center justify-center rounded-[13px] border border-[#E4DED7] bg-[#FAF8F5] px-5 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#111311] transition-all hover:border-[#1F2D22] hover:bg-white"
+          ) : (
+            <form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              noValidate
+              aria-busy={isSubmitting}
             >
-              Sign In
-            </Link>
+              <fieldset
+                className="fbsignup-fieldset"
+                disabled={isSubmitting}
+              >
+                <legend className="fbsignup-sr-only">
+                  Registration details
+                </legend>
 
-            <p className="mt-7 text-center text-xs leading-5 text-[#111311]/40">
-              By creating an account, you agree to
-              Ectoo&apos;s Terms & Conditions and Privacy
-              Policy.
-            </p>
-          </div>
+                <div className="fbsignup-fields">
+                  {fields.map((field) => (
+                    <div className="fbsignup-field" key={field.name}>
+                      <label htmlFor={`fbsignup-${field.name}`}>
+                        {field.label}
+                      </label>
+
+                      <div
+                        className={`fbsignup-input-wrap ${
+                          errors[field.name] ? "has-error" : ""
+                        }`}
+                      >
+                        <input
+                          id={`fbsignup-${field.name}`}
+                          name={field.name}
+                          type={field.type}
+                          value={formData[field.name]}
+                          onChange={handleChange}
+                          autoComplete={field.autoComplete}
+                          placeholder={field.placeholder}
+                          required
+                          minLength={
+                            field.name === "name"
+                              ? 2
+                              : field.toggle
+                              ? 6
+                              : undefined
+                          }
+                          autoCapitalize={
+                            field.name === "email" || field.toggle
+                              ? "none"
+                              : "words"
+                          }
+                          spellCheck={field.name === "name"}
+                          aria-invalid={Boolean(errors[field.name])}
+                          aria-describedby={
+                            errors[field.name]
+                              ? `fbsignup-${field.name}-error`
+                              : field.name === "password"
+                              ? "fbsignup-password-hint"
+                              : undefined
+                          }
+                        />
+
+                        {field.toggle && (
+                          <button
+                            type="button"
+                            className="fbsignup-visibility"
+                            onClick={field.toggle}
+                            aria-label={`${
+                              field.visible ? "Hide" : "Show"
+                            } ${
+                              field.name === "confirmPassword"
+                                ? "confirm password"
+                                : "password"
+                            }`}
+                            aria-pressed={field.visible}
+                            aria-controls={`fbsignup-${field.name}`}
+                          >
+                            {field.visible ? (
+                              <EyeOff size={18} aria-hidden="true" />
+                            ) : (
+                              <Eye size={18} aria-hidden="true" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+
+                      {errors[field.name] ? (
+                        <p
+                          id={`fbsignup-${field.name}-error`}
+                          className="fbsignup-field-error"
+                        >
+                          {errors[field.name]}
+                        </p>
+                      ) : field.name === "password" ? (
+                        <p
+                          id="fbsignup-password-hint"
+                          className="fbsignup-field-hint"
+                        >
+                          Use at least 6 characters.
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="fbsignup-consent">
+                  <div className="fbsignup-consent-row">
+                    <input
+                      id="fbsignup-terms"
+                      name="terms"
+                      type="checkbox"
+                      checked={formData.terms}
+                      onChange={handleChange}
+                      required
+                      aria-invalid={Boolean(errors.terms)}
+                      aria-describedby={
+                        errors.terms ? "fbsignup-terms-error" : undefined
+                      }
+                    />
+
+                    <div>
+                      <label htmlFor="fbsignup-terms">
+                        I agree to the
+                      </label>{" "}
+                      <Link to="/terms-and-conditions">
+                        Terms &amp; Conditions
+                      </Link>{" "}
+                      and{" "}
+                      <Link to="/privacy-policy">Privacy Policy</Link>.
+                    </div>
+                  </div>
+
+                  {errors.terms && (
+                    <p
+                      id="fbsignup-terms-error"
+                      className="fbsignup-field-error"
+                    >
+                      {errors.terms}
+                    </p>
+                  )}
+                </div>
+
+                <div className="fbsignup-form-bottom">
+                  <p>
+                    Your account, ready for your next favourite.
+                  </p>
+
+                  <button
+                    type="submit"
+                    className="fbsignup-submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        Creating account…
+                        <Loader2
+                          size={18}
+                          className="fbsignup-spin"
+                          aria-hidden="true"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        Create account
+                        <ArrowUpRight size={19} aria-hidden="true" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+          )}
+        </section>
+
+        <div className="fbsignup-login-note">
+          <span>Already part of {BUSINESS_INFO.businessName}?</span>
+
+          <Link to="/login">
+            Sign in to your account
+            <ArrowUpRight size={17} aria-hidden="true" />
+          </Link>
         </div>
+
+        <footer className="fbsignup-footer">
+          <span>
+            © {new Date().getFullYear()} {BUSINESS_INFO.businessName}.
+            All rights reserved.
+          </span>
+
+          <div>
+            <Link to="/privacy-policy">Privacy</Link>
+            <Link to="/terms-and-conditions">Terms</Link>
+          </div>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 };
+
+const styles = `
+  .fbsignup {
+    --ink: #173f36;
+    --deep: #102e28;
+    --paper: #fffdf5;
+    --bone: #f5f0e6;
+    --brass: #a56e4f;
+    --muted: #626e67;
+    --line: rgba(23, 63, 54, .17);
+    --error: #a13832;
+
+    min-height: 100vh;
+    background: var(--bone);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .fbsignup *,
+  .fbsignup *::before,
+  .fbsignup *::after {
+    box-sizing: border-box;
+  }
+
+  .fbsignup a {
+    color: inherit;
+    text-decoration: none;
+    text-underline-offset: 4px;
+  }
+
+  .fbsignup button,
+  .fbsignup input {
+    font: inherit;
+  }
+
+  .fbsignup button {
+    cursor: pointer;
+  }
+
+  .fbsignup button:disabled {
+    cursor: not-allowed;
+  }
+
+  .fbsignup a:focus-visible,
+  .fbsignup button:focus-visible,
+  .fbsignup input:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 4px;
+  }
+
+  .fbsignup-wrap {
+    width: min(100%, 1180px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 64px);
+  }
+
+  .fbsignup-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    min-height: 88px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbsignup-brand {
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -.055em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbsignup-brand > span {
+    color: var(--brass);
+  }
+
+  .fbsignup-back {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 10px;
+    min-height: 44px;
+    font-size: 11px;
+  }
+
+  .fbsignup-heading {
+    max-width: 680px;
+    margin-inline: auto;
+    padding-block: 52px 38px;
+    text-align: center;
+    animation: fbsignupEnter .45s ease both;
+  }
+
+  .fbsignup-eyebrow {
+    margin: 0;
+    color: var(--brass);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+  }
+
+  .fbsignup-heading h1 {
+    margin: 20px 0 18px;
+    font-size: clamp(42px, 6vw, 66px);
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -.06em;
+  }
+
+  .fbsignup-heading h1 > span {
+    color: var(--brass);
+  }
+
+  .fbsignup-heading > p:last-child {
+    max-width: 460px;
+    margin-inline: auto;
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  .fbsignup-registration {
+    max-width: 820px;
+    margin-inline: auto;
+    padding: clamp(24px, 4vw, 42px);
+    border: 1px solid var(--line);
+    background: var(--paper);
+    animation: fbsignupEnter .55s ease both;
+  }
+
+  .fbsignup-form-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 26px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbsignup-form-heading > div {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .fbsignup-section-number {
+    color: var(--brass);
+    font-size: 10px;
+  }
+
+  .fbsignup-form-heading h2 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -.035em;
+  }
+
+  .fbsignup-form-heading > p {
+    flex-shrink: 0;
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .fbsignup-form-heading a {
+    margin-left: 5px;
+    color: var(--ink);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  .fbsignup-fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .fbsignup-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .fbsignup-field {
+    min-width: 0;
+  }
+
+  .fbsignup-field > label {
+    display: block;
+    margin-bottom: 9px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .fbsignup-input-wrap {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    border: 1px solid var(--line);
+    background: #fff;
+    transition:
+      border-color .2s ease,
+      box-shadow .2s ease;
+  }
+
+  .fbsignup-input-wrap:focus-within {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(23, 63, 54, .05);
+  }
+
+  .fbsignup-input-wrap.has-error {
+    border-color: var(--error);
+  }
+
+  .fbsignup-input-wrap input {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+    padding: 14px 15px;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 16px;
+  }
+
+  .fbsignup-input-wrap input::placeholder {
+    color: #7a817b;
+    font-size: 12px;
+  }
+
+  .fbsignup-visibility {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    margin-right: 4px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .fbsignup-visibility:hover {
+    color: var(--ink);
+  }
+
+  .fbsignup-field-hint,
+  .fbsignup-field-error {
+    margin: 8px 0 0;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .fbsignup-field-hint {
+    color: var(--muted);
+  }
+
+  .fbsignup-field-error {
+    color: var(--error);
+  }
+
+  .fbsignup-consent {
+    margin-top: 28px;
+  }
+
+  .fbsignup-consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .fbsignup-consent-row > input {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin: 3px 0 0;
+    accent-color: var(--ink);
+    cursor: pointer;
+  }
+
+  .fbsignup-consent-row > div {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.9;
+  }
+
+  .fbsignup-consent label {
+    cursor: pointer;
+  }
+
+  .fbsignup-consent a {
+    color: var(--ink);
+    font-weight: 500;
+    text-decoration: underline;
+  }
+
+  .fbsignup-form-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 28px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+  }
+
+  .fbsignup-form-bottom > p {
+    max-width: 230px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .fbsignup-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 35px;
+    min-width: 220px;
+    min-height: 54px;
+    padding: 15px 20px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff !important;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background .2s ease;
+  }
+
+  .fbsignup-submit:hover:not(:disabled) {
+    background: var(--deep);
+  }
+
+  .fbsignup-submit:disabled {
+    opacity: .65;
+  }
+
+  .fbsignup-submit > svg {
+    flex-shrink: 0;
+  }
+
+  .fbsignup-error-banner {
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    border: 1px solid rgba(161, 56, 50, .25);
+    background: #fbefec;
+    color: var(--error);
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+  }
+
+  .fbsignup-success {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px 0 10px;
+    text-align: center;
+  }
+
+  .fbsignup-success-icon {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--bone);
+  }
+
+  .fbsignup-success h3 {
+    margin: 20px 0 10px;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -.045em;
+  }
+
+  .fbsignup-success > p {
+    max-width: 420px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .fbsignup-success .fbsignup-redirect {
+    margin-top: 12px;
+    font-size: 11px;
+  }
+
+  .fbsignup-success .fbsignup-submit {
+    margin-top: 24px;
+  }
+
+  .fbsignup-login-note {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    max-width: 820px;
+    margin-inline: auto;
+    padding-block: 22px 34px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .fbsignup-login-note > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .fbsignup-login-note > a:hover {
+    text-decoration: underline;
+  }
+
+  .fbsignup-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px 25px;
+    padding-block: 22px 32px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .fbsignup-footer > div {
+    display: flex;
+    gap: 24px;
+  }
+
+  .fbsignup-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .fbsignup-footer a:hover {
+    text-decoration: underline;
+  }
+
+  .fbsignup-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .fbsignup-spin {
+    animation: fbsignupSpin 1s linear infinite;
+  }
+
+  @keyframes fbsignupSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes fbsignupEnter {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .fbsignup-form-heading {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .fbsignup-form-heading > p {
+      flex-shrink: 1;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .fbsignup-top {
+      min-height: 76px;
+      gap: 15px;
+    }
+
+    .fbsignup-brand {
+      font-size: 21px;
+    }
+
+    .fbsignup-back {
+      gap: 7px;
+      font-size: 10px;
+    }
+
+    .fbsignup-heading {
+      padding-block: 36px 28px;
+      text-align: left;
+    }
+
+    .fbsignup-heading h1 {
+      font-size: 44px;
+    }
+
+    .fbsignup-heading > p:last-child {
+      margin-inline: 0;
+    }
+
+    .fbsignup-registration {
+      padding: 26px 22px;
+    }
+
+    .fbsignup-form-heading {
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+    }
+
+    .fbsignup-fields {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    .fbsignup-form-bottom {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .fbsignup-form-bottom > p {
+      max-width: none;
+    }
+
+    .fbsignup-submit {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .fbsignup-login-note {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 4px;
+      padding-block: 20px 28px;
+    }
+
+    .fbsignup-footer {
+      padding-block: 18px 24px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .fbsignup-brand {
+      font-size: 19px;
+    }
+
+    .fbsignup-back {
+      font-size: 9px;
+    }
+
+    .fbsignup-heading h1 {
+      font-size: 38px;
+    }
+
+    .fbsignup-registration {
+      padding: 24px 18px;
+    }
+
+    .fbsignup-form-heading h2 {
+      font-size: 19px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbsignup *,
+    .fbsignup *::before,
+    .fbsignup *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
 
 export default Signup;

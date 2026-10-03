@@ -1,56 +1,83 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Mail, Phone } from "lucide-react";
+import { BUSINESS_INFO, getFullAddress } from "../storeInfo";
 
-const BUSINESS_INFO = {
-  businessName: "Ectoo",
-  address: "1825 Dickinson Ave Ste D, Dickinson, TX 77539",
-  phoneDisplay: "+1 (832) 347-8821",
-  phoneHref: "+19176952303",
-  email: "info@ectoo.us",
-  businessDays: "Monday – Friday",
-  supportHours: "9:00 AM – 5:00 PM Central Time",
+const BusinessDetails = () => {
+  const address = getFullAddress();
+
+  const phoneHref =
+    BUSINESS_INFO.phoneHref ||
+    BUSINESS_INFO.phoneDisplay?.replace(/[^\d+]/g, "");
+
+  const schedule = [
+    BUSINESS_INFO.businessDays,
+    [BUSINESS_INFO.supportHours, BUSINESS_INFO.timeZone]
+      .filter(Boolean)
+      .join(" "),
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <div className="fbprivacy-business">
+      <strong>{BUSINESS_INFO.businessName}</strong>
+
+      {address && <address>{address}</address>}
+
+      {BUSINESS_INFO.email && (
+        <a href={`mailto:${BUSINESS_INFO.email}`}>
+          <Mail size={17} aria-hidden="true" />
+          <span>{BUSINESS_INFO.email}</span>
+        </a>
+      )}
+
+      {BUSINESS_INFO.phoneDisplay && phoneHref && (
+        <a href={`tel:${phoneHref}`}>
+          <Phone size={17} aria-hidden="true" />
+          <span>{BUSINESS_INFO.phoneDisplay}</span>
+        </a>
+      )}
+
+      {schedule && <p>Customer Support Hours: {schedule}</p>}
+
+      <Link to="/contact">
+        Contact our team
+        <ArrowUpRight size={16} aria-hidden="true" />
+      </Link>
+    </div>
+  );
 };
 
+const PrivacyContact = ({ request = false }) =>
+  BUSINESS_INFO.email ? (
+    <a
+      href={`mailto:${BUSINESS_INFO.email}${
+        request ? "?subject=Privacy%20Request" : ""
+      }`}
+    >
+      {BUSINESS_INFO.email}
+    </a>
+  ) : (
+    <Link to="/contact">our customer support team</Link>
+  );
+
 const PrivacyPolicy = () => {
-  const pageRef = useRef(null);
-  useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
-
-    if (!elements?.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.08,
-        rootMargin: "0px 0px -25px 0px",
-      },
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
-  }, []);
+  const brand = BUSINESS_INFO.businessName;
 
   const sections = [
     {
-      title: "1. Business Information",
-      body: [
-        "Ectoo is operated by:",
-        "Ectoo\n1825 Dickinson Ave Ste D\nDickinson, TX 77539\nUnited States",
-        "Email: info@ectoo.us\nPhone: +1 (832) 347-8821\nCustomer Support Hours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
-      ],
+      id: "business",
+      title: "Business Information",
+      body: [`Business information for ${brand}:`],
+      contact: true,
     },
     {
-      title: "2. Information We Collect",
-      body: ["Depending on how you interact with our website, we may collect:"],
+      id: "collection",
+      title: "Information We Collect",
+      body: [
+        "Depending on how you interact with our website, we may collect:",
+      ],
       bullets: [
         "Name, billing address, shipping address, email address, and telephone number.",
         "Account login information, if you create an account.",
@@ -62,15 +89,17 @@ const PrivacyPolicy = () => {
       ],
     },
     {
-      title: "3. Payment Information",
+      id: "payments",
+      title: "Payment Information",
       body: [
-        "Ectoo is currently completing its online payment setup and does not accept Cash on Delivery.",
-        "When online payment processing is activated, payments will be handled by an authorized third-party payment processor. Ectoo will not intentionally store complete payment-card numbers or card security codes on its own systems.",
+        `${brand} is currently completing its online payment setup and does not accept Cash on Delivery.`,
+        `When online payment processing is activated, payments will be handled by an authorized third-party payment processor. ${brand} will not intentionally store complete payment-card numbers or card security codes on its own systems.`,
         "Payment processors may collect and process payment information under their own privacy and security policies.",
       ],
     },
     {
-      title: "4. How We Use Information",
+      id: "usage",
+      title: "How We Use Information",
       body: ["We may use personal information to:"],
       bullets: [
         "Operate and maintain our website.",
@@ -89,7 +118,8 @@ const PrivacyPolicy = () => {
       ],
     },
     {
-      title: "5. How We Disclose Information",
+      id: "disclosure",
+      title: "How We Disclose Information",
       body: [
         "We may disclose personal information to service providers that assist us with:",
       ],
@@ -110,19 +140,26 @@ const PrivacyPolicy = () => {
       afterBullets: [
         "When required by law, subpoena, court order, or lawful government request.",
         "To investigate suspected fraud, security incidents, or violations of our policies.",
-        "To protect the rights, safety, and property of Ectoo, our customers, or others.",
+        `To protect the rights, safety, and property of ${brand}, our customers, or others.`,
         "In connection with a merger, financing, acquisition, reorganization, or sale of business assets.",
       ],
     },
     {
-      title: "6. Sale and Sharing of Personal Information",
+      id: "sharing",
+      title: "Sale and Sharing of Personal Information",
       body: [
         "We do not sell personal information for money.",
-        "Certain analytics or advertising technologies, if enabled, may be treated as “sharing” or targeted advertising under some state privacy laws. Where legally required, eligible consumers may request to opt out by contacting info@ectoo.us.",
+        <>
+          Certain analytics or advertising technologies, if enabled, may
+          be treated as “sharing” or targeted advertising under some
+          state privacy laws. Where legally required, eligible consumers
+          may request to opt out by contacting <PrivacyContact />.
+        </>,
       ],
     },
     {
-      title: "7. Cookies and Local Storage",
+      id: "cookies",
+      title: "Cookies and Local Storage",
       body: [
         "Our website may use cookies, browser storage, session technologies, and similar tools to:",
       ],
@@ -134,18 +171,29 @@ const PrivacyPolicy = () => {
         "Understand website traffic and performance.",
         "Detect fraud or suspicious activity.",
       ],
-      after: ["Additional information is available in our Cookie Policy."],
+      after: [
+        <>
+          Additional information is available in our{" "}
+          <Link to="/cookie-policy">Cookie Policy</Link>.
+        </>,
+      ],
     },
     {
-      title: "8. Marketing Communications",
+      id: "marketing",
+      title: "Marketing Communications",
       body: [
-        "Customers may unsubscribe from promotional emails by using the unsubscribe link included in the message or by contacting info@ectoo.us.",
+        <>
+          Customers may unsubscribe from promotional emails by using
+          the unsubscribe link included in the message or by contacting{" "}
+          <PrivacyContact />.
+        </>,
         "Transactional communications concerning an order, delivery, return, security issue, or account are not promotional and may still be sent when necessary.",
         "We do not send promotional text messages without the recipient’s appropriate consent. Consent to marketing is not a condition of purchase.",
       ],
     },
     {
-      title: "9. Data Retention",
+      id: "retention",
+      title: "Data Retention",
       body: [
         "We retain personal information only for as long as reasonably necessary to:",
       ],
@@ -161,7 +209,8 @@ const PrivacyPolicy = () => {
       ],
     },
     {
-      title: "10. Data Security",
+      id: "security",
+      title: "Data Security",
       body: [
         "We use reasonable administrative, organizational, and technical safeguards designed to protect personal information. However, no website, transmission, or storage system can be guaranteed to be completely secure.",
         "Customers are responsible for maintaining the confidentiality of their account credentials and should contact us immediately if they suspect unauthorized account access.",
@@ -169,7 +218,8 @@ const PrivacyPolicy = () => {
       ],
     },
     {
-      title: "11. Your Privacy Choices and Rights",
+      id: "rights",
+      title: "Your Privacy Choices and Rights",
       body: [
         "Depending on your state of residence and applicable law, you may have the right to:",
       ],
@@ -184,250 +234,716 @@ const PrivacyPolicy = () => {
         "Not receive unlawful discriminatory treatment for exercising privacy rights.",
       ],
       after: [
-        "To submit a request, email info@ectoo.us with the subject “Privacy Request.”",
+        <>
+          To submit a request,{" "}
+          {BUSINESS_INFO.email ? "email " : "contact "}
+          <PrivacyContact request /> with the subject “Privacy Request.”
+        </>,
         "We may need to verify your identity before completing a request. An authorized agent may submit a request when permitted by law and after providing appropriate authorization.",
       ],
     },
     {
-      title: "12. Children’s Privacy",
+      id: "children",
+      title: "Children’s Privacy",
       body: [
         "Our website and products are intended for adults. We do not knowingly collect personal information directly from children under 13. If you believe a child has provided personal information, contact us so we can review and delete it when required.",
         "Individuals under 18 should use the website only with the involvement and permission of a parent or legal guardian.",
       ],
     },
     {
-      title: "13. Third-Party Websites",
+      id: "third-parties",
+      title: "Third-Party Websites",
       body: [
         "Our website may contain links to third-party websites or services. We are not responsible for the privacy, security, content, or practices of third parties. Customers should review the applicable third party’s policies before providing information.",
       ],
     },
     {
-      title: "14. United States Operations",
+      id: "operations",
+      title: "United States Operations",
       body: [
-        "Ectoo operates in the United States. Information may be processed and stored in the United States, where privacy laws may differ from those in other jurisdictions.",
+        `${brand} operates in the United States. Information may be processed and stored in the United States, where privacy laws may differ from those in other jurisdictions.`,
       ],
     },
     {
-      title: "15. Changes to This Policy",
+      id: "changes",
+      title: "Changes to This Policy",
       body: [
         "We may update this Privacy Policy to reflect operational, legal, or technical changes. The revised version will be posted on this page with an updated “Last Updated” date.",
       ],
     },
     {
-      title: "16. Contact Us",
-      body: [
-        "Questions or privacy requests may be directed to:",
-        "Ectoo\n1825 Dickinson Ave Ste D\nDickinson, TX 77539\nUnited States",
-        "Email: info@ectoo.us\nPhone: +1 (832) 347-8821\nHours: Monday–Friday, 9:00 AM–5:00 PM Central Time",
-      ],
+      id: "contact",
+      title: "Contact Us",
+      body: ["Questions or privacy requests may be directed to:"],
+      contact: true,
     },
   ];
 
   return (
-    <div
-      ref={pageRef}
-      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
-    >
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(30px);
-          transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-        }
+    <main id="fbprivacy-top" className="fbprivacy-page">
+      <style>{styles}</style>
 
-        [data-reveal="scale"] {
-          transform: scale(0.97);
-        }
+      <div className="fbprivacy-container">
+        <div className="fbprivacy-topline">
+          <span>{brand} / Privacy Policy</span>
+          <Link to="/contact">
+            Privacy questions
+            <ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
+        </div>
 
-        [data-reveal].ectoo-visible {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-
-        .privacy-section {
-          transition:
-            transform 0.3s ease,
-            border-color 0.3s ease,
-            box-shadow 0.3s ease;
-        }
-
-        .privacy-section:hover {
-          transform: translateY(-2px);
-          border-color: rgba(31, 45, 34, 0.18);
-          box-shadow: 0 14px 38px rgba(31, 45, 34, 0.05);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] {
-            opacity: 1;
-            transform: none;
-            transition: none;
-          }
-        }
-      `}</style>
-
-      <section className="relative overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-        <div
-          data-reveal="scale"
-          className="relative mx-auto max-w-4xl text-center"
-        >
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1F2D22] text-white shadow-[0_12px_30px_rgba(31,45,34,0.15)]">
-            <ShieldCheck size={24} aria-hidden="true" />
+        <header className="fbprivacy-header">
+          <div>
+            <p className="fbprivacy-eyebrow">Your information</p>
+            <h1>
+              Privacy,
+              <span>with care.</span>
+            </h1>
           </div>
 
-          <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-            Ectoo
-          </p>
+          <div className="fbprivacy-introduction">
+            <p>
+              {brand} (“{brand},” “we,” “us,” or “our”) respects your
+              privacy. This Privacy Policy explains how we collect,
+              use, disclose, retain, and protect personal information
+              when you visit{" "}
+              {BUSINESS_INFO.website ? (
+                <a href={BUSINESS_INFO.website}>
+                  {BUSINESS_INFO.website}
+                </a>
+              ) : (
+                "our website"
+              )}
+              , create an account, communicate with us, or purchase
+              our products.
+            </p>
 
-          <h1 className="mt-3 font-display text-5xl leading-[0.98] text-[#111311] sm:text-6xl">
-            Privacy Policy
-          </h1>
+            <div className="fbprivacy-date">
+              <span>Last updated</span>
+              <time dateTime="2026-10-03">October 3, 2026</time>
+            </div>
+          </div>
+        </header>
 
-          <p className="mt-4 text-sm text-[#5E5B57]">
-            Last updated: September 11, 2026
-          </p>
-        </div>
-      </section>
+        <div className="fbprivacy-layout">
+          <aside className="fbprivacy-sidebar">
+            <nav aria-label="Privacy policy sections">
+              <p className="fbprivacy-eyebrow">In this policy</p>
+              <ol>
+                {sections.map((section, index) => (
+                  <li key={section.id}>
+                    <a href={`#fbprivacy-${section.id}`}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      {section.title}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
 
-      <section className="px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-        <div className="mx-auto max-w-4xl">
-          <p
-            data-reveal
-            className="rounded-[24px] border border-[#E4DED7] bg-white p-6 text-sm leading-7 text-[#5E5B57] shadow-[0_14px_40px_rgba(31,45,34,0.04)] sm:p-8 sm:text-base"
+            <div className="fbprivacy-request">
+              <p className="fbprivacy-eyebrow">Privacy requests</p>
+              <h2>Let’s talk.</h2>
+              <p>
+                If you have a question about this Privacy Policy or
+                want to make a privacy-related request, you can contact{" "}
+                {brand} using the details in this policy.
+              </p>
+              <Link to="/contact">
+                Contact us
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+            </div>
+          </aside>
+
+          <article
+            className="fbprivacy-document"
+            aria-label="Privacy policy"
           >
-            Ectoo (“Ectoo,” “we,” “us,” or “our”) respects your privacy. This
-            Privacy Policy explains how we collect, use, disclose, retain, and
-            protect personal information when you visit https://www.ectoo.us,
-            create an account, communicate with us, or purchase our products.
-          </p>
+            <div className="fbprivacy-document-label">
+              <span className="fbprivacy-eyebrow">Privacy Policy</span>
+              <span>16 sections</span>
+            </div>
 
-          <div className="mt-6 grid gap-4 sm:mt-8">
-            {sections.map((section) => (
+            {sections.map((section, index) => (
               <section
-                data-reveal
-                key={section.title}
-                className="privacy-section rounded-[22px] border border-[#E4DED7] bg-white p-6 sm:p-7"
+                key={section.id}
+                id={`fbprivacy-${section.id}`}
+                className="fbprivacy-section"
+                aria-labelledby={`fbprivacy-title-${section.id}`}
               >
-                <h2 className="font-display text-2xl leading-tight text-[#111311]">
-                  {section.title}
-                </h2>
+                <div className="fbprivacy-section-heading">
+                  <span aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <h2 id={`fbprivacy-title-${section.id}`}>
+                    {section.title}
+                  </h2>
+                </div>
 
-                <div className="mt-3 space-y-3">
-                  {section.body?.map((paragraph, index) => (
-                    <p
-                      key={`${section.title}-body-${index}`}
-                      className="whitespace-pre-line text-sm leading-7 text-[#5E5B57] sm:text-[15px]"
-                    >
-                      {paragraph}
-                    </p>
+                <div className="fbprivacy-section-body">
+                  {section.body?.map((paragraph, paragraphIndex) => (
+                    <p key={`body-${paragraphIndex}`}>{paragraph}</p>
                   ))}
 
                   {section.bullets && (
-                    <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
-                      {section.bullets.map((item, index) => (
-                        <li key={`${section.title}-bullet-${index}`}>{item}</li>
+                    <ul>
+                      {section.bullets.map((item) => (
+                        <li key={item}>{item}</li>
                       ))}
                     </ul>
                   )}
 
-                  {section.after?.map((paragraph, index) => (
-                    <p
-                      key={`${section.title}-after-${index}`}
-                      className="whitespace-pre-line text-sm leading-7 text-[#5E5B57] sm:text-[15px]"
-                    >
-                      {paragraph}
-                    </p>
+                  {section.after?.map((paragraph, paragraphIndex) => (
+                    <p key={`after-${paragraphIndex}`}>{paragraph}</p>
                   ))}
 
                   {section.afterBullets && (
-                    <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-[#5E5B57] sm:text-[15px]">
-                      {section.afterBullets.map((item, index) => (
-                        <li key={`${section.title}-after-bullet-${index}`}>
-                          {item}
-                        </li>
+                    <ul>
+                      {section.afterBullets.map((item) => (
+                        <li key={item}>{item}</li>
                       ))}
                     </ul>
                   )}
+
+                  {section.contact && <BusinessDetails />}
                 </div>
               </section>
             ))}
-          </div>
 
-          <div
-            data-reveal="scale"
-            className="mt-8 rounded-[24px] border border-[#E4DED7] bg-[#E8E7DF] p-6 sm:p-8"
-          >
-            <h2 className="font-display text-xl text-[#111311]">
-              Privacy Questions or Requests
-            </h2>
-
-            <p className="mt-2 text-sm leading-7 text-[#5E5B57]">
-              If you have a question about this Privacy Policy or want to make a
-              privacy-related request, you can contact{" "}
-              {BUSINESS_INFO.businessName} using the details below.
-            </p>
-
-            <div className="mt-4 space-y-1 text-sm leading-6 text-[#5E5B57]">
-              <p>{BUSINESS_INFO.businessName}</p>
-              <p>{BUSINESS_INFO.address}</p>
-
-              <p>
-                Email:{" "}
-                <a
-                  href={`mailto:${BUSINESS_INFO.email}`}
-                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.email}
-                </a>
-              </p>
-
-              <p>
-                Phone:{" "}
-                <a
-                  href={`tel:${BUSINESS_INFO.phoneHref}`}
-                  className="font-medium text-[#111311] transition-opacity hover:opacity-70"
-                >
-                  {BUSINESS_INFO.phoneDisplay}
-                </a>
-              </p>
-
-              <p>
-                Support: {BUSINESS_INFO.businessDays},{" "}
-                {BUSINESS_INFO.supportHours}
-              </p>
-            </div>
-          </div>
+            <footer className="fbprivacy-document-footer">
+              <span>{brand} / Privacy Policy</span>
+              <a href="#fbprivacy-top">
+                Back to top
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </a>
+            </footer>
+          </article>
         </div>
-      </section>
 
-      <section className="border-t border-[#E4DED7] bg-[#EEE7DF] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div
-          data-reveal="scale"
-          className="mx-auto flex max-w-4xl flex-col items-start gap-6 rounded-[28px] bg-[#1F2D22] p-7 text-white shadow-[0_22px_55px_rgba(31,45,34,0.14)] sm:p-9 md:flex-row md:items-center md:justify-between"
+        <section
+          className="fbprivacy-help"
+          aria-labelledby="fbprivacy-help-title"
         >
           <div>
-            <h3 className="font-display text-2xl">
+            <p className="fbprivacy-eyebrow">Here to help</p>
+            <h2 id="fbprivacy-help-title">
               Questions about your information?
-            </h3>
-
-            <p className="mt-2 text-sm leading-6 text-white/60">
+            </h2>
+            <p>
               Contact us if you have a privacy-related question or request.
             </p>
           </div>
-
-          <Link
-            to="/contact"
-            className="inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-[14px] bg-[#F1EEE8] px-6 py-3.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white md:w-auto"
-          >
-            Contact Us
-            <ArrowRight size={16} aria-hidden="true" />
+          <Link to="/contact">
+            Contact us
+            <ArrowRight size={18} aria-hidden="true" />
           </Link>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </main>
   );
 };
+
+const styles = `
+  .fbprivacy-page {
+    --ink: #173f36;
+    --cream: #f5f0e6;
+    --paper: #fffdf5;
+    --lime: #d7e5a5;
+    --accent: #a56e4f;
+    --muted: #516b62;
+    --line: rgba(23, 63, 54, .23);
+    min-height: 100vh;
+    padding-bottom: clamp(45px, 6vw, 85px);
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui,
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    scroll-margin-top: 110px;
+  }
+
+  .fbprivacy-page *,
+  .fbprivacy-page *::before,
+  .fbprivacy-page *::after {
+    box-sizing: border-box;
+  }
+
+  .fbprivacy-page a {
+    color: inherit;
+    text-underline-offset: 4px;
+  }
+
+  .fbprivacy-page a:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 5px;
+  }
+
+  .fbprivacy-container {
+    width: min(100%, 1450px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4.2vw, 70px);
+  }
+
+  .fbprivacy-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+  }
+
+  .fbprivacy-topline a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .fbprivacy-eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .fbprivacy-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    align-items: end;
+    gap: clamp(30px, 5vw, 70px);
+    padding-block: clamp(40px, 6vw, 80px);
+    animation: fbprivacyEnter .6s both;
+  }
+
+  .fbprivacy-header h1 {
+    margin: 22px 0 0;
+    font-size: clamp(58px, 7.7vw, 110px);
+    font-weight: 500;
+    line-height: .98;
+    letter-spacing: -.075em;
+  }
+
+  .fbprivacy-header h1 span {
+    display: block;
+    color: var(--accent);
+  }
+
+  .fbprivacy-introduction {
+    border-left: 1px solid var(--ink);
+    padding-left: clamp(22px, 3vw, 40px);
+  }
+
+  .fbprivacy-introduction > p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+  }
+
+  .fbprivacy-introduction a {
+    color: var(--ink);
+  }
+
+  .fbprivacy-date {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-top: 25px;
+    font-size: 11px;
+  }
+
+  .fbprivacy-date > span {
+    color: var(--muted);
+  }
+
+  .fbprivacy-layout {
+    display: grid;
+    grid-template-columns: 275px minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(25px, 4vw, 55px);
+  }
+
+  .fbprivacy-sidebar {
+    min-width: 0;
+  }
+
+  .fbprivacy-sidebar nav {
+    border-top: 1px solid var(--ink);
+    padding-top: 20px;
+  }
+
+  .fbprivacy-sidebar ol {
+    margin: 18px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fbprivacy-sidebar li a {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 12px 8px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+    text-decoration: none;
+    transition: background .2s ease;
+  }
+
+  .fbprivacy-sidebar li a > span {
+    color: var(--accent);
+    font-size: 9px;
+  }
+
+  .fbprivacy-sidebar li a:hover {
+    background: var(--lime);
+  }
+
+  .fbprivacy-request {
+    margin-top: 28px;
+    padding: 25px;
+    border: 1px solid var(--ink);
+    background: var(--lime);
+  }
+
+  .fbprivacy-request h2 {
+    margin: 16px 0;
+    font-size: 36px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbprivacy-request > p:last-of-type {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.9;
+  }
+
+  .fbprivacy-request a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    min-height: 44px;
+    margin-top: 18px;
+    border-bottom: 1px solid var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .fbprivacy-document {
+    min-width: 0;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    animation: fbprivacyEnter .6s .08s both;
+  }
+
+  .fbprivacy-document-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 23px 30px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--lime);
+  }
+
+  .fbprivacy-document-label > span:last-child {
+    font-size: 10px;
+  }
+
+  .fbprivacy-section {
+    padding: clamp(25px, 3.5vw, 45px);
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 110px;
+  }
+
+  .fbprivacy-section:target {
+    background: #f1f4e8;
+  }
+
+  .fbprivacy-section-heading {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 17px;
+    align-items: start;
+    margin-bottom: 22px;
+  }
+
+  .fbprivacy-section-heading > span {
+    padding-top: 6px;
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  .fbprivacy-section h2 {
+    margin: 0;
+    font-size: clamp(25px, 2.7vw, 35px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -.045em;
+  }
+
+  .fbprivacy-section-body {
+    padding-left: 47px;
+    min-width: 0;
+  }
+
+  .fbprivacy-section-body p,
+  .fbprivacy-section-body address {
+    margin: 0 0 15px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+  }
+
+  .fbprivacy-section-body > p:last-child {
+    margin-bottom: 0;
+  }
+
+  .fbprivacy-section-body p a {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .fbprivacy-section-body ul {
+    margin: 18px 0 22px;
+    padding-left: 19px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  .fbprivacy-section-body ul:last-child {
+    margin-bottom: 0;
+  }
+
+  .fbprivacy-section-body li {
+    padding-block: 5px;
+  }
+
+  .fbprivacy-business {
+    display: grid;
+    justify-items: start;
+    gap: 12px;
+  }
+
+  .fbprivacy-business > strong {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .fbprivacy-business address,
+  .fbprivacy-business p {
+    margin: 0;
+  }
+
+  .fbprivacy-business address {
+    font-style: normal;
+  }
+
+  .fbprivacy-business a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+    min-height: 44px;
+    font-size: 13px;
+    text-decoration: none;
+  }
+
+  .fbprivacy-business a > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .fbprivacy-business svg {
+    flex-shrink: 0;
+  }
+
+  .fbprivacy-business a:hover {
+    color: var(--accent);
+  }
+
+  .fbprivacy-document-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    padding: 20px 30px;
+    font-size: 10px;
+  }
+
+  .fbprivacy-document-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    text-decoration: none;
+  }
+
+  .fbprivacy-help {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    margin-top: 35px;
+    padding: clamp(25px, 4vw, 50px);
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .fbprivacy-help h2 {
+    max-width: 750px;
+    margin: 16px 0;
+    font-size: clamp(30px, 3.5vw, 47px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbprivacy-help div > p:last-child {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .fbprivacy-help > a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 25px;
+    min-height: 54px;
+    padding: 15px 22px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform .2s ease;
+  }
+
+  .fbprivacy-help > a:hover {
+    transform: translateY(-2px);
+  }
+
+  @keyframes fbprivacyEnter {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 1050px) {
+    .fbprivacy-layout {
+      grid-template-columns: 230px minmax(0, 1fr);
+      gap: 25px;
+    }
+
+    .fbprivacy-section {
+      padding: 30px 25px;
+    }
+
+    .fbprivacy-section-body {
+      padding-left: 0;
+    }
+  }
+
+  @media (max-width: 800px) {
+    .fbprivacy-header {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 30px;
+    }
+
+    .fbprivacy-introduction {
+      border-left: 0;
+      border-top: 1px solid var(--ink);
+      padding: 25px 0 0;
+    }
+
+    .fbprivacy-layout {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 28px;
+    }
+
+    .fbprivacy-sidebar ol {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 20px;
+    }
+
+    .fbprivacy-help {
+      flex-direction: column;
+      align-items: stretch;
+      padding-inline: 0;
+    }
+
+    .fbprivacy-help > a {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .fbprivacy-header h1 {
+      font-size: clamp(55px, 16vw, 76px);
+    }
+
+    .fbprivacy-sidebar ol {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbprivacy-document-label {
+      padding: 20px;
+    }
+
+    .fbprivacy-section {
+      padding: 27px 20px;
+    }
+
+    .fbprivacy-section-heading {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .fbprivacy-section-heading > span {
+      padding-top: 0;
+    }
+
+    .fbprivacy-section h2 {
+      font-size: 28px;
+    }
+
+    .fbprivacy-section-body p,
+    .fbprivacy-section-body address {
+      font-size: 13px;
+    }
+
+    .fbprivacy-document-footer {
+      padding: 18px 20px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbprivacy-page *,
+    .fbprivacy-page *::before,
+    .fbprivacy-page *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
 
 export default PrivacyPolicy;

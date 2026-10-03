@@ -1,119 +1,144 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  CalendarDays,
+  ArrowUpRight,
   Check,
   CheckCircle2,
-  CircleDot,
   Copy,
   ImageOff,
   Loader2,
-  MapPin,
   Package,
   Search,
   Truck,
   XCircle,
 } from "lucide-react";
-
 import { API_BASE_URL } from "../config";
+import { BUSINESS_INFO } from "../storeInfo";
 
 const STATUS_STEPS = [
-  { key: "Pending", title: "Order Placed", icon: Package },
+  { key: "Pending", title: "Order placed", icon: Package },
   { key: "Processing", title: "Processing", icon: CheckCircle2 },
   { key: "Shipped", title: "Shipped", icon: Truck },
   { key: "Delivered", title: "Delivered", icon: CheckCircle2 },
 ];
 
+const apiBase = API_BASE_URL.replace(/\/+$/, "");
+
+const formatDateTime = (value) => {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const formatMoney = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const amount = Number(value);
+  return Number.isFinite(amount)
+    ? new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(amount)
+    : "—";
+};
+
+const getImageUrl = (image) => {
+  if (typeof image !== "string" || !image.trim()) return "";
+
+  const value = image.trim();
+  if (/^https?:\/\//i.test(value)) return value;
+
+  return `${apiBase}/${value.replace(/^\/+/, "")}`;
+};
+
+const ProductImage = ({ image, name }) => {
+  const [failed, setFailed] = useState(false);
+  const src = getImageUrl(image);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return (
+    <div className="fbtrack-product-image">
+      {src && !failed ? (
+        <img
+          src={src}
+          alt={name || "Ordered product"}
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <ImageOff size={23} aria-label="Product image unavailable" />
+      )}
+    </div>
+  );
+};
+
 const OrderTracking = () => {
-  const pageRef = useRef(null);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [error, setError] = useState("");
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+
+  const requestRef = useRef(null);
+  const copyTimerRef = useRef(null);
 
   useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
-
-    if (!elements?.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.12,
-        rootMargin: "0px 0px -30px 0px",
-      }
-    );
-
-    elements.forEach((element) => observer.observe(element));
-
-    return () => observer.disconnect();
-  }, [order]);
-
-  const getImageUrl = (image) => {
-    if (!image) return "";
-
-    if (image.startsWith("http://") || image.startsWith("https://")) {
-      return image;
-    }
-
-    return `${API_BASE_URL}${image}`;
-  };
-
-  const formatDateTime = (dateString) => {
-    if (!dateString) return "";
-
-    return new Date(dateString).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
-
-  const getDestination = (shippingAddress) => {
-    if (!shippingAddress) return "—";
-
-    return [shippingAddress.city, shippingAddress.state]
-      .filter(Boolean)
-      .join(", ");
-  };
+    return () => {
+      requestRef.current?.abort();
+      clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const handleTrackOrder = async (event) => {
     event.preventDefault();
+    if (requestRef.current) return;
 
     const value = trackingNumber.trim().toUpperCase();
 
     setError("");
     setOrder(null);
+    setCopied(false);
+    setCopyError("");
+    clearTimeout(copyTimerRef.current);
 
     if (!value) {
       setError("Please enter your order number.");
       return;
     }
 
-    try {
-      setLoading(true);
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setLoading(true);
 
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 20000);
+
+    try {
       const response = await fetch(
-        `${API_BASE_URL}/api/orders/track/${encodeURIComponent(value)}`
+        `${apiBase}/api/orders/track/${encodeURIComponent(value)}`,
+        { signal: controller.signal }
       );
 
-      let data = {};
-
-      try {
-        data = await response.json();
-      } catch {
-        data = {};
-      }
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
@@ -122,605 +147,963 @@ const OrderTracking = () => {
         );
       }
 
-      setOrder(data.order);
+      if (
+        !data?.order ||
+        typeof data.order !== "object" ||
+        Array.isArray(data.order)
+      ) {
+        throw new Error(
+          "Order details are unavailable right now. Please try again."
+        );
+      }
+
+      if (!controller.signal.aborted) {
+        setOrder(data.order);
+      }
     } catch (fetchError) {
-      setError(
-        fetchError?.message ||
-          "Unable to retrieve this order right now. Please try again."
-      );
+      if (timedOut) {
+        setError("The request took too long. Please try again.");
+      } else if (fetchError?.name !== "AbortError") {
+        setError(
+          fetchError?.message ||
+            "Unable to retrieve this order right now. Please try again."
+        );
+      }
     } finally {
-      setLoading(false);
+      clearTimeout(timeout);
+
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setLoading(false);
+      }
     }
   };
 
-  const handleCopyTracking = async () => {
+  const handleCopyOrderNumber = async () => {
     if (!order?.orderNumber) return;
 
-    try {
-      await navigator.clipboard.writeText(order.orderNumber);
-      setCopied(true);
+    setCopyError("");
 
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+    try {
+      await navigator.clipboard.writeText(String(order.orderNumber));
+      setCopied(true);
+      clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
+      setCopyError("Couldn't copy. Please select the order number manually.");
     }
   };
 
-  const handleContactSupport = () => {
-    const subject = encodeURIComponent(
-      `Order Support - ${order?.orderNumber || ""}`
-    );
+  const status = String(order?.status || "").trim();
+  const isCancelled = status.toLowerCase() === "cancelled";
+  const currentStepIndex = STATUS_STEPS.findIndex(
+    (step) => step.key.toLowerCase() === status.toLowerCase()
+  );
 
-    window.location.href = `mailto:info@ectoo.us?subject=${subject}`;
-  };
+  const destination = [
+    order?.shippingAddress?.city,
+    order?.shippingAddress?.state,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
-  const isCancelled = order?.status === "Cancelled";
+  const items = Array.isArray(order?.items) ? order.items : [];
 
-  const currentStepIndex = order
-    ? STATUS_STEPS.findIndex((step) => step.key === order.status)
-    : -1;
+  const supportHref = BUSINESS_INFO.email
+    ? `mailto:${BUSINESS_INFO.email}?subject=${encodeURIComponent(
+        `${BUSINESS_INFO.businessName} Order Support - ${
+          order?.orderNumber || ""
+        }`
+      )}`
+    : "";
 
   return (
-    <main
-      ref={pageRef}
-      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
-    >
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(34px);
-          transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-        }
+    <main className="fbtrack-page">
+      <style>{styles}</style>
 
-        [data-reveal="left"] {
-          transform: translateX(-42px);
-        }
-
-        [data-reveal="right"] {
-          transform: translateX(42px);
-        }
-
-        [data-reveal="scale"] {
-          transform: scale(0.96);
-        }
-
-        [data-reveal].ectoo-visible {
-          opacity: 1;
-          transform: translate(0, 0) scale(1);
-        }
-
-        .ectoo-lift {
-          transition:
-            transform 0.35s ease,
-            box-shadow 0.35s ease,
-            border-color 0.35s ease;
-        }
-
-        .ectoo-lift:hover {
-          transform: translateY(-5px);
-          border-color: rgba(31, 45, 34, 0.2);
-          box-shadow: 0 20px 55px rgba(31, 45, 34, 0.08);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] {
-            opacity: 1;
-            transform: none;
-            transition: none;
-          }
-        }
-      `}</style>
-
-      <section className="relative isolate overflow-hidden border-b border-[#E4DED7] bg-[#EEE7DF]">
-        <div className="absolute left-0 top-0 h-full w-full">
-          <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full border border-[#1F2D22]/10" />
-          <div className="absolute -left-10 -top-10 h-48 w-48 rounded-full border border-[#1F2D22]/10" />
-          <div className="absolute right-[-120px] top-[-80px] h-80 w-80 rounded-full bg-[#E4E5DD]" />
-          <div className="absolute bottom-[-100px] right-[12%] h-60 w-60 rounded-full border border-[#9A5937]/20" />
+      <div className="fbtrack-container">
+        <div className="fbtrack-topline">
+          <span>{BUSINESS_INFO.businessName} / Order care</span>
+          <Link to="/contact">
+            Need a hand?
+            <ArrowUpRight size={16} aria-hidden="true" />
+          </Link>
         </div>
 
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-12 lg:py-24">
-          <div data-reveal="left" className="flex items-center">
-            <div className="max-w-2xl">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#9A5937]">
-                Ectoo Order Care
-              </p>
+        <header className="fbtrack-header">
+          <p className="fbtrack-eyebrow">Track your order</p>
+          <h1>
+            From our door
+            <span>to yours.</span>
+          </h1>
+          <p className="fbtrack-intro">
+            Enter the order number from your confirmation to see the
+            latest available status.
+          </p>
+        </header>
 
-              <h1 className="mt-5 max-w-xl font-display text-5xl leading-[0.95] sm:text-6xl lg:text-7xl">
-                Follow your order from checkout to delivery.
-              </h1>
-
-              <p className="mt-6 max-w-xl text-sm leading-7 text-[#5E5B57] sm:text-base">
-                Enter your order number below to view the latest status available
-                for your purchase.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium text-[#5E5B57]">
-                <span className="rounded-full border border-[#1F2D22]/10 bg-white/55 px-4 py-2">
-                  Live order status
-                </span>
-                <span className="rounded-full border border-[#1F2D22]/10 bg-white/55 px-4 py-2">
-                  Delivery progress
-                </span>
-                <span className="rounded-full border border-[#1F2D22]/10 bg-white/55 px-4 py-2">
-                  Order details
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div data-reveal="right" className="relative">
-            <div className="relative min-h-[430px] overflow-hidden rounded-[34px] bg-[#1F2D22] p-5 shadow-[0_28px_80px_rgba(31,45,34,0.16)] sm:p-7">
-              <img
-                src="/order tracking.png"
-                alt="Track Your Order"
-                className="absolute inset-0 h-full w-full object-cover opacity-30"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1F2D22] via-[#1F2D22]/65 to-[#1F2D22]/10" />
-
-              <div className="relative flex min-h-[376px] flex-col justify-between">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white backdrop-blur">
-                  <Truck size={24} />
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/50">
-                    Simple tracking
-                  </p>
-                  <h2 className="mt-3 max-w-xs font-display text-4xl leading-tight text-white">
-                    One number. One clear view of your order.
-                  </h2>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative z-10 mx-auto -mt-6 max-w-7xl px-5 sm:px-8 lg:px-12">
-        <div
-          data-reveal="scale"
-          className="rounded-[28px] border border-[#E4DED7] bg-white p-5 shadow-[0_24px_70px_rgba(31,45,34,0.08)] sm:p-7 lg:p-8"
+        <section
+          className="fbtrack-desk"
+          aria-label="Order tracking"
+          aria-busy={loading}
         >
-          <form
-            onSubmit={handleTrackOrder}
-            className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end"
-          >
-            <div>
-              <label
-                htmlFor="trackingNumber"
-                className="mb-3 block text-[10px] font-semibold uppercase tracking-[0.16em] text-[#5E5B57]"
-              >
-                Order Number
-              </label>
+          <div className="fbtrack-search-strip">
+            <div className="fbtrack-search-heading">
+              <span className="fbtrack-eyebrow">Your order</span>
+              <h2>Find its journey.</h2>
+            </div>
 
-              <div className="relative">
-                <Package
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5E5B57]/70"
-                />
+            <form onSubmit={handleTrackOrder}>
+              <label htmlFor="fbtrack-order-number">Order number</label>
+              <div className="fbtrack-input-row">
+                <div className="fbtrack-input-wrap">
+                  <Package size={19} aria-hidden="true" />
+                  <input
+                    id="fbtrack-order-number"
+                    type="text"
+                    value={trackingNumber}
+                    onChange={(event) => {
+                      setTrackingNumber(event.target.value);
+                      setError("");
+                    }}
+                    placeholder="Enter your order number"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    maxLength={120}
+                    disabled={loading}
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={
+                      error ? "fbtrack-error" : "fbtrack-input-help"
+                    }
+                  />
+                </div>
 
-                <input
-                  id="trackingNumber"
-                  type="text"
-                  value={trackingNumber}
-                  onChange={(event) => {
-                    setTrackingNumber(event.target.value);
-                    setError("");
-                  }}
-                  placeholder="Example: EC-123456"
-                  className={`h-14 w-full rounded-[16px] border bg-[#FAF8F5] pl-12 pr-4 text-sm font-medium outline-none transition-all placeholder:text-[#5E5B57]/50 focus:bg-white focus:shadow-[0_0_0_4px_rgba(31,45,34,0.05)] ${
-                    error
-                      ? "border-red-300 focus:border-red-500"
-                      : "border-[#E4DED7] focus:border-[#1F2D22]"
-                  }`}
-                />
+                <button
+                  type="submit"
+                  className="fbtrack-button"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2
+                      size={18}
+                      className="fbtrack-spin"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Search size={18} aria-hidden="true" />
+                  )}
+                  {loading ? "Searching…" : "Track order"}
+                </button>
               </div>
-
-              {error && (
-                <p className="mt-3 text-sm font-semibold text-red-600">
-                  {error}
-                </p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex h-14 items-center justify-center gap-2 rounded-[16px] bg-[#1F2D22] px-8 text-[10px] font-semibold uppercase tracking-[0.16em] text-white shadow-[0_14px_30px_rgba(31,45,34,0.15)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#3F4C3A] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={17} className="animate-spin" />
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Search size={17} />
-                  Track Order
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-      </section>
-
-      {!order && !error && !loading && (
-        <section className="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-12 lg:py-20">
-          <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-            <div data-reveal="left" className="flex items-center">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#9A5937]">
-                  How it works
-                </p>
-                <h2 className="mt-4 max-w-sm font-display text-4xl leading-tight sm:text-5xl">
-                  A quieter, clearer way to check your order.
-                </h2>
-                <p className="mt-5 max-w-md text-sm leading-7 text-[#5E5B57]">
-                  Use the order number from your confirmation and we’ll show the
-                  latest status stored for your order.
-                </p>
-              </div>
-            </div>
-
-            <div data-reveal="right" className="grid gap-4 sm:grid-cols-3">
-              {[
-                {
-                  icon: Package,
-                  number: "01",
-                  title: "Enter your order",
-                  description:
-                    "Use the order number from your existing order confirmation.",
-                },
-                {
-                  icon: Truck,
-                  number: "02",
-                  title: "View the progress",
-                  description:
-                    "See the current order stage and the latest available update.",
-                },
-                {
-                  icon: CheckCircle2,
-                  number: "03",
-                  title: "Need more help?",
-                  description:
-                    "Contact support if anything about your order needs attention.",
-                },
-              ].map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <div
-                    key={item.number}
-                    className="ectoo-lift rounded-[24px] border border-[#E4DED7] bg-white p-6"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
-                        <Icon size={19} />
-                      </div>
-                      <span className="font-display text-2xl text-[#1F2D22]/20">
-                        {item.number}
-                      </span>
-                    </div>
-
-                    <h3 className="mt-7 font-display text-2xl leading-tight">
-                      {item.title}
-                    </h3>
-
-                    <p className="mt-3 text-sm leading-6 text-[#5E5B57]">
-                      {item.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+              <p id="fbtrack-input-help" className="fbtrack-input-help">
+                Use the order number exactly as shown in your confirmation.
+              </p>
+            </form>
           </div>
-        </section>
-      )}
 
-      {order && (
-        <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 lg:px-12 lg:py-20">
-          <div
-            data-reveal="scale"
-            className="overflow-hidden rounded-[30px] border border-[#E4DED7] bg-white shadow-[0_20px_60px_rgba(31,45,34,0.05)]"
-          >
-            <div className="grid gap-0 lg:grid-cols-[1.3fr_0.7fr]">
-              <div className="p-6 sm:p-8 lg:p-10">
-                <div className="flex flex-wrap items-center gap-3">
+          {error && (
+            <div id="fbtrack-error" className="fbtrack-error" role="alert">
+              <XCircle size={20} aria-hidden="true" />
+              <p>{error}</p>
+            </div>
+          )}
+
+          {loading && (
+            <div className="fbtrack-loading" role="status">
+              <Loader2
+                size={27}
+                className="fbtrack-spin"
+                aria-hidden="true"
+              />
+              <p>Looking up your order…</p>
+            </div>
+          )}
+
+          {!order && !loading && (
+            <div className="fbtrack-guide">
+              <div className="fbtrack-guide-heading">
+                <p className="fbtrack-eyebrow">A few simple steps</p>
+                <h2>Stay in the loop.</h2>
+              </div>
+
+              <ol>
+                <li>
+                  <span>01</span>
+                  <div>
+                    <h3>Find your number</h3>
+                    <p>Check your existing order confirmation.</p>
+                  </div>
+                </li>
+                <li>
+                  <span>02</span>
+                  <div>
+                    <h3>Check the progress</h3>
+                    <p>View the current stage and latest available update.</p>
+                  </div>
+                </li>
+                <li>
+                  <span>03</span>
+                  <div>
+                    <h3>Talk to our team</h3>
+                    <p>Contact support if your order needs attention.</p>
+                  </div>
+                </li>
+              </ol>
+            </div>
+          )}
+
+          {order && (
+            <div className="fbtrack-result">
+              <div className="fbtrack-order-heading">
+                <div>
+                  <p className="fbtrack-eyebrow">Latest order status</p>
+                  <h2>
+                    {isCancelled
+                      ? "This order was cancelled."
+                      : currentStepIndex === 3
+                      ? "Your order has arrived."
+                      : currentStepIndex >= 0
+                      ? "Here’s where it stands."
+                      : "Your order update."}
+                  </h2>
                   <span
-                    className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] ${
-                      isCancelled
-                        ? "bg-red-50 text-red-700"
-                        : "bg-[#E8E7DF] text-[#1F2D22]"
+                    className={`fbtrack-status ${
+                      isCancelled ? "is-cancelled" : ""
                     }`}
                   >
-                    {order.status}
-                  </span>
-
-                  <span className="text-xs font-medium text-[#5E5B57]">
-                    {order.orderNumber}
+                    {status || "Status unavailable"}
                   </span>
                 </div>
 
-                <h2 className="mt-5 max-w-xl font-display text-4xl leading-tight sm:text-5xl">
-                  {isCancelled
-                    ? "This order was cancelled"
-                    : order.status === "Delivered"
-                    ? "Your order has been delivered"
-                    : "Your order is moving forward"}
-                </h2>
-
-                <p className="mt-4 text-sm text-[#5E5B57]">
-                  Placed on{" "}
-                  <span className="font-semibold text-[#111311]">
-                    {formatDateTime(order.createdAt)}
-                  </span>
-                </p>
-              </div>
-
-              <div className="flex flex-col justify-between border-t border-[#E4DED7] bg-[#EEE7DF] p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
-                    Order Number
-                  </p>
-
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="break-all font-display text-2xl">
-                      {order.orderNumber}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={handleCopyTracking}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#1F2D22] transition hover:bg-[#1F2D22] hover:text-white"
-                      aria-label="Copy order number"
-                    >
-                      {copied ? <Check size={16} /> : <Copy size={16} />}
-                    </button>
-                  </div>
-
-                  {copied && (
-                    <p className="mt-2 text-xs font-semibold text-emerald-600">
-                      Order number copied.
-                    </p>
-                  )}
-                </div>
-
-                <div className="mt-8 flex items-center gap-3 border-t border-[#1F2D22]/10 pt-5 text-sm text-[#5E5B57]">
-                  <Clock3 size={16} />
-                  Latest update: {formatDateTime(order.updatedAt)}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-px bg-[#E4DED7] sm:grid-cols-3">
-              <div className="flex items-center gap-4 bg-white p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
-                  <Package size={19} />
-                </div>
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#5E5B57]">
-                    Status
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    {order.status || "Processing"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 bg-white p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
-                  <MapPin size={19} />
-                </div>
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#5E5B57]">
-                    Destination
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    {getDestination(order.shippingAddress)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 bg-white p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
-                  <CalendarDays size={19} />
-                </div>
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-[#5E5B57]">
-                    Last Updated
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    {formatDateTime(order.updatedAt)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-            <div data-reveal="left">
-              <div className="rounded-[28px] border border-[#E4DED7] bg-white p-6 sm:p-8">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#9A5937]">
-                  Shipment Progress
-                </p>
-
-                <h3 className="mt-3 font-display text-3xl">Order Timeline</h3>
-
-                <div className="mt-8">
-                  {isCancelled ? (
-                    <div className="flex items-start gap-4 rounded-[20px] bg-red-50 p-5">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-600 text-white">
-                        <XCircle size={20} />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-red-700">
-                          Order Cancelled
-                        </h4>
-                        <p className="mt-1 text-sm leading-6 text-red-600">
-                          This order was cancelled and will not be delivered.
-                          Contact support if you believe this is a mistake.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {STATUS_STEPS.map((step, index) => {
-                        const Icon = step.icon;
-                        const completed = index <= currentStepIndex;
-                        const isCurrent = index === currentStepIndex;
-
-                        return (
-                          <div
-                            key={step.key}
-                            className={`grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[20px] border p-4 sm:p-5 ${
-                              isCurrent
-                                ? "border-[#1F2D22]/20 bg-[#E8E7DF]"
-                                : completed
-                                ? "border-[#E4DED7] bg-[#FAF8F5]"
-                                : "border-[#E4DED7] bg-white"
-                            }`}
-                          >
-                            <div
-                              className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                                completed
-                                  ? "bg-[#1F2D22] text-white"
-                                  : "bg-[#F1EEE8] text-[#5E5B57]"
-                              }`}
-                            >
-                              <Icon size={18} />
-                            </div>
-
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-semibold">
-                                  {step.title}
-                                </h4>
-                                {isCurrent && (
-                                  <span className="rounded-full bg-white px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-[#1F2D22]">
-                                    Current
-                                  </span>
-                                )}
-                              </div>
-                              <p className="mt-1 text-xs text-[#5E5B57]">
-                                {completed ? "Completed" : "Not reached yet"}
-                              </p>
-                            </div>
-
-                            <span className="hidden text-xs font-medium text-[#5E5B57] sm:block">
-                              {index === 0
-                                ? formatDateTime(order.createdAt)
-                                : isCurrent
-                                ? formatDateTime(order.updatedAt)
-                                : ""}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div data-reveal="right" className="space-y-6">
-              <div className="rounded-[28px] border border-[#E4DED7] bg-white p-6">
-                <div className="flex items-center justify-between">
+                <div className="fbtrack-order-number">
+                  <p className="fbtrack-eyebrow">Order number</p>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
-                      Your Purchase
-                    </p>
-                    <h3 className="mt-2 font-display text-2xl">Order Items</h3>
+                    <strong>{order.orderNumber || "—"}</strong>
+                    {order.orderNumber && (
+                      <button
+                        type="button"
+                        onClick={handleCopyOrderNumber}
+                        aria-label="Copy order number"
+                      >
+                        {copied ? <Check size={18} /> : <Copy size={18} />}
+                      </button>
+                    )}
                   </div>
-
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E8E7DF] text-[#1F2D22]">
-                    <Package size={18} />
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  {(order.items || []).map((item, index) => (
-                    <div
-                      key={`${item.product}-${index}`}
-                      className="flex gap-4 rounded-[18px] bg-[#FAF8F5] p-3"
-                    >
-                      {item.image ? (
-                        <img
-                          src={getImageUrl(item.image)}
-                          alt={item.name}
-                          className="h-20 w-20 shrink-0 rounded-[14px] object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[14px] bg-[#E8E7DF] text-[#5E5B57]">
-                          <ImageOff size={20} />
-                        </div>
-                      )}
-
-                      <div className="min-w-0 flex-1">
-                        <h4 className="line-clamp-2 text-sm font-semibold">
-                          {item.name}
-                        </h4>
-
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="text-xs text-[#5E5B57]">
-                            Qty: {item.quantity}
-                          </span>
-
-                          <span className="text-sm font-semibold">
-                            ${Number(item.price).toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 flex items-center justify-between border-t border-[#E4DED7] pt-5">
-                  <span className="text-sm font-medium text-[#5E5B57]">
-                    Total
-                  </span>
-                  <span className="font-display text-2xl">
-                    ${Number(order.totalAmount).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="relative overflow-hidden rounded-[28px] bg-[#1F2D22] p-7 text-white">
-                <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full border border-white/10" />
-                <div className="relative">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
-                    <CircleDot size={18} />
-                  </div>
-
-                  <h3 className="mt-5 font-display text-2xl">
-                    Need assistance?
-                  </h3>
-
-                  <p className="mt-3 text-sm leading-6 text-white/60">
-                    If anything about your order looks incorrect, our support team
-                    can help.
+                  <p role="status">
+                    {copied ? "Order number copied." : copyError}
                   </p>
-
-                  <button
-                    type="button"
-                    onClick={handleContactSupport}
-                    className="mt-6 inline-flex items-center justify-center gap-2 rounded-[14px] bg-[#F1EEE8] px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
-                  >
-                    Contact Support
-                    <ArrowRight size={16} />
-                  </button>
                 </div>
               </div>
+
+              <dl className="fbtrack-metadata">
+                <div>
+                  <dt>Placed on</dt>
+                  <dd>{formatDateTime(order.createdAt)}</dd>
+                </div>
+                <div>
+                  <dt>Destination</dt>
+                  <dd>{destination || "—"}</dd>
+                </div>
+                <div>
+                  <dt>Latest update</dt>
+                  <dd>{formatDateTime(order.updatedAt)}</dd>
+                </div>
+              </dl>
+
+              <section
+                className="fbtrack-progress"
+                aria-labelledby="fbtrack-progress-title"
+              >
+                <p className="fbtrack-eyebrow">Delivery progress</p>
+                <h3 id="fbtrack-progress-title">The journey so far.</h3>
+
+                {isCancelled ? (
+                  <div className="fbtrack-cancelled">
+                    <XCircle size={25} aria-hidden="true" />
+                    <p>
+                      This order was cancelled and will not be delivered.
+                      Contact support if you believe this is a mistake.
+                    </p>
+                  </div>
+                ) : currentStepIndex < 0 ? (
+                  <p className="fbtrack-muted">
+                    A delivery stage is not available for this status.
+                    Contact our team for more details.
+                  </p>
+                ) : (
+                  <ol className="fbtrack-timeline">
+                    {STATUS_STEPS.map((step, index) => {
+                      const Icon = step.icon;
+                      const isCurrent = index === currentStepIndex;
+                      const isPast = index < currentStepIndex;
+
+                      return (
+                        <li
+                          key={step.key}
+                          className={
+                            isCurrent
+                              ? "is-current"
+                              : isPast
+                              ? "is-complete"
+                              : ""
+                          }
+                          aria-current={isCurrent ? "step" : undefined}
+                        >
+                          <span className="fbtrack-step-icon">
+                            {isPast ? (
+                              <Check size={20} aria-hidden="true" />
+                            ) : (
+                              <Icon size={20} aria-hidden="true" />
+                            )}
+                          </span>
+                          <div>
+                            <h4>{step.title}</h4>
+                            <p>
+                              {isCurrent
+                                ? index === 3
+                                  ? "Completed"
+                                  : "Current stage"
+                                : isPast
+                                ? "Completed"
+                                : "Not reached yet"}
+                            </p>
+                            {index === 0 && (
+                              <time>{formatDateTime(order.createdAt)}</time>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
+              </section>
+
+              <section
+                className="fbtrack-purchase"
+                aria-labelledby="fbtrack-purchase-title"
+              >
+                <div className="fbtrack-purchase-heading">
+                  <div>
+                    <p className="fbtrack-eyebrow">Your purchase</p>
+                    <h3 id="fbtrack-purchase-title">Inside your order.</h3>
+                  </div>
+                  <span>
+                    {items.length} {items.length === 1 ? "item" : "items"}
+                  </span>
+                </div>
+
+                {items.length ? (
+                  <ul className="fbtrack-items">
+                    {items.map((item, index) => (
+                      <li key={`${item.product || item._id || "item"}-${index}`}>
+                        <ProductImage image={item.image} name={item.name} />
+                        <div className="fbtrack-item-copy">
+                          <h4>{item.name || "Ordered product"}</h4>
+                          <span>Quantity: {item.quantity ?? "—"}</span>
+                        </div>
+                        <div className="fbtrack-item-price">
+                          <small>Unit price</small>
+                          <strong>{formatMoney(item.price)}</strong>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="fbtrack-muted">
+                    Item details are not available for this order.
+                  </p>
+                )}
+
+                <div className="fbtrack-total">
+                  <span>Order total</span>
+                  <strong>{formatMoney(order.totalAmount)}</strong>
+                </div>
+              </section>
             </div>
-          </div>
+          )}
+
+          <footer className="fbtrack-support">
+            <div>
+              <p className="fbtrack-eyebrow">We’re here to help</p>
+              <h3>A question about your order?</h3>
+              <p>
+                If anything looks incorrect, our support team can help.
+              </p>
+            </div>
+
+            {supportHref ? (
+              <a className="fbtrack-button" href={supportHref}>
+                Contact support
+                <ArrowRight size={18} aria-hidden="true" />
+              </a>
+            ) : (
+              <Link className="fbtrack-button" to="/contact">
+                Contact support
+                <ArrowRight size={18} aria-hidden="true" />
+              </Link>
+            )}
+          </footer>
         </section>
-      )}
+      </div>
     </main>
   );
 };
+
+const styles = `
+  .fbtrack-page {
+    --ink: #173f36;
+    --cream: #f5f0e6;
+    --paper: #fffdf5;
+    --lime: #d7e5a5;
+    --accent: #a56e4f;
+    --muted: #516b62;
+    --line: rgba(23, 63, 54, .23);
+    min-height: 100vh;
+    padding-bottom: clamp(45px, 7vw, 90px);
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui,
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+  }
+
+  .fbtrack-page *,
+  .fbtrack-page *::before,
+  .fbtrack-page *::after {
+    box-sizing: border-box;
+  }
+
+  .fbtrack-page a { color: inherit; text-decoration: none; }
+  .fbtrack-page button,
+  .fbtrack-page input { font: inherit; }
+  .fbtrack-page button { cursor: pointer; }
+  .fbtrack-page button:disabled { cursor: wait; opacity: .65; }
+
+  .fbtrack-page a:focus-visible,
+  .fbtrack-page button:focus-visible,
+  .fbtrack-page input:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 4px;
+  }
+
+  .fbtrack-container {
+    width: min(100%, 1380px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4.2vw, 65px);
+  }
+
+  .fbtrack-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px;
+  }
+
+  .fbtrack-topline a {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    font-weight: 600;
+  }
+
+  .fbtrack-eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .13em;
+  }
+
+  .fbtrack-header {
+    padding-block: clamp(35px, 5vw, 65px);
+    animation: fbtrackEnter .6s both;
+  }
+
+  .fbtrack-header h1 {
+    margin: 20px 0 25px;
+    font-size: clamp(52px, 8vw, 112px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -.07em;
+  }
+
+  .fbtrack-header h1 span {
+    display: block;
+    margin-left: clamp(0px, 13vw, 185px);
+    color: var(--accent);
+  }
+
+  .fbtrack-intro {
+    max-width: 530px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.9;
+  }
+
+  .fbtrack-desk {
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 9px 9px 0 rgba(23, 63, 54, .09);
+  }
+
+  .fbtrack-search-strip {
+    display: grid;
+    grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr);
+    align-items: center;
+    gap: 30px;
+    padding: clamp(24px, 3.5vw, 45px);
+    border-bottom: 1px solid var(--ink);
+    background: var(--lime);
+  }
+
+  .fbtrack-search-heading h2 {
+    margin: 12px 0 0;
+    font-size: clamp(30px, 3.3vw, 43px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbtrack-search-strip form { min-width: 0; }
+  .fbtrack-search-strip label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .fbtrack-input-row {
+    display: flex;
+    gap: 12px;
+  }
+
+  .fbtrack-input-wrap {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 12px;
+    padding-inline: 15px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+  }
+
+  .fbtrack-input-wrap svg { flex-shrink: 0; }
+  .fbtrack-input-wrap input {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+    padding: 12px 0;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 16px;
+  }
+
+  .fbtrack-input-wrap input::placeholder {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .fbtrack-page .fbtrack-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 54px;
+    padding: 14px 20px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background .2s ease;
+  }
+
+  .fbtrack-button:hover:not(:disabled) { background: #102e28; }
+  .fbtrack-input-help {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  .fbtrack-error,
+  .fbtrack-cancelled {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 22px;
+    background: #fff1ed;
+    color: #923c2e;
+  }
+
+  .fbtrack-error svg,
+  .fbtrack-cancelled svg { flex-shrink: 0; }
+  .fbtrack-error p,
+  .fbtrack-cancelled p { margin: 0; font-size: 13px; line-height: 1.8; }
+
+  .fbtrack-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    min-height: 220px;
+    padding: 30px;
+    font-size: 14px;
+  }
+
+  .fbtrack-guide {
+    display: grid;
+    grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr);
+    gap: 35px;
+    padding: clamp(28px, 4vw, 55px);
+  }
+
+  .fbtrack-guide h2 {
+    margin: 14px 0 0;
+    font-size: 36px;
+    font-weight: 500;
+    letter-spacing: -.05em;
+    line-height: 1.1;
+  }
+
+  .fbtrack-guide ol { margin: 0; padding: 0; list-style: none; }
+  .fbtrack-guide li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 18px;
+    padding-block: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbtrack-guide li:first-child { padding-top: 0; }
+  .fbtrack-guide li > span { color: var(--accent); font-size: 11px; }
+  .fbtrack-guide h3 { margin: 0 0 7px; font-size: 19px; font-weight: 500; }
+  .fbtrack-guide li p { margin: 0; font-size: 12px; color: var(--muted); }
+
+  .fbtrack-result { animation: fbtrackEnter .45s both; }
+  .fbtrack-order-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 30px;
+    padding: clamp(25px, 4vw, 50px);
+  }
+
+  .fbtrack-order-heading > div { min-width: 0; }
+  .fbtrack-order-heading h2 {
+    max-width: 650px;
+    margin: 15px 0 20px;
+    font-size: clamp(33px, 4vw, 52px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbtrack-status {
+    display: inline-block;
+    padding: 7px 12px;
+    border: 1px solid var(--ink);
+    font-size: 11px;
+    background: var(--lime);
+  }
+
+  .fbtrack-status.is-cancelled {
+    color: #923c2e;
+    border-color: #923c2e;
+    background: #fff1ed;
+  }
+
+  .fbtrack-order-number { max-width: 300px; }
+  .fbtrack-order-number > div {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 10px;
+  }
+
+  .fbtrack-order-number strong {
+    min-width: 0;
+    font-size: 21px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .fbtrack-order-number button {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+    background: var(--cream);
+    color: var(--ink);
+  }
+
+  .fbtrack-order-number > p:last-child {
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .fbtrack-metadata {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    border-block: 1px solid var(--line);
+  }
+
+  .fbtrack-metadata > div {
+    padding: 24px 30px;
+    border-right: 1px solid var(--line);
+  }
+
+  .fbtrack-metadata > div:last-child { border-right: 0; }
+  .fbtrack-metadata dt { font-size: 10px; color: var(--muted); }
+  .fbtrack-metadata dd {
+    margin: 8px 0 0;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+
+  .fbtrack-progress,
+  .fbtrack-purchase { padding: clamp(25px, 4vw, 50px); }
+  .fbtrack-progress { border-bottom: 1px solid var(--line); }
+  .fbtrack-progress h3,
+  .fbtrack-purchase-heading h3 {
+    margin: 13px 0 25px;
+    font-size: clamp(28px, 3vw, 38px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.05em;
+  }
+
+  .fbtrack-timeline {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fbtrack-timeline li {
+    position: relative;
+    min-width: 0;
+    padding-right: 15px;
+  }
+
+  .fbtrack-timeline li::before {
+    content: '';
+    position: absolute;
+    top: 23px;
+    left: 48px;
+    right: 0;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .fbtrack-timeline li:last-child::before { display: none; }
+  .fbtrack-timeline li.is-complete::before { background: var(--ink); }
+
+  .fbtrack-step-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--line);
+    background: var(--cream);
+    color: var(--muted);
+  }
+
+  .is-complete .fbtrack-step-icon { background: var(--ink); color: white; }
+  .is-current .fbtrack-step-icon {
+    background: var(--lime);
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+
+  .fbtrack-timeline h4 {
+    margin: 17px 0 6px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .fbtrack-timeline p { margin: 0; font-size: 11px; color: var(--muted); }
+  .fbtrack-timeline time {
+    display: block;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .fbtrack-purchase-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .fbtrack-purchase-heading > span { font-size: 11px; color: var(--muted); }
+  .fbtrack-items { margin: 0; padding: 0; list-style: none; }
+  .fbtrack-items li {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 22px;
+    padding-block: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  .fbtrack-product-image {
+    display: grid;
+    place-items: center;
+    width: 90px;
+    height: 100px;
+    background: var(--cream);
+    color: var(--muted);
+  }
+
+  .fbtrack-product-image img {
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    object-fit: contain;
+  }
+
+  .fbtrack-item-copy h4 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .fbtrack-item-copy > span { font-size: 11px; color: var(--muted); }
+  .fbtrack-item-price { text-align: right; }
+  .fbtrack-item-price small { display: block; font-size: 10px; color: var(--muted); }
+  .fbtrack-item-price strong { display: block; margin-top: 6px; font-size: 15px; }
+
+  .fbtrack-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 15px;
+    padding-top: 25px;
+    border-top: 1px solid var(--ink);
+  }
+
+  .fbtrack-total > span { font-size: 13px; }
+  .fbtrack-total strong { font-size: 28px; font-weight: 500; }
+  .fbtrack-muted { color: var(--muted); font-size: 13px; line-height: 1.8; }
+
+  .fbtrack-support {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    padding: clamp(25px, 3.5vw, 45px);
+    border-top: 1px solid var(--ink);
+    background: var(--cream);
+  }
+
+  .fbtrack-support h3 {
+    margin: 12px 0;
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -.04em;
+  }
+
+  .fbtrack-support div > p:last-child {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .fbtrack-support .fbtrack-button { flex-shrink: 0; }
+
+  @keyframes fbtrackEnter {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fbtrackSpin { to { transform: rotate(360deg); } }
+  .fbtrack-spin { animation: fbtrackSpin 1s linear infinite; }
+
+  @media (max-width: 950px) {
+    .fbtrack-search-strip,
+    .fbtrack-guide { grid-template-columns: minmax(0, 1fr); }
+    .fbtrack-order-heading { flex-direction: column; }
+    .fbtrack-order-number { max-width: 100%; }
+  }
+
+  @media (max-width: 650px) {
+    .fbtrack-header h1 span { margin-left: 0; }
+    .fbtrack-input-row { flex-direction: column; }
+    .fbtrack-input-row .fbtrack-button { width: 100%; }
+    .fbtrack-metadata { grid-template-columns: minmax(0, 1fr); }
+    .fbtrack-metadata > div {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+      padding: 18px 24px;
+    }
+    .fbtrack-metadata > div:last-child { border-bottom: 0; }
+
+    .fbtrack-timeline { grid-template-columns: minmax(0, 1fr); }
+    .fbtrack-timeline li {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 18px;
+      padding: 0 0 28px;
+    }
+    .fbtrack-timeline li:last-child { padding-bottom: 0; }
+    .fbtrack-timeline li::before {
+      left: 23px;
+      right: auto;
+      top: 48px;
+      bottom: 0;
+      width: 1px;
+      height: auto;
+    }
+    .fbtrack-timeline h4 { margin-top: 3px; }
+    .fbtrack-support { flex-direction: column; align-items: stretch; }
+    .fbtrack-support .fbtrack-button { width: 100%; }
+  }
+
+  @media (max-width: 420px) {
+    .fbtrack-header h1 { font-size: 52px; }
+    .fbtrack-desk { box-shadow: 5px 5px 0 rgba(23, 63, 54, .09); }
+    .fbtrack-items li {
+      grid-template-columns: 70px minmax(0, 1fr);
+      gap: 15px;
+    }
+    .fbtrack-product-image { width: 70px; height: 85px; }
+    .fbtrack-item-price { grid-column: 2; text-align: left; }
+    .fbtrack-item-price small { display: inline; margin-right: 8px; }
+    .fbtrack-item-price strong { display: inline; }
+    .fbtrack-purchase-heading { align-items: flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbtrack-page *,
+    .fbtrack-page *::before,
+    .fbtrack-page *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
 
 export default OrderTracking;

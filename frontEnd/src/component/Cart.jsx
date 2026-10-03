@@ -1,18 +1,45 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   ArrowRight,
+  ArrowUpRight,
   ChevronLeft,
   ImageOff,
   Minus,
-  PackageCheck,
   Plus,
   ShoppingBag,
   Trash2,
   Truck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
 import { useCart } from "./CartContext";
+
+const formatPrice = (value) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(value) || 0);
+
+const CartImage = ({ src, name }) => {
+  const [failedSource, setFailedSource] = useState(null);
+
+  if (!src || failedSource === src) {
+    return (
+      <div className="fbc-image-placeholder">
+        <ImageOff size={32} strokeWidth={1.2} />
+        <span>Image unavailable</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={name || "Handbag"}
+      loading="lazy"
+      onError={() => setFailedSource(src)}
+    />
+  );
+};
 
 const Cart = () => {
   const {
@@ -22,553 +49,1166 @@ const Cart = () => {
     cartSubtotal,
   } = useCart();
 
-  const pageRef = useRef(null);
+  const items = cartItems || [];
 
-  const handleQuantityChange = (
-    id,
-    action,
-    currentQuantity
-  ) => {
-    const newQuantity =
-      action === "increase"
-        ? currentQuantity + 1
-        : Math.max(1, currentQuantity - 1);
+  const getQuantity = (item) =>
+    Math.max(1, Math.floor(Number(item.quantity) || 1));
 
-    updateQuantity(id, newQuantity);
-  };
-
-  const subtotal = cartSubtotal;
-  const shipping = 0;
-  const total = subtotal + shipping;
-
-  const totalItems = cartItems.reduce(
-    (sum, item) => sum + item.quantity,
+  const totalItems = items.reduce(
+    (total, item) => total + getQuantity(item),
     0
   );
 
-  useEffect(() => {
-    const elements =
-      pageRef.current?.querySelectorAll("[data-reveal]");
+  const subtotal = Number(cartSubtotal) || 0;
+  const shipping = 0;
+  const total = subtotal + shipping;
 
-    if (!elements?.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.12,
-        rootMargin: "0px 0px -30px 0px",
-      }
+  const handleQuantity = (item, change) => {
+    updateQuantity(
+      item.id,
+      Math.max(1, getQuantity(item) + change)
     );
-
-    elements.forEach((element) => {
-      observer.observe(element);
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [cartItems.length]);
-
-  if (cartItems.length === 0) {
-    return (
-      <div
-        ref={pageRef}
-        className="min-h-[78vh] overflow-hidden bg-[#FAF8F5] text-[#111311]"
-      >
-        <style>{animationStyles}</style>
-
-        <section className="px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-24">
-          <div
-            data-reveal="scale"
-            className="mx-auto max-w-[900px] overflow-hidden rounded-[24px] border border-[#E4DED7] bg-white"
-          >
-            <div className="grid md:grid-cols-[0.72fr_1.28fr]">
-              <div className="relative flex min-h-[260px] items-center justify-center overflow-hidden bg-[#1F2D22] p-10 text-white md:min-h-[430px]">
-                <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full border border-white/5" />
-                <div className="absolute -bottom-28 -right-24 h-72 w-72 rounded-full border border-white/5" />
-
-                <div className="relative text-center">
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
-                    <ShoppingBag
-                      size={32}
-                      strokeWidth={1.35}
-                    />
-                  </div>
-
-                  <p className="mt-6 text-[9px] font-semibold uppercase tracking-[0.32em] text-white/50">
-                    Ectoo
-                  </p>
-
-                  <p className="mt-2 font-display text-2xl">
-                    Your Bag
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center px-7 py-12 sm:px-10 lg:px-14">
-                <div data-reveal="right">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-                    Shopping Bag
-                  </p>
-
-                  <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
-                    Nothing here
-                    <span className="block text-[#5E5B57]">
-                      just yet.
-                    </span>
-                  </h1>
-
-                  <p className="mt-5 max-w-md text-sm leading-7 text-[#5E5B57]">
-                    Explore our handbag collection and add the styles that work
-                    for your everyday routine.
-                  </p>
-
-                  <Link
-                    to="/shop"
-                    className="ectoo-cta group mt-7 inline-flex min-h-12 items-center justify-center gap-3 rounded-[5px] bg-[#1F2D22] px-7 text-[10px] font-semibold uppercase tracking-[0.1em] text-white transition-all duration-300 hover:-translate-y-1 hover:bg-[#3F4C3A]"
-                  >
-                    Explore Handbags
-
-                    <ArrowRight
-                      size={15}
-                      strokeWidth={1.7}
-                      className="ectoo-arrow"
-                    />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div
-      ref={pageRef}
-      className="min-h-screen overflow-hidden bg-[#FAF8F5] text-[#111311]"
-    >
-      <style>{animationStyles}</style>
+    <main className="fbc-page">
+      <style>{styles}</style>
 
-      <section className="border-b border-[#E4DED7] bg-[#E4E5DD]">
-        <div className="mx-auto max-w-[1450px] px-5 py-10 sm:px-8 sm:py-12 lg:px-12">
-          <Link
-            to="/shop"
-            data-reveal="left"
-            className="group inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#5E5B57] transition-colors hover:text-[#111311]"
-          >
-            <ChevronLeft
-              size={15}
-              className="transition-transform duration-300 group-hover:-translate-x-1"
-            />
-
-            Continue Shopping
+      <div className="fbc-container">
+        <nav className="fbc-navigation" aria-label="Cart navigation">
+          <Link to="/shop" className="fbc-back">
+            <ChevronLeft size={17} />
+            Back to collection
           </Link>
 
-          <div className="mt-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div data-reveal="left">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.32em] text-[#9A5937]">
-                Ectoo
-              </p>
+          <span className="fbc-brand">FableBelle</span>
+        </nav>
 
-              <h1 className="mt-3 font-display text-4xl leading-none sm:text-5xl lg:text-[58px]">
-                Your Shopping Bag
+        {items.length === 0 ? (
+          <section className="fbc-empty">
+            <div className="fbc-empty-art" aria-hidden="true">
+              <span className="fbc-orbit fbc-orbit-one" />
+              <span className="fbc-orbit fbc-orbit-two" />
+              <div className="fbc-empty-icon">
+                <ShoppingBag size={85} strokeWidth={1} />
+              </div>
+              <span className="fbc-art-caption">
+                A little space for something lovely.
+              </span>
+            </div>
+
+            <div className="fbc-empty-content">
+              <p className="fbc-eyebrow">Your collection starts here</p>
+              <h1>
+                Find your
+                <span>everyday muse.</span>
               </h1>
+              <p className="fbc-empty-copy">
+                Your cart is empty. Discover the pieces that fit your
+                routine, your plans, and your personal style.
+              </p>
+
+              <Link to="/shop" className="fbc-button">
+                Explore handbags
+                <ArrowUpRight size={20} />
+              </Link>
             </div>
-
-            <div
-              data-reveal="right"
-              className="flex items-center gap-3"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                <ShoppingBag
-                  size={16}
-                  strokeWidth={1.5}
-                />
-              </div>
-
+          </section>
+        ) : (
+          <>
+            <header className="fbc-header">
               <div>
-                <p className="text-[9px] uppercase tracking-[0.18em] text-[#5E5B57]">
-                  In Your Bag
+                <p className="fbc-eyebrow">
+                  The pieces you picked
                 </p>
-
-                <p className="mt-0.5 text-[12px] font-semibold">
-                  {totalItems} {totalItems === 1 ? "Item" : "Items"}
-                </p>
+                <h1>
+                  Your cart<span>.</span>
+                </h1>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <section className="px-5 py-10 sm:px-8 sm:py-14 lg:px-12 lg:py-16">
-        <div className="mx-auto grid max-w-[1450px] gap-10 lg:grid-cols-[minmax(0,1fr)_390px] xl:gap-14">
-          <div>
-            <div
-              data-reveal
-              className="mb-5 flex items-center justify-between"
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#5E5B57]">
-                Selected Items
-              </p>
+              <div className="fbc-item-count">
+                <ShoppingBag size={21} strokeWidth={1.4} />
+                <span>
+                  <strong>{totalItems}</strong>
+                  {totalItems === 1 ? " piece" : " pieces"}
+                </span>
+              </div>
+            </header>
 
-              <p className="text-[10px] text-[#5E5B57]">
-                {totalItems} total
-              </p>
-            </div>
+            <div className="fbc-workspace">
+              <aside className="fbc-summary">
+                <div className="fbc-summary-heading">
+                  <p className="fbc-eyebrow">Ready when you are</p>
+                  <ArrowUpRight size={25} strokeWidth={1.3} />
+                </div>
 
-            <div className="space-y-4">
-              {cartItems.map((item, index) => (
-                <article
-                  key={item.id}
-                  data-reveal
-                  style={{
-                    transitionDelay: `${index * 80}ms`,
-                  }}
-                  className="ectoo-cart-card group overflow-hidden rounded-[18px] border border-[#E4DED7] bg-white p-4 sm:p-5"
+                <h2>Make them yours.</h2>
+
+                <p className="fbc-summary-description">
+                  Your favourites, together in one place.
+                </p>
+
+                <dl className="fbc-summary-lines">
+                  <div>
+                    <dt>
+                      Subtotal · {totalItems}{" "}
+                      {totalItems === 1 ? "item" : "items"}
+                    </dt>
+                    <dd>{formatPrice(subtotal)}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Shipping</dt>
+                    <dd>Free</dd>
+                  </div>
+                </dl>
+
+                <div
+                  className="fbc-order-total"
+                  aria-live="polite"
+                  aria-atomic="true"
                 >
-                  <div className="flex gap-4 sm:gap-6">
-                    <Link
-                      to={`/shop/${item.id}`}
-                      className="relative h-[125px] w-[105px] shrink-0 overflow-hidden rounded-[13px] bg-[#F5F1EC] sm:h-[155px] sm:w-[135px]"
-                    >
-                      {item.image ? (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="ectoo-product-image h-full w-full object-contain p-2.5"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[#5E5B57]/30">
-                          <ImageOff
-                            size={25}
-                            strokeWidth={1.4}
-                          />
-                        </div>
-                      )}
-                    </Link>
+                  <span>Order total</span>
+                  <strong>{formatPrice(total)}</strong>
+                </div>
 
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          {item.category && (
-                            <p className="truncate text-[8px] font-semibold uppercase tracking-[0.2em] text-[#9A5937]">
-                              {item.category}
-                            </p>
-                          )}
+                <Link to="/checkout" className="fbc-button">
+                  Proceed to checkout
+                  <ArrowRight size={18} />
+                </Link>
 
-                          <Link to={`/shop/${item.id}`}>
-                            <h2 className="mt-1.5 line-clamp-2 font-display text-xl leading-tight transition-colors duration-300 hover:text-[#9A5937] sm:text-2xl">
-                              {item.name}
-                            </h2>
+                <p className="fbc-checkout-note">
+                  Review your items and quantities before checkout.
+                </p>
+
+                <div className="fbc-delivery">
+                  <Truck size={24} strokeWidth={1.3} />
+                  <div>
+                    <strong>Free U.S. shipping</strong>
+                    <p>No shipping charge added to this order.</p>
+                  </div>
+                </div>
+
+                <div className="fbc-summary-signature">
+                  <span>Chosen with a little intention.</span>
+                  <strong>FableBelle</strong>
+                </div>
+              </aside>
+
+              <section
+                className="fbc-products"
+                aria-labelledby="fbc-selection-title"
+              >
+                <div className="fbc-products-heading">
+                  <h2 id="fbc-selection-title">Your selection</h2>
+                  <span>
+                    {items.length}{" "}
+                    {items.length === 1 ? "style" : "styles"}
+                  </span>
+                </div>
+
+                <div className="fbc-product-grid">
+                  {items.map((item, index) => {
+                    const quantity = getQuantity(item);
+
+                    return (
+                      <article
+                        key={item.id}
+                        className="fbc-product-card"
+                        style={{
+                          "--fbc-delay": `${
+                            Math.min(index, 5) * 70
+                          }ms`,
+                        }}
+                      >
+                        <div className="fbc-product-visual">
+                          <span
+                            className="fbc-product-number"
+                            aria-hidden="true"
+                          >
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+
+                          <button
+                            type="button"
+                            className="fbc-remove"
+                            onClick={() => removeFromCart(item.id)}
+                            aria-label={`Remove ${item.name} from cart`}
+                          >
+                            <Trash2 size={17} strokeWidth={1.5} />
+                          </button>
+
+                          <Link
+                            to={`/shop/${item.id}`}
+                            className="fbc-image-link"
+                            aria-label={`View ${item.name}`}
+                          >
+                            <CartImage
+                              src={item.image}
+                              name={item.name}
+                            />
+                          </Link>
+
+                          <Link
+                            to={`/shop/${item.id}`}
+                            className="fbc-view-product"
+                            aria-label={`View details for ${item.name}`}
+                          >
+                            View piece
+                            <ArrowUpRight size={15} />
                           </Link>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeFromCart(item.id)
-                          }
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#5E5B57] transition-all duration-300 hover:bg-red-50 hover:text-red-600"
-                          aria-label={`Remove ${item.name}`}
-                        >
-                          <Trash2
-                            size={16}
-                            strokeWidth={1.6}
-                          />
-                        </button>
-                      </div>
-
-                      <div className="mt-auto flex flex-col gap-4 pt-5 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                          <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.16em] text-[#5E5B57]">
-                            Quantity
+                        <div className="fbc-product-details">
+                          <p className="fbc-product-category">
+                            {item.category || "FableBelle collection"}
                           </p>
 
-                          <div className="inline-flex items-center rounded-full border border-[#E4DED7] bg-[#FAF8F5] p-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.id,
-                                  "decrease",
-                                  item.quantity
-                                )
-                              }
-                              className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white"
-                              aria-label="Decrease quantity"
-                            >
-                              <Minus
-                                size={12}
-                                strokeWidth={1.8}
-                              />
-                            </button>
+                          <Link to={`/shop/${item.id}`}>
+                            <h3>{item.name}</h3>
+                          </Link>
 
-                            <span className="min-w-[34px] text-center text-[11px] font-semibold">
-                              {item.quantity}
-                            </span>
+                          <p className="fbc-unit-price">
+                            {formatPrice(item.price)} each
+                          </p>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleQuantityChange(
-                                  item.id,
-                                  "increase",
-                                  item.quantity
-                                )
-                              }
-                              className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white"
-                              aria-label="Increase quantity"
-                            >
-                              <Plus
-                                size={12}
-                                strokeWidth={1.8}
-                              />
-                            </button>
+                          <div className="fbc-product-bottom">
+                            <div className="fbc-quantity-group">
+                              <span className="fbc-field-label">
+                                Quantity
+                              </span>
+
+                              <div className="fbc-quantity">
+                                <button
+                                  type="button"
+                                  disabled={quantity <= 1}
+                                  onClick={() =>
+                                    handleQuantity(item, -1)
+                                  }
+                                  aria-label={`Decrease quantity of ${item.name}`}
+                                >
+                                  <Minus size={14} />
+                                </button>
+
+                                <span
+                                  aria-live="polite"
+                                  aria-atomic="true"
+                                >
+                                  {quantity}
+                                </span>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleQuantity(item, 1)
+                                  }
+                                  aria-label={`Increase quantity of ${item.name}`}
+                                >
+                                  <Plus size={14} />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="fbc-line-total">
+                              <span className="fbc-field-label">
+                                Item total
+                              </span>
+                              <strong>
+                                {formatPrice(
+                                  Number(item.price) * quantity
+                                )}
+                              </strong>
+                            </div>
                           </div>
                         </div>
-
-                        <div className="sm:text-right">
-                          <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#5E5B57]">
-                            Item Total
-                          </p>
-
-                          <p className="mt-1 font-display text-2xl">
-                            $
-                            {(
-                              item.price *
-                              item.quantity
-                            ).toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div
-              data-reveal
-              className="mt-5 rounded-[18px] bg-[#E4E5DD] p-5 sm:p-6"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                  <Truck
-                    size={18}
-                    strokeWidth={1.4}
-                  />
+                      </article>
+                    );
+                  })}
                 </div>
 
-                <div>
-                  <p className="text-[12px] font-semibold">
-                    Free U.S. Shipping
-                  </p>
-
-                  <p className="mt-1 text-[10px] leading-5 text-[#5E5B57]">
-                    No shipping charge is added to this order.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <aside
-            data-reveal="right"
-            className="lg:sticky lg:top-28 lg:h-fit"
-          >
-            <div className="relative overflow-hidden rounded-[22px] bg-[#1F2D22] p-6 text-white sm:p-8">
-              <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full border border-white/5" />
-              <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full border border-white/5" />
-
-              <div className="relative">
-                <div className="flex items-center justify-between">
+                <Link to="/shop" className="fbc-continue-panel">
                   <div>
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.25em] text-white/45">
-                      Your Order
-                    </p>
-
-                    <h2 className="mt-2 font-display text-3xl">
-                      Summary
-                    </h2>
-                  </div>
-
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
-                    <ShoppingBag
-                      size={18}
-                      strokeWidth={1.4}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-8 space-y-4 border-t border-white/10 pt-7">
-                  <div className="flex items-center justify-between text-[12px]">
-                    <span className="text-white/55">
-                      Subtotal
+                    <span className="fbc-eyebrow">
+                      There is more to discover
                     </span>
-
-                    <span className="font-semibold">
-                      ${subtotal.toFixed(2)}
-                    </span>
+                    <strong>Find another favourite.</strong>
                   </div>
 
-                  <div className="flex items-center justify-between text-[12px]">
-                    <span className="text-white/55">
-                      Shipping
-                    </span>
-
-                    <span className="font-semibold text-[#E4E5DD]">
-                      FREE
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-7 border-t border-white/10 pt-7">
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-white/45">
-                        Order Total
-                      </p>
-
-                      <p className="mt-1 text-[9px] text-white/40">
-                        Before checkout
-                      </p>
-                    </div>
-
-                    <p className="font-display text-3xl">
-                      ${total.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-
-                <Link
-                  to="/checkout"
-                  className="ectoo-cta group mt-8 flex min-h-[50px] w-full items-center justify-center gap-3 rounded-[6px] bg-[#F1EEE8] px-5 text-[9px] font-semibold uppercase tracking-[0.1em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white"
-                >
-                  Proceed To Checkout
-
-                  <ArrowRight
-                    size={15}
-                    strokeWidth={1.7}
-                    className="ectoo-arrow"
-                  />
+                  <span className="fbc-continue-icon">
+                    <ArrowUpRight size={25} strokeWidth={1.4} />
+                  </span>
                 </Link>
-
-                <div className="mt-6 flex items-start gap-3 border-t border-white/10 pt-5">
-                  <PackageCheck
-                    size={16}
-                    strokeWidth={1.4}
-                    className="mt-0.5 shrink-0 text-white/55"
-                  />
-
-                  <p className="text-[9px] leading-5 text-white/45">
-                    Review your items and quantities before continuing to checkout.
-                  </p>
-                </div>
-              </div>
+              </section>
             </div>
-
-            <Link
-              to="/shop"
-              className="group mt-4 flex min-h-12 items-center justify-center gap-2 rounded-[15px] border border-[#E4DED7] bg-white text-[9px] font-semibold uppercase tracking-[0.1em] transition-all duration-300 hover:border-[#1F2D22]/30"
-            >
-              <ChevronLeft
-                size={14}
-                className="transition-transform duration-300 group-hover:-translate-x-1"
-              />
-
-              Continue Shopping
-            </Link>
-          </aside>
-        </div>
-      </section>
-    </div>
+          </>
+        )}
+      </div>
+    </main>
   );
 };
 
-const animationStyles = `
-  [data-reveal] {
-    opacity: 0;
-    transform: translateY(38px);
-    transition:
-      opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+const styles = `
+  .fbc-page {
+    --fbc-forest: #173f36;
+    --fbc-deep: #102e28;
+    --fbc-pistachio: #d7e5a5;
+    --fbc-bone: #f5f0e6;
+    --fbc-paper: #fffdf5;
+    --fbc-brass: #a56e4f;
+    --fbc-line: rgba(23, 63, 54, .22);
+    min-height: 80vh;
+    padding-bottom: clamp(50px, 7vw, 100px);
+    background: var(--fbc-bone);
+    color: var(--fbc-forest);
+    font-family: 'Onest', ui-sans-serif, system-ui, -apple-system,
+      BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
   }
 
-  [data-reveal="left"] {
-    transform: translateX(-42px);
+  .fbc-page *,
+  .fbc-page *::before,
+  .fbc-page *::after {
+    box-sizing: border-box;
   }
 
-  [data-reveal="right"] {
-    transform: translateX(42px);
+  .fbc-page a {
+    color: inherit;
+    text-decoration: none;
   }
 
-  [data-reveal="scale"] {
-    transform: scale(0.96);
+  .fbc-page button {
+    font: inherit;
+    cursor: pointer;
   }
 
-  [data-reveal].ectoo-visible {
-    opacity: 1;
-    transform: translate(0, 0) scale(1);
+  .fbc-page a:focus-visible,
+  .fbc-page button:focus-visible {
+    outline: 3px solid var(--fbc-brass);
+    outline-offset: 4px;
   }
 
-  .ectoo-cart-card {
-    transition:
-      transform 0.4s ease,
-      box-shadow 0.4s ease,
-      border-color 0.4s ease;
+  .fbc-container {
+    width: min(100%, 1450px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4.2vw, 70px);
   }
 
-  .ectoo-cart-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(31, 45, 34, 0.18);
-    box-shadow: 0 18px 45px rgba(31, 45, 34, 0.06);
+  .fbc-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 20px;
+    border-bottom: 1px solid var(--fbc-line);
   }
 
-  .ectoo-product-image {
-    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  .fbc-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    font-size: 12px;
+    font-weight: 600;
   }
 
-  .ectoo-cart-card:hover .ectoo-product-image {
-    transform: scale(1.045);
+  .fbc-back svg {
+    transition: transform .25s ease;
   }
 
-  @keyframes ectooCartArrow {
-    0%,
-    100% {
-      transform: translateX(0);
+  .fbc-back:hover svg {
+    transform: translateX(-4px);
+  }
+
+  .fbc-brand {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+  }
+
+  .fbc-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-block: clamp(32px, 5vw, 66px);
+    animation: fbcReveal .65s both;
+  }
+
+  .fbc-eyebrow {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .fbc-header h1 {
+    margin: 10px 0 0;
+    font-size: clamp(55px, 8vw, 110px);
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -.075em;
+  }
+
+  .fbc-header h1 > span {
+    color: var(--fbc-brass);
+  }
+
+  .fbc-item-count {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 18px;
+    border: 1px solid var(--fbc-line);
+    background: var(--fbc-paper);
+    font-size: 13px;
+  }
+
+  .fbc-item-count strong {
+    font-weight: 700;
+  }
+
+  .fbc-workspace {
+    display: grid;
+    grid-template-columns: 335px minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(28px, 4vw, 60px);
+  }
+
+  .fbc-summary {
+    position: sticky;
+    top: 120px;
+    min-width: 0;
+    padding: 30px;
+    background: var(--fbc-pistachio);
+    border: 1px solid var(--fbc-forest);
+    box-shadow: 8px 8px 0 rgba(23, 63, 54, .1);
+    animation: fbcReveal .65s .08s both;
+  }
+
+  .fbc-summary-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .fbc-summary-heading svg {
+    flex-shrink: 0;
+  }
+
+  .fbc-summary h2 {
+    margin: 32px 0 13px;
+    font-size: 46px;
+    font-weight: 500;
+    line-height: 1.03;
+    letter-spacing: -.065em;
+  }
+
+  .fbc-summary-description {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .fbc-summary-lines {
+    display: grid;
+    gap: 18px;
+    margin: 30px 0 0;
+    padding-top: 24px;
+    border-top: 1px solid var(--fbc-line);
+  }
+
+  .fbc-summary-lines > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: 12px;
+  }
+
+  .fbc-summary-lines dd {
+    margin: 0;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .fbc-order-total {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    margin-block: 24px;
+    padding-top: 22px;
+    border-top: 1px solid var(--fbc-forest);
+  }
+
+  .fbc-order-total > span {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .fbc-order-total strong {
+    max-width: 100%;
+    font-size: 44px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -.055em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbc-page .fbc-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 56px;
+    padding: 16px 18px;
+    background: var(--fbc-forest);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    transition: background .25s ease, transform .25s ease;
+  }
+
+  .fbc-button svg {
+    flex-shrink: 0;
+    transition: transform .25s ease;
+  }
+
+  .fbc-button:hover {
+    background: var(--fbc-deep);
+    transform: translateY(-2px);
+  }
+
+  .fbc-button:hover svg {
+    transform: translateX(4px);
+  }
+
+  .fbc-checkout-note {
+    margin: 13px 0 26px;
+    font-size: 10px;
+    line-height: 1.8;
+  }
+
+  .fbc-delivery {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 21px;
+    border-top: 1px solid var(--fbc-line);
+  }
+
+  .fbc-delivery > svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .fbc-delivery strong {
+    font-size: 12px;
+  }
+
+  .fbc-delivery p {
+    margin: 4px 0 0;
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  .fbc-summary-signature {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 30px;
+  }
+
+  .fbc-summary-signature > span {
+    font-size: 10px;
+  }
+
+  .fbc-summary-signature > strong {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -.06em;
+  }
+
+  .fbc-products {
+    min-width: 0;
+  }
+
+  .fbc-products-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--fbc-forest);
+  }
+
+  .fbc-products-heading h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -.045em;
+  }
+
+  .fbc-products-heading > span {
+    font-size: 12px;
+  }
+
+  .fbc-product-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .fbc-product-card {
+    min-width: 0;
+    border: 1px solid var(--fbc-line);
+    background: var(--fbc-paper);
+    animation: fbcReveal .65s both;
+    animation-delay: var(--fbc-delay, 0ms);
+  }
+
+  .fbc-product-visual {
+    position: relative;
+    isolation: isolate;
+    min-height: 245px;
+    overflow: hidden;
+    background: #e6eadb;
+  }
+
+  .fbc-product-card:nth-child(4n + 2) .fbc-product-visual {
+    background: #e9dfcf;
+  }
+
+  .fbc-product-card:nth-child(4n + 3) .fbc-product-visual {
+    background: #dce5da;
+  }
+
+  .fbc-product-card:nth-child(4n + 4) .fbc-product-visual {
+    background: #ede5dc;
+  }
+
+  .fbc-product-visual::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: 180px;
+    height: 180px;
+    top: 50%;
+    left: 50%;
+    border: 1px solid rgba(23, 63, 54, .13);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform .6s ease;
+  }
+
+  .fbc-product-card:hover .fbc-product-visual::before {
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+
+  .fbc-product-number {
+    position: absolute;
+    top: 17px;
+    left: 18px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+  }
+
+  .fbc-remove {
+    position: absolute;
+    z-index: 2;
+    top: 9px;
+    right: 9px;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--fbc-forest);
+    transition: background .25s ease, color .25s ease;
+  }
+
+  .fbc-remove:hover {
+    background: var(--fbc-paper);
+    color: #a33c32;
+  }
+
+  .fbc-image-link {
+    display: grid;
+    place-items: center;
+    height: 255px;
+    padding: 36px 25px 30px;
+  }
+
+  .fbc-image-link img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: contain;
+    transition: transform .6s cubic-bezier(.2, .8, .25, 1);
+  }
+
+  .fbc-product-card:hover .fbc-image-link img {
+    transform: translateY(-5px) scale(1.045);
+  }
+
+  .fbc-image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+  }
+
+  .fbc-view-product {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 18px;
+    border-top: 1px solid rgba(23, 63, 54, .13);
+    font-size: 10px;
+    font-weight: 600;
+    transition: background .25s ease;
+  }
+
+  .fbc-view-product:hover {
+    background: rgba(255, 253, 245, .5);
+  }
+
+  .fbc-product-details {
+    padding: 22px;
+  }
+
+  .fbc-product-category {
+    margin: 0;
+    color: var(--fbc-brass);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+  }
+
+  .fbc-product-details h3 {
+    margin: 9px 0;
+    font-size: 25px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -.045em;
+    overflow-wrap: anywhere;
+    transition: color .2s ease;
+  }
+
+  .fbc-product-details a:hover h3 {
+    color: var(--fbc-brass);
+  }
+
+  .fbc-unit-price {
+    margin: 0;
+    color: #516b62;
+    font-size: 12px;
+  }
+
+  .fbc-product-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 18px 12px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--fbc-line);
+  }
+
+  .fbc-field-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #516b62;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .fbc-quantity {
+    display: inline-grid;
+    grid-template-columns: 38px minmax(28px, auto) 38px;
+    align-items: center;
+    border: 1px solid var(--fbc-line);
+  }
+
+  .fbc-quantity button {
+    display: grid;
+    place-items: center;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--fbc-forest);
+    transition: background .2s ease, color .2s ease;
+  }
+
+  .fbc-quantity button:hover:not(:disabled) {
+    background: var(--fbc-forest);
+    color: #fff;
+  }
+
+  .fbc-quantity button:disabled {
+    opacity: .3;
+    cursor: not-allowed;
+  }
+
+  .fbc-quantity > span {
+    padding-inline: 3px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .fbc-line-total {
+    margin-left: auto;
+    padding-bottom: 7px;
+    text-align: right;
+  }
+
+  .fbc-line-total strong {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -.04em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbc-continue-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 26px;
+    padding: 26px;
+    border: 1px solid var(--fbc-line);
+    transition: background .25s ease;
+  }
+
+  .fbc-continue-panel:hover {
+    background: var(--fbc-pistachio);
+  }
+
+  .fbc-continue-panel strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -.05em;
+  }
+
+  .fbc-continue-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--fbc-forest);
+    border-radius: 50%;
+    transition: transform .25s ease;
+  }
+
+  .fbc-continue-panel:hover .fbc-continue-icon {
+    transform: rotate(8deg);
+  }
+
+  .fbc-empty {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    margin-top: clamp(35px, 5vw, 70px);
+    border: 1px solid var(--fbc-forest);
+    animation: fbcReveal .7s both;
+  }
+
+  .fbc-empty-art {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 34px;
+    min-height: 440px;
+    padding: 35px;
+    overflow: hidden;
+    background: var(--fbc-forest);
+    color: var(--fbc-pistachio);
+  }
+
+  .fbc-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    background: var(--fbc-pistachio);
+    color: var(--fbc-forest);
+    animation: fbcFloat 5s ease-in-out infinite;
+  }
+
+  .fbc-orbit {
+    position: absolute;
+    z-index: -1;
+    width: 320px;
+    height: 320px;
+    border: 1px solid rgba(215, 229, 165, .2);
+    border-radius: 50%;
+  }
+
+  .fbc-orbit-two {
+    width: 440px;
+    height: 440px;
+  }
+
+  .fbc-art-caption {
+    max-width: 210px;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .fbc-empty-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: clamp(30px, 5vw, 75px);
+    background: var(--fbc-paper);
+  }
+
+  .fbc-empty-content h1 {
+    margin: 20px 0 0;
+    font-size: clamp(40px, 5vw, 72px);
+    font-weight: 500;
+    line-height: 1.03;
+    letter-spacing: -.065em;
+  }
+
+  .fbc-empty-content h1 span {
+    display: block;
+    color: var(--fbc-brass);
+  }
+
+  .fbc-empty-copy {
+    max-width: 400px;
+    margin: 23px 0 30px;
+    color: #516b62;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .fbc-empty-content .fbc-button {
+    width: min(100%, 290px);
+  }
+
+  @keyframes fbcReveal {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
     }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
+  @keyframes fbcFloat {
+    0%, 100% {
+      transform: translateY(0) rotate(-4deg);
+    }
     50% {
-      transform: translateX(5px);
+      transform: translateY(-9px) rotate(3deg);
     }
   }
 
-  .ectoo-cta:hover .ectoo-arrow {
-    animation: ectooCartArrow 0.8s ease infinite;
+  @media (max-width: 1150px) {
+    .fbc-workspace {
+      grid-template-columns: 290px minmax(0, 1fr);
+      gap: 28px;
+    }
+
+    .fbc-summary {
+      padding: 24px;
+    }
+
+    .fbc-summary h2 {
+      font-size: 40px;
+    }
+
+    .fbc-product-grid {
+      gap: 16px;
+    }
+
+    .fbc-product-details {
+      padding: 18px;
+    }
+
+    .fbc-image-link {
+      height: 230px;
+      padding-inline: 18px;
+    }
+
+    .fbc-product-visual {
+      min-height: 0;
+    }
+  }
+
+  @media (max-width: 850px) {
+    .fbc-workspace {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 35px;
+    }
+
+    .fbc-products {
+      grid-row: 1;
+    }
+
+    .fbc-summary {
+      position: static;
+      grid-row: 2;
+      padding: 30px;
+    }
+
+    .fbc-summary h2 {
+      margin-top: 20px;
+    }
+
+    .fbc-order-total {
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .fbc-order-total strong {
+      font-size: 36px;
+    }
+
+    .fbc-empty {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbc-empty-art {
+      min-height: 300px;
+      gap: 22px;
+    }
+
+    .fbc-empty-icon {
+      width: 150px;
+      height: 150px;
+    }
+
+    .fbc-empty-content {
+      padding: 36px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .fbc-navigation {
+      padding-block: 12px;
+    }
+
+    .fbc-back {
+      font-size: 11px;
+    }
+
+    .fbc-brand {
+      font-size: 12px;
+    }
+
+    .fbc-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+      padding-block: 32px;
+    }
+
+    .fbc-header h1 {
+      font-size: clamp(55px, 16vw, 80px);
+    }
+
+    .fbc-item-count {
+      padding: 10px 14px;
+    }
+
+    .fbc-product-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+    }
+
+    .fbc-image-link {
+      height: 280px;
+      padding: 38px 35px 26px;
+    }
+
+    .fbc-product-details {
+      padding: 22px;
+    }
+
+    .fbc-product-details h3 {
+      font-size: 27px;
+    }
+
+    .fbc-products-heading h2 {
+      font-size: 23px;
+    }
+
+    .fbc-summary {
+      padding: 26px 22px;
+      box-shadow: 6px 6px 0 rgba(23, 63, 54, .1);
+    }
+
+    .fbc-summary h2 {
+      font-size: 43px;
+    }
+
+    .fbc-order-total {
+      flex-wrap: wrap;
+    }
+
+    .fbc-continue-panel {
+      padding: 22px 18px;
+      gap: 12px;
+    }
+
+    .fbc-continue-panel strong {
+      font-size: 25px;
+    }
+
+    .fbc-continue-panel .fbc-eyebrow {
+      font-size: 9px;
+    }
+
+    .fbc-continue-icon {
+      width: 42px;
+      height: 42px;
+    }
+
+    .fbc-empty-content {
+      padding: 32px 24px;
+    }
+
+    .fbc-empty-content h1 {
+      font-size: clamp(37px, 11vw, 55px);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    [data-reveal] {
-      opacity: 1;
-      transform: none;
-      transition: none;
-    }
-
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+    .fbc-page *,
+    .fbc-page *::before,
+    .fbc-page *::after {
+      animation: none !important;
+      transition: none !important;
     }
   }
 `;

@@ -1,28 +1,57 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+
+const TOKEN_KEY = "fablebelle-token";
+const USER_KEY = "fablebelle-user";
 
 const AdminRoute = ({ children }) => {
-  const token = localStorage.getItem("ectoo-token");
-  const savedUser = localStorage.getItem("ectoo-user");
+  const location = useLocation();
+  const from = `${location.pathname}${location.search}${location.hash}`;
 
-  if (!token || !savedUser) {
-    return <Navigate to="/login" replace />;
-  }
+  let token;
+  let user;
 
   try {
-    const user = JSON.parse(savedUser);
+    token = localStorage.getItem(TOKEN_KEY);
+    const savedUser = localStorage.getItem(USER_KEY);
 
-    if (user?.role !== "admin") {
-      return <Navigate to="/" replace />;
+    if (!token?.trim() || !savedUser) {
+      return (
+        <Navigate
+          to="/login"
+          replace
+          state={{ from }}
+        />
+      );
     }
 
-    return children;
-  } catch {
-    localStorage.removeItem("ectoo-token");
-    localStorage.removeItem("ectoo-user");
+    user = JSON.parse(savedUser);
 
-    return <Navigate to="/login" replace />;
+    if (!user || typeof user !== "object" || Array.isArray(user)) {
+      throw new Error("Invalid stored user.");
+    }
+  } catch {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    } catch {
+      // Browser storage may be unavailable.
+    }
+
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from }}
+      />
+    );
   }
+
+  if (user.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
 };
 
 export default AdminRoute;

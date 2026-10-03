@@ -27,8 +27,8 @@ const frontendOrigins = (process.env.FRONTEND_URL || "")
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://ectoo.us",
-  "https://www.ectoo.us",
+  "https://fablebelle.us",
+  "https://www.fablebelle.us",
   ...frontendOrigins,
 ]);
 
@@ -114,14 +114,14 @@ app.use("/api/orders", orderRoutes);
 app.get("/", (req, res) => {
   return res.json({
     success: true,
-    message: "Ectoo Backend is running",
+    message: "fablebelle Backend is running",
   });
 });
 
 app.get("/api/health", (req, res) => {
   return res.json({
     success: true,
-    message: "Ectoo API is running",
+    message: "fablebelle API is running",
   });
 });
 
@@ -154,5 +154,5 @@ app.use((error, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Ectoo Backend running on port ${PORT}`);
+  console.log(`fablebelle Backend running on port ${PORT}`);
 });

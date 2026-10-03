@@ -1,29 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  DollarSign,
-  ShoppingCart,
-  Package,
-  Users,
   ArrowUpRight,
-  ArrowDownRight,
-  Eye,
-  Clock3,
-  CheckCircle2,
-  Truck,
-  XCircle,
-  ArrowRight,
-  TrendingUp,
-  TrendingDown,
   Loader2,
+  Package,
   RefreshCw,
+  ShoppingCart,
+  Users,
 } from "lucide-react";
-import { API_BASE_URL } from "../../config";
 
-const PRODUCTS_API_URL = `${API_BASE_URL}/api/products`;
-const ORDERS_API_URL = `${API_BASE_URL}/api/orders`;
-const USERS_API_URL = `${API_BASE_URL}/api/users`;
-const SERVER_URL = API_BASE_URL;
+import { API_BASE_URL } from "../../config";
+import { BUSINESS_INFO } from "../../storeInfo";
+
+const apiBase = String(API_BASE_URL || "").replace(/\/+$/, "");
 
 const STATUS_ORDER = [
   "Pending",
@@ -33,916 +22,1136 @@ const STATUS_ORDER = [
   "Cancelled",
 ];
 
-const Dashboard = () => {
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [users, setUsers] = useState([]);
+const number = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
+const money = (value) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(number(value));
+
+const timestamp = (value) => {
+  const date = new Date(value || 0).getTime();
+  return Number.isFinite(date) ? date : 0;
+};
+
+const formatDate = (value) => {
+  if (!value || !timestamp(value)) return "—";
+
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+};
+
+const getId = (value) => {
+  if (value && typeof value === "object") {
+    return String(value._id || value.id || "");
+  }
+
+  return value ? String(value) : "";
+};
+
+const getStatus = (order) => {
+  const raw = String(order.status || "").trim();
+  return (
+    STATUS_ORDER.find(
+      (status) => status.toLowerCase() === raw.toLowerCase()
+    ) || raw || "Unknown"
+  );
+};
+
+const isCancelled = (order) =>
+  ["cancelled", "canceled"].includes(
+    String(order.status || "").trim().toLowerCase()
+  );
+
+const getImageUrl = (image) => {
+  if (typeof image !== "string" || !image.trim()) return "";
+
+  const value = image.trim();
+
+  return /^https?:\/\//i.test(value)
+    ? value
+    : `${apiBase}/${value.replace(/^\/+/, "")}`;
+};
+
+const getCustomer = (order) => {
+  const address = order.shippingAddress || {};
+  const name = `${address.firstName || ""} ${address.lastName || ""}`.trim();
+
+  return name || order.user?.name || "Guest";
+};
+
+const getOrderSummary = (order) => {
+  const items = Array.isArray(order.items) ? order.items : [];
+
+  if (!items.length) return "No item details";
+
+  const firstName = items[0]?.name || "Product";
+
+  return items.length > 1
+    ? `${firstName} +${items.length - 1} more`
+    : firstName;
+};
+
+const getChange = (current, previous) => {
+  if (previous === 0) {
+    return current > 0
+      ? "No previous-month baseline"
+      : "No change this month";
+  }
+
+  const change = ((current - previous) / previous) * 100;
+
+  return `${change > 0 ? "+" : ""}${change.toFixed(1)}% vs. previous month`;
+};
+
+const ProductThumbnail = ({ image, rank }) => {
+  const src = getImageUrl(image);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return (
+    <div className="fbadmin-product-image">
+      {src && !failed ? (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span>{String(rank).padStart(2, "0")}</span>
+      )}
+    </div>
+  );
+};
+
+const Dashboard = () => {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [refreshCount, setRefreshCount] = useState(0);
 
-  const getToken = () => {
-    return localStorage.getItem("ectoo-token");
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
 
-  const getHeaders = () => {
-    const token = getToken();
-
-    return {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  };
-
-  const getImageUrl = (image) => {
-    if (!image) return "";
-    if (image.startsWith("http://") || image.startsWith("https://")) {
-      return image;
-    }
-    return `${SERVER_URL}${image}`;
-  };
-
-  
-
-  const fetchDashboardData = async () => {
-    try {
+    const fetchDashboard = async () => {
       setLoading(true);
       setErrorMessage("");
 
-      const [productsRes, ordersRes, usersRes] = await Promise.all([
-        fetch(PRODUCTS_API_URL, { headers: getHeaders() }),
-        fetch(ORDERS_API_URL, { headers: getHeaders() }),
-        fetch(USERS_API_URL, { headers: getHeaders() }),
-      ]);
+      try {
+        let token;
 
-      const productsData = await productsRes.json();
-      const ordersData = await ordersRes.json();
-      const usersData = await usersRes.json();
+        try {
+          token = localStorage.getItem("fablebelle-token");
+        } catch {
+          throw new Error("Unable to access your login. Please sign in again.");
+        }
 
-      if (!productsRes.ok) {
-        throw new Error(productsData.message || "Failed to fetch products.");
+        if (!token?.trim()) {
+          throw new Error("Please sign in with an admin account.");
+        }
+
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const results = await Promise.allSettled(
+          ["products", "orders", "users"].map(async (resource) => {
+            const response = await fetch(`${apiBase}/api/${resource}`, {
+              headers,
+              signal: controller.signal,
+            });
+
+            const body = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+              throw new Error(
+                body.message ||
+                  (response.status === 401 || response.status === 403
+                    ? "Your admin access could not be verified. Please sign in again."
+                    : `Unable to load ${resource}.`)
+              );
+            }
+
+            if (!Array.isArray(body[resource])) {
+              throw new Error(`The ${resource} response is incomplete.`);
+            }
+
+            return body[resource].filter(
+              (item) => item && typeof item === "object"
+            );
+          })
+        );
+
+        const failed = results.find((result) => result.status === "rejected");
+        if (failed) throw failed.reason;
+
+        if (active) {
+          setData({
+            products: results[0].value,
+            orders: results[1].value,
+            users: results[2].value,
+            updatedAt: new Date(),
+          });
+        }
+      } catch (error) {
+        if (active && error.name !== "AbortError") {
+          setErrorMessage(error.message || "Unable to load dashboard data.");
+        }
+      } finally {
+        if (active) setLoading(false);
       }
+    };
 
-      if (!ordersRes.ok) {
-        throw new Error(ordersData.message || "Failed to fetch orders.");
-      }
+    fetchDashboard();
 
-      if (!usersRes.ok) {
-        throw new Error(usersData.message || "Failed to fetch users.");
-      }
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [refreshCount]);
 
-      setProducts(productsData.products || []);
-      setOrders(ordersData.orders || []);
-      setUsers(usersData.users || []);
-    } catch (error) {
-      console.error("Dashboard Fetch Error:", error);
+  const overview = useMemo(() => {
+    if (!data) return null;
 
-      setErrorMessage(error.message || "Unable to load dashboard data.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const { orders, products, users, updatedAt } = data;
+    const year = updatedAt.getFullYear();
+    const month = updatedAt.getMonth();
+    const previous = new Date(year, month - 1, 1);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    const inMonth = (item, targetYear, targetMonth) => {
+      if (!item.createdAt || !timestamp(item.createdAt)) return false;
 
-  
+      const date = new Date(item.createdAt);
 
-  const now = new Date();
+      return (
+        date.getFullYear() === targetYear &&
+        date.getMonth() === targetMonth
+      );
+    };
 
-  const isInMonth = (dateString, year, month) => {
-    if (!dateString) return false;
+    const countCurrent = (items) =>
+      items.filter((item) => inMonth(item, year, month)).length;
 
-    const date = new Date(dateString);
+    const countPrevious = (items) =>
+      items.filter((item) =>
+        inMonth(item, previous.getFullYear(), previous.getMonth())
+      ).length;
 
-    return date.getFullYear() === year && date.getMonth() === month;
-  };
-
-  const getPercentChange = (current, previous) => {
-    if (previous === 0) {
-      return current > 0 ? 100 : 0;
-    }
-
-    return ((current - previous) / previous) * 100;
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "—";
-
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  
-
-  const dashboardStats = useMemo(() => {
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
-
-    const prevMonthDate = new Date(thisYear, thisMonth - 1, 1);
-    const prevMonth = prevMonthDate.getMonth();
-    const prevYear = prevMonthDate.getFullYear();
-
-    const nonCancelled = orders.filter((order) => order.status !== "Cancelled");
-    const revenueThisMonth = nonCancelled
-      .filter((order) => isInMonth(order.createdAt, thisYear, thisMonth))
-      .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
-
-    const revenueLastMonth = nonCancelled
-      .filter((order) => isInMonth(order.createdAt, prevYear, prevMonth))
-      .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
-
-    const totalRevenue = nonCancelled.reduce(
-      (sum, order) => sum + Number(order.totalAmount || 0),
-      0,
+    const eligibleOrders = orders.filter((order) => !isCancelled(order));
+    const customers = users.filter(
+      (user) => String(user.role || "").toLowerCase() !== "admin"
     );
-    const ordersThisMonth = orders.filter((order) =>
-      isInMonth(order.createdAt, thisYear, thisMonth),
-    ).length;
 
-    const ordersLastMonth = orders.filter((order) =>
-      isInMonth(order.createdAt, prevYear, prevMonth),
-    ).length;
-    const productsThisMonth = products.filter((product) =>
-      isInMonth(product.createdAt, thisYear, thisMonth),
-    ).length;
+    const totalValue = eligibleOrders.reduce(
+      (sum, order) => sum + number(order.totalAmount),
+      0
+    );
 
-    const productsLastMonth = products.filter((product) =>
-      isInMonth(product.createdAt, prevYear, prevMonth),
-    ).length;
-    const customers = users.filter((user) => user.role !== "admin");
+    const currentValue = eligibleOrders
+      .filter((order) => inMonth(order, year, month))
+      .reduce((sum, order) => sum + number(order.totalAmount), 0);
 
-    const customersThisMonth = customers.filter((user) =>
-      isInMonth(user.createdAt, thisYear, thisMonth),
-    ).length;
+    const previousValue = eligibleOrders
+      .filter((order) =>
+        inMonth(order, previous.getFullYear(), previous.getMonth())
+      )
+      .reduce((sum, order) => sum + number(order.totalAmount), 0);
 
-    const customersLastMonth = customers.filter((user) =>
-      isInMonth(user.createdAt, prevYear, prevMonth),
-    ).length;
+    const months = Array.from({ length: 12 }, (_, index) => {
+      const date = new Date(year, month - 11 + index, 1);
 
-    return [
-      {
-        title: "Total Revenue",
-        value: `$${totalRevenue.toLocaleString()}`,
-        change: getPercentChange(revenueThisMonth, revenueLastMonth),
-        icon: DollarSign,
-        description: "vs. last month",
-      },
-      {
-        title: "Total Orders",
-        value: orders.length.toLocaleString(),
-        change: getPercentChange(ordersThisMonth, ordersLastMonth),
-        icon: ShoppingCart,
-        description: "vs. last month",
-      },
-      {
-        title: "Products",
-        value: products.length.toLocaleString(),
-        change: getPercentChange(productsThisMonth, productsLastMonth),
-        icon: Package,
-        description: "vs. last month",
-      },
-      {
-        title: "Customers",
-        value: customers.length.toLocaleString(),
-        change: getPercentChange(customersThisMonth, customersLastMonth),
-        icon: Users,
-        description: "vs. last month",
-      },
-    ];
-  }, [orders, products, users]);
-
-  const totalRevenueValue = orders
-    .filter((order) => order.status !== "Cancelled")
-    .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
-
-  const revenueChangeThisVsLast = dashboardStats[0]?.change || 0;
-
-  
-
-  const salesData = useMemo(() => {
-    const months = [];
-
-    for (let i = 11; i >= 0; i -= 1) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-
-      months.push({
-        label: date.toLocaleDateString("en-US", { month: "short" }),
+      return {
+        key: `${date.getFullYear()}-${date.getMonth()}`,
         year: date.getFullYear(),
         month: date.getMonth(),
-        revenue: 0,
-      });
-    }
-
-    const nonCancelled = orders.filter((order) => order.status !== "Cancelled");
-
-    nonCancelled.forEach((order) => {
-      if (!order.createdAt) return;
-
-      const orderDate = new Date(order.createdAt);
-
-      const bucket = months.find(
-        (m) =>
-          m.year === orderDate.getFullYear() &&
-          m.month === orderDate.getMonth(),
-      );
-
-      if (bucket) {
-        bucket.revenue += Number(order.totalAmount || 0);
-      }
+        label: date.toLocaleDateString("en-US", { month: "short" }),
+        fullLabel: date.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        }),
+        value: 0,
+      };
     });
 
-    const maxRevenue = Math.max(...months.map((m) => m.revenue), 1);
+    eligibleOrders.forEach((order) => {
+      if (!order.createdAt || !timestamp(order.createdAt)) return;
 
-    return months.map((m) => ({
-      ...m,
-      heightPercent: Math.max(
-        (m.revenue / maxRevenue) * 100,
-        m.revenue > 0 ? 4 : 0,
+      const date = new Date(order.createdAt);
+      const bucket = months.find(
+        (item) =>
+          item.year === date.getFullYear() &&
+          item.month === date.getMonth()
+      );
+
+      if (bucket) bucket.value += number(order.totalAmount);
+    });
+
+    const maxValue = Math.max(...months.map((item) => item.value), 1);
+    const periodValue = months.reduce((sum, item) => sum + item.value, 0);
+
+    const statusNames = [
+      ...STATUS_ORDER,
+      ...new Set(
+        orders.map(getStatus).filter((status) => !STATUS_ORDER.includes(status))
       ),
-    }));
-  }, [orders]);
+    ];
 
-  
-
-  const statusBreakdown = useMemo(() => {
-    const total = orders.length || 1;
-
-    return STATUS_ORDER.map((status) => {
-      const count = orders.filter((order) => order.status === status).length;
+    const statuses = statusNames.map((status) => {
+      const count = orders.filter((order) => getStatus(order) === status).length;
 
       return {
         status,
         count,
-        percent: (count / total) * 100,
+        percent: orders.length ? (count / orders.length) * 100 : 0,
       };
     });
-  }, [orders]);
 
-  const avgOrderValue =
-    orders.filter((order) => order.status !== "Cancelled").length > 0
-      ? totalRevenueValue /
-        orders.filter((order) => order.status !== "Cancelled").length
-      : 0;
+    const productMap = new Map(
+      products.map((product) => [getId(product), product])
+    );
+    const sales = new Map();
 
-  
+    eligibleOrders.forEach((order) => {
+      const items = Array.isArray(order.items) ? order.items : [];
 
-  const recentOrders = useMemo(() => {
-    return [...orders]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 5);
-  }, [orders]);
+      items.forEach((item) => {
+        if (!item || typeof item !== "object") return;
 
-  const getOrderCustomer = (order) => {
-    const first = order.shippingAddress?.firstName || "";
-    const last = order.shippingAddress?.lastName || "";
-    const fullName = `${first} ${last}`.trim();
+        const productId = getId(item.product);
+        const key = productId || String(item.name || "Unknown product");
+        const product = productMap.get(productId);
+        const entry = sales.get(key) || {
+          key,
+          name: product?.name || item.name || "Product",
+          category: product?.category || "Uncategorised",
+          image: product?.images?.[0] || item.image || "",
+          units: 0,
+          value: 0,
+        };
 
-    return fullName || order.user?.name || "Guest";
-  };
-
-  const getOrderSummary = (order) => {
-    const items = order.items || [];
-
-    if (items.length === 0) return "—";
-    if (items.length === 1) return items[0].name;
-
-    return `${items[0].name} +${items.length - 1} more`;
-  };
-
-  
-
-  const productCategoryMap = useMemo(() => {
-    const map = {};
-
-    products.forEach((product) => {
-      map[product._id] = product;
+        const quantity = Math.max(0, number(item.quantity));
+        entry.units += quantity;
+        entry.value += number(item.price) * quantity;
+        sales.set(key, entry);
+      });
     });
 
-    return map;
-  }, [products]);
-
-  const topProducts = useMemo(() => {
-    const salesMap = {};
-
-    orders
-      .filter((order) => order.status !== "Cancelled")
-      .forEach((order) => {
-        (order.items || []).forEach((item) => {
-          const key = item.product || item.name;
-
-          if (!salesMap[key]) {
-            salesMap[key] = {
-              key,
-              name: item.name,
-              unitsSold: 0,
-              revenue: 0,
-              productId: item.product,
-            };
-          }
-
-          salesMap[key].unitsSold += Number(item.quantity || 0);
-          salesMap[key].revenue +=
-            Number(item.price || 0) * Number(item.quantity || 0);
-        });
-      });
-
-    return Object.values(salesMap)
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 4)
-      .map((entry) => {
-        const productDetails = productCategoryMap[entry.productId];
-
-        return {
-          ...entry,
-          category: productDetails?.category || "—",
-          image: productDetails?.images?.[0] || "",
-        };
-      });
-  }, [orders, productCategoryMap]);
-
-  
-
-  const getStatusStyles = (status) => {
-    switch (status) {
-      case "Delivered":
-        return "bg-emerald-50 text-emerald-600";
-      case "Processing":
-        return "bg-blue-50 text-blue-600";
-      case "Shipped":
-        return "bg-violet-50 text-violet-600";
-      case "Pending":
-        return "bg-amber-50 text-amber-600";
-      case "Cancelled":
-        return "bg-red-50 text-red-600";
-      default:
-        return "bg-[#F4F1EB] text-ink/60";
-    }
-  };
-
-  const getStatusBarColor = (status) => {
-    switch (status) {
-      case "Delivered":
-        return "bg-emerald-500";
-      case "Processing":
-        return "bg-blue-500";
-      case "Shipped":
-        return "bg-violet-500";
-      case "Pending":
-        return "bg-amber-400";
-      case "Cancelled":
-        return "bg-red-500";
-      default:
-        return "bg-ink/40";
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Delivered":
-        return <CheckCircle2 size={14} />;
-      case "Processing":
-        return <Clock3 size={14} />;
-      case "Shipped":
-        return <Truck size={14} />;
-      case "Cancelled":
-        return <XCircle size={14} />;
-      case "Pending":
-        return <Clock3 size={14} />;
-      default:
-        return null;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3">
-        <Loader2 size={32} className="animate-spin text-ink" />
-        <p className="text-sm font-medium text-ink/60">Loading dashboard...</p>
-      </div>
-    );
-  }
+    return {
+      totalValue,
+      currentValue,
+      periodValue,
+      average: eligibleOrders.length
+        ? totalValue / eligibleOrders.length
+        : 0,
+      valueChange: getChange(currentValue, previousValue),
+      months: months.map((item) => ({
+        ...item,
+        height: Math.max(0, (item.value / maxValue) * 100),
+      })),
+      statuses,
+      recentOrders: [...orders]
+        .sort((a, b) => timestamp(b.createdAt) - timestamp(a.createdAt))
+        .slice(0, 5),
+      topProducts: [...sales.values()]
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 4),
+      stats: [
+        {
+          title: "Orders",
+          value: orders.length,
+          change: getChange(countCurrent(orders), countPrevious(orders)),
+          Icon: ShoppingCart,
+          href: "/admin/orders",
+        },
+        {
+          title: "Products",
+          value: products.length,
+          change: getChange(countCurrent(products), countPrevious(products)),
+          Icon: Package,
+          href: "/admin/products",
+        },
+        {
+          title: "Customers",
+          value: customers.length,
+          change: getChange(countCurrent(customers), countPrevious(customers)),
+          Icon: Users,
+          href: "/admin/users",
+        },
+      ],
+    };
+  }, [data]);
 
   return (
-    <div className="space-y-6">
-      {}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <main className="fbadmin">
+      <style>{styles}</style>
+
+      <header className="fbadmin-heading">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink/40">
-            Overview
+          <p className="fbadmin-eyebrow">
+            {BUSINESS_INFO.businessName} / Admin
           </p>
-
-          <h1 className="mt-1 font-display text-3xl text-ink sm:text-4xl">
-            Dashboard
-          </h1>
-
-          <p className="mt-1 text-sm text-ink/60">
-            Welcome back. Here's what's happening with your store.
-          </p>
+          <h1>Store overview.</h1>
+          <p>Your orders, collection and customers at a glance.</p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="fbadmin-actions">
           <button
             type="button"
-            onClick={fetchDashboardData}
-            className="inline-flex items-center justify-center gap-2 border border-line bg-paper px-4 py-3 text-xs font-semibold uppercase tracking-wider text-ink/70 transition-all hover:bg-[#F4F1EB]"
+            disabled={loading}
+            onClick={() => setRefreshCount((value) => value + 1)}
+            className="fbadmin-refresh"
           >
-            <RefreshCw size={16} />
-            Refresh
+            <RefreshCw
+              size={16}
+              className={loading ? "fbadmin-spin" : ""}
+              aria-hidden="true"
+            />
+            {loading ? "Loading…" : "Refresh"}
           </button>
 
-          <Link
-            to="/shop"
-            className="inline-flex items-center justify-center gap-2 bg-ink px-5 py-3 text-xs font-semibold uppercase tracking-wider text-paper transition-all duration-300 hover:bg-bottle-dark"
-          >
-            View Store
-            <ArrowUpRight size={17} />
+          <Link to="/shop" className="fbadmin-primary">
+            View store
+            <ArrowUpRight size={17} aria-hidden="true" />
           </Link>
         </div>
-      </div>
+      </header>
 
       {errorMessage && (
-        <div className="border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
+        <div className="fbadmin-error" role="alert">
           {errorMessage}
+          {data && <p>The figures below show the last successful update.</p>}
         </div>
       )}
 
-      {}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {dashboardStats.map((stat) => {
-          const Icon = stat.icon;
-          const positive = stat.change >= 0;
-
-          return (
-            <div key={stat.title} className="border border-line bg-paper p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex h-11 w-11 items-center justify-center bg-ink text-paper">
-                  <Icon size={20} />
-                </div>
-
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold ${
-                    positive
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-red-50 text-red-600"
-                  }`}
-                >
-                  {positive ? (
-                    <ArrowUpRight size={13} />
-                  ) : (
-                    <ArrowDownRight size={13} />
-                  )}
-                  {Math.abs(stat.change).toFixed(1)}%
-                </span>
-              </div>
-
-              <p className="mt-5 text-sm font-medium text-ink/60">
-                {stat.title}
-              </p>
-
-              <div className="mt-1 flex items-end gap-2">
-                <h2 className="font-display text-2xl text-ink">{stat.value}</h2>
-              </div>
-
-              <p className="mt-1 text-xs text-ink/40">{stat.description}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {}
-      <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-        {}
-        <div className="border border-line bg-paper p-5 sm:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink/40">
-                Revenue
-              </p>
-
-              <h2 className="mt-1 font-display text-xl text-ink">
-                Sales Overview
-              </h2>
-            </div>
-
-            <span className="border border-line bg-paper px-3 py-2 text-xs font-semibold text-ink/60">
-              Last 12 months
-            </span>
+      {!data ? (
+        <div className="fbadmin-state" role={loading ? "status" : undefined}>
+          {loading ? (
+            <>
+              <Loader2 size={30} className="fbadmin-spin" aria-hidden="true" />
+              <p>Loading your store overview…</p>
+            </>
+          ) : (
+            <p>Dashboard figures will appear once the data loads successfully.</p>
+          )}
+        </div>
+      ) : (
+        <div className="fbadmin-content" aria-busy={loading}>
+          <div className="fbadmin-update">
+            <span>Last updated</span>
+            <time dateTime={data.updatedAt.toISOString()}>
+              {data.updatedAt.toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </time>
           </div>
 
-          <div className="mt-8">
-            <div className="flex items-end justify-between">
+          <section className="fbadmin-overview" aria-label="Store totals">
+            <div className="fbadmin-value-panel">
+              <p className="fbadmin-eyebrow">All-time order value</p>
+              <h2>{money(overview.totalValue)}</h2>
+              <p className="fbadmin-value-note">
+                Total of non-cancelled orders; this is not a confirmed
+                payment or net-profit figure.
+              </p>
+
+              <div className="fbadmin-value-bottom">
+                <div>
+                  <span>This month</span>
+                  <strong>{money(overview.currentValue)}</strong>
+                </div>
+                <div>
+                  <span>Average order value</span>
+                  <strong>{money(overview.average)}</strong>
+                </div>
+              </div>
+
+              <p className="fbadmin-comparison">{overview.valueChange}</p>
+            </div>
+
+            <div className="fbadmin-stats">
+              {overview.stats.map(({ title, value, change, Icon, href }) => (
+                <Link to={href} className="fbadmin-stat" key={title}>
+                  <Icon size={20} aria-hidden="true" />
+                  <div>
+                    <span>{title}</span>
+                    <strong>{value.toLocaleString()}</strong>
+                    <p>{change}</p>
+                  </div>
+                  <ArrowUpRight size={17} aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="fbadmin-panel fbadmin-sales">
+            <div className="fbadmin-section-heading">
               <div>
-                <p className="font-display text-3xl text-ink">
-                  ${totalRevenueValue.toLocaleString()}
-                </p>
-
-                <div
-                  className={`mt-1 flex items-center gap-1.5 text-xs font-semibold ${
-                    revenueChangeThisVsLast >= 0
-                      ? "text-emerald-600"
-                      : "text-red-500"
-                  }`}
-                >
-                  {revenueChangeThisVsLast >= 0 ? (
-                    <TrendingUp size={14} />
-                  ) : (
-                    <TrendingDown size={14} />
-                  )}
-                  {Math.abs(revenueChangeThisVsLast).toFixed(1)}% from last
-                  month
-                </div>
+                <p className="fbadmin-eyebrow">Monthly activity</p>
+                <h2>Order value over time</h2>
+              </div>
+              <div className="fbadmin-period-total">
+                <strong>{money(overview.periodValue)}</strong>
+                <span>Last 12 months · non-cancelled orders</span>
               </div>
             </div>
 
-            {}
-            <div className="mt-8">
-              {salesData.every((m) => m.revenue === 0) ? (
-                <div className="flex h-64 flex-col items-center justify-center text-center">
-                  <TrendingUp size={28} className="text-ink/20" />
-                  <p className="mt-3 text-sm font-semibold text-ink/40">
-                    No sales recorded yet.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex h-64 items-end gap-2 border-b border-line px-1 sm:gap-4">
-                    {salesData.map((item, index) => (
+            <div className="fbadmin-chart-scroll">
+              <div className="fbadmin-chart" aria-label="Monthly order values">
+                {overview.months.map((month) => (
+                  <div className="fbadmin-chart-column" key={month.key}>
+                    <div className="fbadmin-chart-track">
                       <div
-                        key={`${item.label}-${index}`}
-                        className="group relative flex h-full flex-1 flex-col justify-end"
-                      >
-                        <div
-                          className="w-full bg-ink transition-all duration-300 group-hover:bg-bottle"
-                          style={{
-                            height: `${item.heightPercent}%`,
-                          }}
-                        />
-
-                        <span className="absolute -top-7 left-1/2 hidden -translate-x-1/2 whitespace-nowrap bg-ink px-2 py-1 text-[10px] font-bold text-paper group-hover:block">
-                          ${item.revenue.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
+                        className="fbadmin-chart-bar"
+                        style={{ height: `${month.height}%` }}
+                      />
+                    </div>
+                    <span>{month.label}</span>
+                    <span className="fbadmin-chart-value">
+                      {money(month.value)}
+                    </span>
+                    <span className="fbadmin-sr-only">{month.fullLabel}</span>
                   </div>
-
-                  <div className="mt-3 flex gap-2 sm:gap-4">
-                    {salesData.map((item, index) => (
-                      <span
-                        key={`${item.label}-label-${index}`}
-                        className="flex-1 text-center text-[9px] font-semibold text-ink/40 sm:text-[10px]"
-                      >
-                        {item.label}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {}
-        <div className="border border-line bg-paper p-5 sm:p-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink/40">
-              Orders
-            </p>
-
-            <h2 className="mt-1 font-display text-xl text-ink">
-              Order Summary
-            </h2>
-          </div>
-
-          <div className="mt-7 space-y-5">
-            {statusBreakdown.map((row) => (
-              <div key={row.status}>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink/70">
-                    {row.status}
-                  </span>
-
-                  <span className="text-sm font-bold text-ink">
-                    {row.percent.toFixed(0)}%
-                  </span>
-                </div>
-
-                <div className="h-2 overflow-hidden bg-[#F4F1EB]">
-                  <div
-                    className={`h-full ${getStatusBarColor(row.status)}`}
-                    style={{ width: `${row.percent}%` }}
-                  />
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          </section>
 
-          <div className="mt-8 grid grid-cols-2 gap-3">
-            <div className="bg-[#F4F1EB] p-4">
-              <p className="text-xs font-semibold text-ink/40">Total Orders</p>
-
-              <p className="mt-1 text-xl font-bold text-ink">
-                {orders.length.toLocaleString()}
-              </p>
+          <section className="fbadmin-panel fbadmin-orders">
+            <div className="fbadmin-section-heading">
+              <div>
+                <p className="fbadmin-eyebrow">Latest activity</p>
+                <h2>Recent orders</h2>
+              </div>
+              <Link to="/admin/orders" className="fbadmin-text-link">
+                All orders
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </Link>
             </div>
 
-            <div className="bg-[#F4F1EB] p-4">
-              <p className="text-xs font-semibold text-ink/40">Avg. Order</p>
-
-              <p className="mt-1 text-xl font-bold text-ink">
-                ${avgOrderValue.toFixed(0)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {}
-      <div className="border border-line bg-paper">
-        <div className="flex flex-col gap-3 border-b border-line p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink/40">
-              Latest Activity
-            </p>
-
-            <h2 className="mt-1 font-display text-xl text-ink">
-              Recent Orders
-            </h2>
-          </div>
-
-          <Link
-            to="/admin/orders"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-ink/70 transition-colors hover:text-ink"
-          >
-            View all orders
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-
-        {recentOrders.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm font-semibold text-ink/40">
-              No orders have been placed yet.
-            </p>
-          </div>
-        ) : (
-          <>
-            {}
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[800px]">
-                <thead>
-                  <tr className="border-b border-line bg-[#F4F1EB]">
-                    <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-ink/40">
-                      Order
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-ink/40">
-                      Customer
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-ink/40">
-                      Product
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-ink/40">
-                      Amount
-                    </th>
-
-                    <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-wider text-ink/40">
-                      Status
-                    </th>
-
-                    <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-wider text-ink/40">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {recentOrders.map((order) => (
-                    <tr
-                      key={order._id}
-                      className="border-b border-line last:border-0 hover:bg-[#F4F1EB]/60"
-                    >
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-bold text-ink">
-                          {order.orderNumber}
-                        </p>
-
-                        <p className="mt-1 text-xs text-ink/40">
-                          {formatDate(order.createdAt)}
-                        </p>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-ink/70">
-                          {getOrderCustomer(order)}
-                        </p>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <p className="max-w-[200px] truncate text-sm font-medium text-ink/70">
-                          {getOrderSummary(order)}
-                        </p>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-bold text-ink">
-                          ${Number(order.totalAmount).toFixed(2)}
-                        </p>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold ${getStatusStyles(
-                            order.status,
-                          )}`}
-                        >
-                          {getStatusIcon(order.status)}
-                          {order.status}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <Link
-                          to="/admin/orders"
-                          className="inline-flex h-9 w-9 items-center justify-center text-ink/40 transition-colors hover:bg-[#F4F1EB] hover:text-ink"
-                          aria-label={`View ${order.orderNumber}`}
-                        >
-                          <Eye size={17} />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {}
-            <div className="divide-y divide-line md:hidden">
-              {recentOrders.map((order) => (
-                <div key={order._id} className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-ink">
-                        {order.orderNumber}
-                      </p>
-
-                      <p className="mt-1 text-xs text-ink/40">
-                        {formatDate(order.createdAt)}
-                      </p>
+            {!overview.recentOrders.length ? (
+              <p className="fbadmin-empty">No orders have been placed yet.</p>
+            ) : (
+              <div className="fbadmin-order-list">
+                {overview.recentOrders.map((order, index) => (
+                  <article
+                    className="fbadmin-order"
+                    key={getId(order) || index}
+                  >
+                    <div className="fbadmin-order-id">
+                      <strong>{order.orderNumber || "Order"}</strong>
+                      <span>{formatDate(order.createdAt)}</span>
                     </div>
 
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold ${getStatusStyles(
-                        order.status,
-                      )}`}
-                    >
-                      {getStatusIcon(order.status)}
-                      {order.status}
-                    </span>
-                  </div>
+                    <div className="fbadmin-order-customer">
+                      <strong>{getCustomer(order)}</strong>
+                      <span>{getOrderSummary(order)}</span>
+                    </div>
 
-                  <div className="mt-4">
-                    <p className="text-sm font-semibold text-ink/80">
-                      {getOrderCustomer(order)}
-                    </p>
-
-                    <p className="mt-1 text-xs text-ink/50">
-                      {getOrderSummary(order)}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="text-base font-bold text-ink">
-                      ${Number(order.totalAmount).toFixed(2)}
-                    </p>
+                    <span className="fbadmin-badge">{getStatus(order)}</span>
+                    <strong className="fbadmin-order-price">
+                      {money(order.totalAmount)}
+                    </strong>
 
                     <Link
                       to="/admin/orders"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-ink/60 hover:text-ink"
+                      className="fbadmin-order-link"
+                      aria-label={`Open orders to review ${
+                        order.orderNumber || "this order"
+                      }`}
                     >
-                      View
-                      <Eye size={14} />
+                      <ArrowUpRight size={19} aria-hidden="true" />
                     </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
 
-      {}
-      <div className="border border-line bg-paper">
-        <div className="flex items-center justify-between border-b border-line p-5 sm:p-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-ink/40">
-              Best Sellers
-            </p>
-
-            <h2 className="mt-1 font-display text-xl text-ink">Top Products</h2>
-          </div>
-
-          <Link
-            to="/admin/products"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-ink/70 transition-colors hover:text-ink"
-          >
-            Manage
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-
-        {topProducts.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm font-semibold text-ink/40">
-              No sales yet — top products will appear here once orders come in.
-            </p>
-          </div>
-        ) : (
-          <div className="grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-            {topProducts.map((product, index) => (
-              <div
-                key={product.key}
-                className="flex items-center gap-4 p-5 transition-colors hover:bg-[#F4F1EB]/60 sm:p-6"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden bg-ink text-sm font-bold text-paper">
-                  {product.image ? (
-                    <img
-                      src={getImageUrl(product.image)}
-                      alt={product.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    String(index + 1).padStart(2, "0")
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-ink">
-                    {product.name}
-                  </p>
-
-                  <p className="mt-1 text-xs text-ink/40">{product.category}</p>
-
-                  <div className="mt-3 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-ink/50">
-                      {product.unitsSold} sold
-                    </p>
-
-                    <p className="text-sm font-bold text-ink">
-                      ${product.revenue.toLocaleString()}
-                    </p>
-                  </div>
+          <div className="fbadmin-bottom-grid">
+            <section className="fbadmin-panel">
+              <div className="fbadmin-section-heading">
+                <div>
+                  <p className="fbadmin-eyebrow">Order distribution</p>
+                  <h2>Fulfillment status</h2>
                 </div>
               </div>
-            ))}
+
+              <div className="fbadmin-status-list">
+                {overview.statuses.map((row) => (
+                  <div className="fbadmin-status" key={row.status}>
+                    <div>
+                      <span>{row.status}</span>
+                      <strong>
+                        {row.count} <span> / {row.percent.toFixed(0)}%</span>
+                      </strong>
+                    </div>
+                    <div className="fbadmin-progress" aria-hidden="true">
+                      <span style={{ width: `${row.percent}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="fbadmin-panel">
+              <div className="fbadmin-section-heading">
+                <div>
+                  <p className="fbadmin-eyebrow">Ranked by order item value</p>
+                  <h2>Top products</h2>
+                </div>
+                <Link to="/admin/products" className="fbadmin-text-link">
+                  Manage
+                  <ArrowUpRight size={17} aria-hidden="true" />
+                </Link>
+              </div>
+
+              {!overview.topProducts.length ? (
+                <p className="fbadmin-empty">
+                  Products will appear here when order activity is available.
+                </p>
+              ) : (
+                <div className="fbadmin-product-list">
+                  {overview.topProducts.map((product, index) => (
+                    <div className="fbadmin-product" key={product.key}>
+                      <ProductThumbnail image={product.image} rank={index + 1} />
+                      <div>
+                        <h3>{product.name}</h3>
+                        <p>{product.category}</p>
+                        <span>{product.units.toLocaleString()} units ordered</span>
+                      </div>
+                      <strong>{money(product.value)}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
-        )}
-      </div>
 
-      {}
-      <div className="bg-ink p-6 text-paper sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-paper/50">
-              Ectoo Admin
-            </p>
-
-            <h2 className="mt-2 font-display text-2xl sm:text-3xl">
-              Keep your store moving forward.
-            </h2>
-
-            <p className="mt-2 max-w-xl text-sm leading-6 text-paper/70">
-              Manage products, monitor orders, and keep your customers happy
-              from one powerful dashboard.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              to="/admin/products"
-              className="inline-flex items-center justify-center gap-2 bg-paper px-5 py-3 text-xs font-semibold uppercase tracking-wider text-ink transition-all hover:bg-[#EFE9DE]"
-            >
-              Manage Products
-              <ArrowRight size={16} />
-            </Link>
-
-            <Link
-              to="/admin/orders"
-              className="inline-flex items-center justify-center gap-2 border border-paper/20 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-paper transition-all hover:bg-paper/10"
-            >
-              View Orders
-              <ArrowRight size={16} />
-            </Link>
-          </div>
+          <footer className="fbadmin-footer">
+            <span>{BUSINESS_INFO.businessName} / Store management</span>
+            <div>
+              <Link to="/admin/products">Products</Link>
+              <Link to="/admin/orders">Orders</Link>
+              <Link to="/admin/users">Customers</Link>
+            </div>
+          </footer>
         </div>
-      </div>
-    </div>
+      )}
+    </main>
   );
 };
+
+const styles = `
+  .fbadmin {
+    --ink: #173f36;
+    --deep: #102e28;
+    --paper: #fffdf5;
+    --bone: #f5f0e6;
+    --muted: #626e67;
+    --brass: #a56e4f;
+    --line: rgba(23, 63, 54, .16);
+
+    width: 100%;
+    min-width: 0;
+    padding: clamp(18px, 3vw, 36px);
+    background: var(--bone);
+    color: var(--ink);
+    font-family: 'Onest', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.6;
+  }
+
+  .fbadmin *, .fbadmin *::before, .fbadmin *::after {
+    box-sizing: border-box;
+  }
+
+  .fbadmin a { color: inherit; text-decoration: none; }
+  .fbadmin button { font: inherit; cursor: pointer; }
+
+  .fbadmin a:focus-visible, .fbadmin button:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 4px;
+  }
+
+  .fbadmin-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 25px;
+    padding-bottom: 26px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbadmin-eyebrow {
+    margin: 0;
+    color: var(--brass);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .fbadmin-heading h1 {
+    margin: 10px 0 8px;
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -.05em;
+  }
+
+  .fbadmin-heading > div > p:last-child {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .fbadmin-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 10px;
+  }
+
+  .fbadmin-primary, .fbadmin-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 46px;
+    padding: 12px 17px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff !important;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .fbadmin-primary:hover { background: var(--deep); }
+
+  .fbadmin-refresh {
+    border-color: var(--line);
+    background: var(--paper);
+    color: var(--ink) !important;
+  }
+
+  .fbadmin-refresh:disabled { cursor: not-allowed; opacity: .6; }
+
+  .fbadmin-update {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-block: 18px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .fbadmin-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .fbadmin-value-panel {
+    padding: 30px;
+    background: var(--ink);
+    color: #fffdf5;
+  }
+
+  .fbadmin-value-panel .fbadmin-eyebrow { color: #d7e5a5; }
+
+  .fbadmin-value-panel h2 {
+    margin: 20px 0 14px;
+    font-size: clamp(34px, 4.6vw, 58px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+    overflow-wrap: anywhere;
+  }
+
+  .fbadmin-value-note {
+    max-width: 440px;
+    margin: 0;
+    color: #d0d9ce;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .fbadmin-value-bottom {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,.2);
+  }
+
+  .fbadmin-value-bottom span {
+    display: block;
+    color: #d0d9ce;
+    font-size: 10px;
+  }
+
+  .fbadmin-value-bottom strong {
+    display: block;
+    margin-top: 6px;
+    font-size: 20px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .fbadmin-comparison {
+    margin: 20px 0 0;
+    color: #d7e5a5;
+    font-size: 10px;
+  }
+
+  .fbadmin-stats {
+    display: grid;
+    gap: 12px;
+  }
+
+  .fbadmin-stat {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .fbadmin-stat > svg { flex-shrink: 0; }
+  .fbadmin-stat > svg:first-child { color: var(--brass); }
+  .fbadmin-stat > svg:last-child { margin-left: auto; }
+  .fbadmin-stat > div { min-width: 0; }
+  .fbadmin-stat span { color: var(--muted); font-size: 10px; }
+
+  .fbadmin-stat strong {
+    display: block;
+    font-size: 27px;
+    font-weight: 500;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .fbadmin-stat p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 9px;
+  }
+
+  .fbadmin-panel {
+    min-width: 0;
+    margin-top: 22px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .fbadmin-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbadmin-section-heading h2 {
+    margin: 8px 0 0;
+    font-size: 23px;
+    font-weight: 500;
+    letter-spacing: -.04em;
+    line-height: 1.25;
+  }
+
+  .fbadmin-period-total { text-align: right; }
+  .fbadmin-period-total strong { display: block; font-size: 22px; font-weight: 500; }
+  .fbadmin-period-total span { color: var(--muted); font-size: 9px; }
+
+  .fbadmin-chart-scroll { overflow-x: auto; padding: 28px 24px; }
+
+  .fbadmin-chart {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 15px;
+    min-width: 670px;
+  }
+
+  .fbadmin-chart-column { min-width: 0; text-align: center; }
+
+  .fbadmin-chart-track {
+    display: flex;
+    align-items: flex-end;
+    height: 190px;
+    border-bottom: 1px solid var(--line);
+    background: repeating-linear-gradient(
+      to top,
+      transparent 0,
+      transparent 46px,
+      rgba(23,63,54,.07) 47px,
+      transparent 48px
+    );
+  }
+
+  .fbadmin-chart-bar {
+    width: 100%;
+    background: var(--ink);
+    transition: height .35s ease;
+  }
+
+  .fbadmin-chart-column:nth-child(even) .fbadmin-chart-bar {
+    background: #a56e4f;
+  }
+
+  .fbadmin-chart-column > span {
+    display: block;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .fbadmin-chart-column > .fbadmin-chart-value {
+    margin-top: 4px;
+    color: var(--ink);
+    font-size: 9px;
+    overflow-wrap: anywhere;
+  }
+
+  .fbadmin-text-link {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 12px;
+    min-height: 44px;
+    font-size: 11px;
+  }
+
+  .fbadmin-order {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1.4fr)
+      auto
+      minmax(90px, .6fr)
+      44px;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbadmin-order:last-child { border-bottom: 0; }
+
+  .fbadmin-order-id, .fbadmin-order-customer { min-width: 0; }
+
+  .fbadmin-order strong { font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
+
+  .fbadmin-order-id span, .fbadmin-order-customer span {
+    display: block;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .fbadmin-badge {
+    padding: 6px 10px;
+    background: var(--bone);
+    font-size: 9px;
+  }
+
+  .fbadmin-order-price { text-align: right; }
+
+  .fbadmin-order-link {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line);
+  }
+
+  .fbadmin-bottom-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 22px;
+  }
+
+  .fbadmin-status-list { padding: 24px; }
+  .fbadmin-status + .fbadmin-status { margin-top: 20px; }
+
+  .fbadmin-status > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 9px;
+    font-size: 11px;
+  }
+
+  .fbadmin-status strong { font-weight: 500; }
+  .fbadmin-status strong > span { color: var(--muted); font-size: 10px; }
+
+  .fbadmin-progress { height: 5px; background: var(--bone); }
+  .fbadmin-progress > span { display: block; height: 100%; background: var(--ink); }
+
+  .fbadmin-status:nth-child(even) .fbadmin-progress > span {
+    background: var(--brass);
+  }
+
+  .fbadmin-product {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .fbadmin-product:last-child { border-bottom: 0; }
+  .fbadmin-product > div:nth-child(2) { min-width: 0; flex: 1; }
+
+  .fbadmin-product-image {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 62px;
+    height: 70px;
+    background: var(--bone);
+    color: var(--brass);
+    font-size: 12px;
+  }
+
+  .fbadmin-product-image img {
+    width: 100%;
+    height: 100%;
+    padding: 6px;
+    object-fit: contain;
+  }
+
+  .fbadmin-product h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .fbadmin-product p { margin: 4px 0; color: var(--muted); font-size: 9px; }
+  .fbadmin-product > div > span { color: var(--muted); font-size: 9px; }
+  .fbadmin-product > strong { font-size: 11px; font-weight: 500; }
+
+  .fbadmin-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding-top: 25px;
+    margin-top: 25px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .fbadmin-footer > div { display: flex; gap: 20px; }
+  .fbadmin-footer a { display: inline-flex; align-items: center; min-height: 44px; }
+
+  .fbadmin-error {
+    margin-top: 22px;
+    padding: 16px 20px;
+    border: 1px solid #dfbdb5;
+    background: #fbefec;
+    color: #a13832;
+    font-size: 12px;
+  }
+
+  .fbadmin-error p { margin: 8px 0 0; font-size: 11px; }
+
+  .fbadmin-state {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    min-height: 350px;
+    padding: 30px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .fbadmin-empty {
+    padding: 38px 24px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .fbadmin-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+  }
+
+  .fbadmin-spin { animation: fbadminSpin 1s linear infinite; }
+
+  @keyframes fbadminSpin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 1050px) {
+    .fbadmin-heading { align-items: flex-start; flex-direction: column; }
+    .fbadmin-overview { grid-template-columns: minmax(0, 1fr); }
+    .fbadmin-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .fbadmin-stat { align-items: flex-start; gap: 12px; padding: 18px; }
+    .fbadmin-stat > svg:last-child { display: none; }
+    .fbadmin-bottom-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  @media (max-width: 720px) {
+    .fbadmin-stats { grid-template-columns: minmax(0, 1fr); }
+    .fbadmin-stat > svg:last-child { display: block; }
+    .fbadmin-stat { align-items: center; }
+    .fbadmin-value-panel { padding: 24px; }
+    .fbadmin-section-heading { padding: 20px; flex-wrap: wrap; gap: 12px; }
+    .fbadmin-period-total { text-align: left; }
+    .fbadmin-order { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 20px; }
+    .fbadmin-order-id { grid-column: 1; }
+    .fbadmin-order-customer { grid-column: 1; grid-row: 2; }
+    .fbadmin-badge { grid-column: 2; grid-row: 1; }
+    .fbadmin-order-price { grid-column: 1; grid-row: 3; text-align: left; }
+    .fbadmin-order-link { grid-column: 2; grid-row: 3; justify-self: end; }
+    .fbadmin-product { padding: 18px 20px; gap: 12px; flex-wrap: wrap; }
+    .fbadmin-status-list { padding: 20px; }
+  }
+
+  @media (max-width: 380px) {
+    .fbadmin-actions { width: 100%; flex-wrap: wrap; }
+    .fbadmin-actions > * { flex: 1; }
+    .fbadmin-value-bottom { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .fbadmin-value-panel h2 { font-size: 34px; }
+    .fbadmin-product > strong { margin-left: 74px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbadmin *, .fbadmin *::before, .fbadmin *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
 
 export default Dashboard;

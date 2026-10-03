@@ -1,513 +1,945 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import emailjs from "@emailjs/browser";
 import {
   AlertCircle,
+  ArrowUpRight,
   CheckCircle2,
   Clock3,
+  Loader2,
   Mail,
   MapPin,
   Phone,
   Send,
 } from "lucide-react";
 
-const BUSINESS_INFO = {
-  businessName: "Ectoo",
-  email: "info@ectoo.us",
-  phoneDisplay: "+1 (832) 347-8821",
-  phoneHref: "+19176952303",
-  addressLine1: "1825 Dickinson Ave Ste D",
-  addressLine2: "Dickinson, TX 77539",
-  country: "United States",
-  hours: "Monday – Friday",
-  time: "9:00 AM – 5:00 PM CT",
+import { BUSINESS_INFO } from "../storeInfo";
+
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  subject: "",
+  message: "",
 };
 
 const Contact = () => {
-  const pageRef = useRef(null);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
-
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const sendingRef = useRef(false);
 
-  useEffect(() => {
-    const elements = pageRef.current?.querySelectorAll("[data-reveal]");
+  const supportTime = [
+    BUSINESS_INFO.supportHours,
+    BUSINESS_INFO.timeZone,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-    if (!elements?.length) return;
+  const addressLines = [
+    BUSINESS_INFO.addressLine1,
+    BUSINESS_INFO.addressLine2,
+    BUSINESS_INFO.country,
+  ].filter(Boolean);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("ectoo-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      {
-        threshold: 0.12,
-        rootMargin: "0px 0px -30px 0px",
-      },
-    );
+  const phoneHref =
+    BUSINESS_INFO.phoneHref ||
+    BUSINESS_INFO.phoneDisplay?.replace(/[^\d+]/g, "");
 
-    elements.forEach((element) => observer.observe(element));
+  const handleChange = (event) => {
+    const { name, value } = event.target;
 
-    return () => observer.disconnect();
-  }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((current) => ({
+      ...current,
       [name]: value,
     }));
 
-    if (successMessage) setSuccessMessage("");
-    if (errorMessage) setErrorMessage("");
+    setSuccessMessage("");
+    setErrorMessage("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (sendingRef.current) return;
 
     setSuccessMessage("");
     setErrorMessage("");
 
-    if (
-      !formData.name.trim() ||
-      !formData.email.trim() ||
-      !formData.subject.trim() ||
-      !formData.message.trim()
-    ) {
+    if (!event.currentTarget.reportValidity()) return;
+
+    const values = Object.fromEntries(
+      Object.entries(formData).map(([key, value]) => [
+        key,
+        value.trim(),
+      ])
+    );
+
+    if (Object.values(values).some((value) => !value)) {
       setErrorMessage("Please complete all required fields.");
       return;
     }
 
+    const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+    const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+    const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+    if (!serviceId || !templateId || !publicKey) {
+      setErrorMessage(
+        BUSINESS_INFO.email || BUSINESS_INFO.phoneDisplay
+          ? "The message form is currently unavailable. Please use the contact details below."
+          : "The message form is currently unavailable. Please try again later."
+      );
+      return;
+    }
+
+    sendingRef.current = true;
     setIsSubmitting(true);
 
     try {
       await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        serviceId,
+        templateId,
         {
-          from_name: formData.name.trim(),
-          from_email: formData.email.trim(),
-          subject: formData.subject.trim(),
-          message: formData.message.trim(),
+          from_name: values.name,
+          from_email: values.email,
+          subject: values.subject,
+          message: values.message,
         },
-        {
-          publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
-        },
+        { publicKey }
       );
 
       setSuccessMessage(
-        "Your message has been sent successfully. Our support team will get back to you as soon as possible.",
+        "Your message has been sent. Our support team will get back to you as soon as possible."
       );
-
-      setFormData({
-        name: "",
-        email: "",
-        subject: "",
-        message: "",
-      });
-    } catch (error) {
-      console.error("EmailJS error:", error);
-
+      setFormData({ ...EMPTY_FORM });
+    } catch {
       setErrorMessage(
-        "We were unable to send your message. Please try again or email us directly.",
+        BUSINESS_INFO.email
+          ? "We couldn't send your message. Please try again or email us directly."
+          : "We couldn't send your message. Please try again."
       );
     } finally {
+      sendingRef.current = false;
       setIsSubmitting(false);
     }
   };
 
-  const inputClass =
-    "min-h-12 w-full rounded-[8px] border border-[#E4DED7] bg-[#FAF8F5] px-4 py-3 text-sm text-[#111311] outline-none transition-all duration-300 placeholder:text-[#5E5B57]/45 focus:border-[#1F2D22] focus:bg-white focus:shadow-[0_0_0_3px_rgba(31,45,34,0.06)]";
-
-  const labelClass =
-    "mb-2 block text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5E5B57]";
-
   return (
-    <div
-      ref={pageRef}
-      className="min-h-screen overflow-x-hidden bg-[#FAF8F5] text-[#111311]"
-    >
-      <style>{`
-        [data-reveal] {
-          opacity: 0;
-          transform: translateY(38px);
-          transition:
-            opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-        }
+    <main className="fbct-page">
+      <style>{contactStyles}</style>
 
-        [data-reveal="left"] {
-          transform: translateX(-42px);
-        }
-
-        [data-reveal="right"] {
-          transform: translateX(42px);
-        }
-
-        [data-reveal="scale"] {
-          transform: scale(0.96);
-        }
-
-        [data-reveal].ectoo-visible {
-          opacity: 1;
-          transform: translate(0, 0) scale(1);
-        }
-
-        .ectoo-contact-card {
-          transition:
-            transform 0.4s ease,
-            box-shadow 0.4s ease,
-            border-color 0.4s ease;
-        }
-
-        .ectoo-contact-card:hover {
-          transform: translateY(-4px);
-          border-color: rgba(31, 45, 34, 0.18);
-          box-shadow: 0 18px 45px rgba(31, 45, 34, 0.06);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          [data-reveal] {
-            opacity: 1;
-            transform: none;
-            transition: none;
-          }
-
-          *,
-          *::before,
-          *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
-        }
-      `}</style>
-
-      <section className="relative overflow-hidden bg-[#EEE7DF] px-5 py-16 sm:px-8 sm:py-20 lg:px-12 lg:py-28">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full border border-[#1F2D22]/5" />
-        <div className="pointer-events-none absolute right-10 top-14 h-48 w-48 rounded-full border border-[#1F2D22]/5" />
-
-        <div className="relative mx-auto grid max-w-[1450px] gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-end">
-          <div data-reveal="left">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.32em] text-[#9A5937]">
-              Contact Ectoo
-            </p>
-
-            <h1 className="mt-5 max-w-3xl font-display text-5xl leading-[0.95] sm:text-6xl lg:text-[78px]">
-              Here when you
-              <span className="block text-[#3F4C3A]">need us.</span>
-            </h1>
-          </div>
-
-          <p
-            data-reveal="right"
-            className="max-w-xl text-sm leading-7 text-[#5E5B57] lg:justify-self-end sm:text-base"
-          >
-            Questions about an order, product, shipping, or returns? Send us a
-            message or use the contact information below.
+      <div className="fbct-container">
+        <header className="fbct-header">
+          <p className="fbct-overline">
+            {BUSINESS_INFO.businessName} / The care desk
           </p>
-        </div>
-      </section>
 
-      <section className="px-5 py-12 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
-        <div className="mx-auto grid max-w-[1450px] gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
-          <div>
-            <div data-reveal="left">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-                Contact Information
-              </p>
+          <h1>
+            A question?
+            <span>Let's talk.</span>
+          </h1>
 
-              <h2 className="mt-3 font-display text-4xl leading-tight sm:text-5xl">
-                Reach our support team.
-              </h2>
+          <p className="fbct-intro">
+            A little help with your order, a detail about a bag,
+            or something else on your mind. We're here to listen.
+          </p>
 
-              <p className="mt-4 max-w-xl text-sm leading-7 text-[#5E5B57]">
-                Our support team is available during normal business hours for
-                general questions, order assistance, and product support.
-              </p>
+          <a href="#fbct-message-form" className="fbct-jump">
+            Write us a note
+            <ArrowUpRight size={18} />
+          </a>
+        </header>
+
+        <section
+          className="fbct-message-board"
+          aria-labelledby="fbct-form-title"
+        >
+          <div className="fbct-board-top">
+            <div>
+              <p className="fbct-overline">A note to our team</p>
+              <h2 id="fbct-form-title">How can we help?</h2>
             </div>
 
-            <div className="mt-8 grid gap-4">
-              <div
-                data-reveal="left"
-                className="ectoo-contact-card flex items-start gap-4 rounded-[18px] border border-[#E4DED7] bg-white p-5 sm:p-6"
-              >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                  <Mail size={17} strokeWidth={1.4} />
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
-                    Email
-                  </p>
-
-                  <a
-                    href={`mailto:${BUSINESS_INFO.email}`}
-                    className="mt-1.5 block break-all font-display text-xl transition-colors hover:text-[#9A5937]"
-                  >
-                    {BUSINESS_INFO.email}
-                  </a>
-
-                  <p className="mt-2 text-[10px] leading-5 text-[#5E5B57]">
-                    We usually respond within 24 hours during business days.
-                  </p>
-                </div>
-              </div>
-
-              <div
-                data-reveal="left"
-                className="ectoo-contact-card flex items-start gap-4 rounded-[18px] border border-[#E4DED7] bg-white p-5 sm:p-6"
-              >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                  <Phone size={17} strokeWidth={1.4} />
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
-                    Phone
-                  </p>
-
-                  <a
-                    href={`tel:${BUSINESS_INFO.phoneHref}`}
-                    className="mt-1.5 block font-display text-xl transition-colors hover:text-[#9A5937]"
-                  >
-                    {BUSINESS_INFO.phoneDisplay}
-                  </a>
-
-                  <p className="mt-2 text-[10px] leading-5 text-[#5E5B57]">
-                    {BUSINESS_INFO.hours}
-                    <br />
-                    {BUSINESS_INFO.time}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                data-reveal="left"
-                className="ectoo-contact-card flex items-start gap-4 rounded-[18px] border border-[#E4DED7] bg-white p-5 sm:p-6"
-              >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                  <MapPin size={17} strokeWidth={1.4} />
-                </div>
-
-                <div className="min-w-0">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
-                    Business Location
-                  </p>
-
-                  <p className="mt-1.5 font-display text-xl">
-                    {BUSINESS_INFO.businessName}
-                  </p>
-
-                  <p className="mt-2 text-[10px] leading-5 text-[#5E5B57]">
-                    {BUSINESS_INFO.addressLine1}
-                    <br />
-                    {BUSINESS_INFO.addressLine2}
-                    <br />
-                    {BUSINESS_INFO.country}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                data-reveal="left"
-                className="ectoo-contact-card flex items-start gap-4 rounded-[18px] border border-[#E4DED7] bg-white p-5 sm:p-6"
-              >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1F2D22] text-white">
-                  <Clock3 size={17} strokeWidth={1.4} />
-                </div>
-
-                <div>
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#5E5B57]">
-                    Working Hours
-                  </p>
-
-                  <p className="mt-1.5 font-display text-xl">
-                    {BUSINESS_INFO.hours}
-                  </p>
-
-                  <p className="mt-2 text-[10px] leading-5 text-[#5E5B57]">
-                    {BUSINESS_INFO.time}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <span className="fbct-mail-mark" aria-hidden="true">
+              <Mail size={32} strokeWidth={1.1} />
+            </span>
           </div>
 
-          <div
-            data-reveal="right"
-            className="relative overflow-hidden rounded-[22px] bg-[#1F2D22] p-6 text-white sm:p-8 lg:p-10"
+          <form
+            id="fbct-message-form"
+            onSubmit={handleSubmit}
+            aria-busy={isSubmitting}
           >
-            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border border-white/5" />
-            <div className="pointer-events-none absolute -bottom-28 -left-20 h-72 w-72 rounded-full border border-white/5" />
+            <fieldset disabled={isSubmitting}>
+              <legend className="fbct-sr-only">
+                Your contact details and message
+              </legend>
 
-            <div className="relative">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.28em] text-white/45">
-                Send A Message
-              </p>
-
-              <h2 className="mt-3 font-display text-4xl sm:text-5xl">
-                How can we help?
-              </h2>
-
-              <p className="mt-3 max-w-xl text-sm leading-7 text-white/55">
-                Complete the form and our support team will review your message.
-              </p>
-
-              <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-                <div>
-                  <label
-                    htmlFor="name"
-                    className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.12em] text-white/50"
-                  >
-                    Name
+              <div className="fbct-fields">
+                <div className="fbct-field">
+                  <label htmlFor="fbct-name">
+                    <span>01</span>
+                    Your name
                   </label>
-
                   <input
-                    id="name"
+                    id="fbct-name"
                     name="name"
                     type="text"
+                    autoComplete="name"
                     value={formData.name}
                     onChange={handleChange}
                     maxLength={80}
+                    placeholder="Full name"
                     required
-                    autoComplete="name"
-                    className="min-h-12 w-full rounded-[8px] border border-white/15 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition-all duration-300 placeholder:text-white/30 focus:border-white/40 focus:bg-white/[0.1]"
-                    placeholder="Your name"
                   />
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.12em] text-white/50"
-                  >
-                    Email
+                <div className="fbct-field">
+                  <label htmlFor="fbct-email">
+                    <span>02</span>
+                    Email address
                   </label>
-
                   <input
-                    id="email"
+                    id="fbct-email"
                     name="email"
                     type="email"
+                    autoComplete="email"
                     value={formData.email}
                     onChange={handleChange}
                     maxLength={120}
-                    required
-                    autoComplete="email"
-                    className="min-h-12 w-full rounded-[8px] border border-white/15 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition-all duration-300 placeholder:text-white/30 focus:border-white/40 focus:bg-white/[0.1]"
                     placeholder="you@example.com"
+                    required
                   />
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="subject"
-                    className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.12em] text-white/50"
-                  >
-                    Subject
+                <div className="fbct-field fbct-field-full">
+                  <label htmlFor="fbct-subject">
+                    <span>03</span>
+                    What's it about?
                   </label>
-
                   <input
-                    id="subject"
+                    id="fbct-subject"
                     name="subject"
                     type="text"
                     value={formData.subject}
                     onChange={handleChange}
                     maxLength={120}
+                    placeholder="An order, a product, or a general question"
                     required
-                    className="min-h-12 w-full rounded-[8px] border border-white/15 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition-all duration-300 placeholder:text-white/30 focus:border-white/40 focus:bg-white/[0.1]"
-                    placeholder="How can we help?"
                   />
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="message"
-                    className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.12em] text-white/50"
-                  >
-                    Message
-                  </label>
+                <div className="fbct-field fbct-field-full">
+                  <div className="fbct-message-label">
+                    <label htmlFor="fbct-message">
+                      <span>04</span>
+                      Your message
+                    </label>
+                    <span id="fbct-message-count">
+                      {formData.message.length} / 2000
+                    </span>
+                  </div>
 
                   <textarea
-                    id="message"
+                    id="fbct-message"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
                     maxLength={2000}
+                    placeholder="Tell us a little more..."
+                    rows={6}
                     required
-                    rows={7}
-                    className="w-full resize-y rounded-[8px] border border-white/15 bg-white/[0.07] px-4 py-3 text-sm leading-6 text-white outline-none transition-all duration-300 placeholder:text-white/30 focus:border-white/40 focus:bg-white/[0.1]"
-                    placeholder="Enter your message"
+                    aria-describedby="fbct-message-count"
                   />
                 </div>
+              </div>
+            </fieldset>
 
-                {successMessage && (
-                  <div
-                    role="status"
-                    className="flex items-start gap-3 rounded-[10px] border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-100"
-                  >
-                    <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-                    <span>{successMessage}</span>
-                  </div>
+            {successMessage && (
+              <div className="fbct-feedback is-success" role="status">
+                <CheckCircle2 size={20} />
+                <p>{successMessage}</p>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="fbct-feedback is-error" role="alert">
+                <AlertCircle size={20} />
+                <p>{errorMessage}</p>
+              </div>
+            )}
+
+            <div className="fbct-form-bottom">
+              <p>
+                Include your order number if your question
+                is about an existing order.
+              </p>
+
+              <button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Sending your note…" : "Send your note"}
+                {isSubmitting ? (
+                  <Loader2 size={18} className="fbct-spinner" />
+                ) : (
+                  <Send size={18} strokeWidth={1.4} />
                 )}
+              </button>
+            </div>
+          </form>
 
-                {errorMessage && (
-                  <div
-                    role="alert"
-                    className="flex items-start gap-3 rounded-[10px] border border-red-300/20 bg-red-300/10 p-4 text-sm leading-6 text-red-100"
-                  >
-                    <AlertCircle size={18} className="mt-0.5 shrink-0" />
-                    <span>{errorMessage}</span>
-                  </div>
-                )}
+          <div className="fbct-board-signature">
+            <span>A little care goes a long way.</span>
+            <strong>{BUSINESS_INFO.businessName}</strong>
+          </div>
+        </section>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="group inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-[7px] bg-[#F1EEE8] px-6 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#1F2D22] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Send
-                    size={14}
-                    className="transition-transform duration-300 group-hover:translate-x-1"
-                  />
+        <section
+          className="fbct-contact-strip"
+          aria-labelledby="fbct-contact-title"
+        >
+          <div className="fbct-strip-heading">
+            <p className="fbct-overline">Prefer another way?</p>
+            <h2 id="fbct-contact-title">Stay in touch.</h2>
+          </div>
 
-                  {isSubmitting ? "Sending..." : "Send Message"}
-                </button>
-              </form>
+          <div className="fbct-contact-grid">
+            <div className="fbct-contact-cell">
+              <Mail size={21} strokeWidth={1.3} />
+              <h3>Email us</h3>
+
+              {BUSINESS_INFO.email && (
+                <a href={`mailto:${BUSINESS_INFO.email}`}>
+                  {BUSINESS_INFO.email}
+                  <ArrowUpRight size={15} />
+                </a>
+              )}
+
+              <p>
+                We usually respond within 24 hours
+                during business days.
+              </p>
+            </div>
+
+            <div className="fbct-contact-cell">
+              <Phone size={21} strokeWidth={1.3} />
+              <h3>Give us a call</h3>
+
+              {BUSINESS_INFO.phoneDisplay && phoneHref && (
+                <a href={`tel:${phoneHref}`}>
+                  {BUSINESS_INFO.phoneDisplay}
+                  <ArrowUpRight size={15} />
+                </a>
+              )}
+
+              <p>Available during our business hours.</p>
+            </div>
+
+            <div className="fbct-contact-cell">
+              <Clock3 size={21} strokeWidth={1.3} />
+              <h3>Our hours</h3>
+
+              {BUSINESS_INFO.businessDays && (
+                <strong>{BUSINESS_INFO.businessDays}</strong>
+              )}
+
+              {supportTime && <p>{supportTime}</p>}
+            </div>
+
+            <div className="fbct-contact-cell">
+              <MapPin size={21} strokeWidth={1.3} />
+              <h3>Business location</h3>
+
+              {addressLines.length > 0 && (
+                <address>
+                  {addressLines.map((line, index) => (
+                    <React.Fragment key={`${index}-${line}`}>
+                      {index > 0 && <br />}
+                      {line}
+                    </React.Fragment>
+                  ))}
+                </address>
+              )}
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="border-t border-[#E4DED7] bg-[#E4E5DD] px-5 py-14 sm:px-8 sm:py-16 lg:px-12">
-        <div data-reveal="scale" className="mx-auto max-w-[1100px] text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.3em] text-[#9A5937]">
-            Ectoo
-          </p>
-
-          <h2 className="mt-3 font-display text-4xl sm:text-5xl">
-            Thoughtful bags for everyday life.
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-[#5E5B57]">
-            Practical details, versatile shapes, and an easier way to find the
-            bag that fits your routine.
-          </p>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </main>
   );
 };
+
+const contactStyles = `
+  .fbct-page {
+    --forest: #173f36;
+    --deep: #102e28;
+    --pistachio: #d7e5a5;
+    --bone: #f5f0e6;
+    --paper: #fffdf5;
+    --brass: #a56e4f;
+    --line: rgba(23, 63, 54, .24);
+    min-height: 100vh;
+    padding-block: clamp(40px, 6vw, 85px)
+      clamp(50px, 7vw, 100px);
+    background: var(--bone);
+    color: var(--forest);
+    font-family: 'Onest', ui-sans-serif, system-ui,
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+  }
+
+  .fbct-page *,
+  .fbct-page *::before,
+  .fbct-page *::after {
+    box-sizing: border-box;
+  }
+
+  .fbct-page a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .fbct-page input,
+  .fbct-page textarea,
+  .fbct-page button {
+    font: inherit;
+  }
+
+  .fbct-page a:focus-visible,
+  .fbct-page button:focus-visible,
+  .fbct-page input:focus-visible,
+  .fbct-page textarea:focus-visible {
+    outline: 3px solid var(--brass);
+    outline-offset: 5px;
+  }
+
+  .fbct-container {
+    width: min(100%, 1450px);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 4.2vw, 70px);
+  }
+
+  .fbct-overline {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+  }
+
+  .fbct-header {
+    max-width: 850px;
+    margin-inline: auto;
+    margin-bottom: clamp(40px, 5vw, 70px);
+    text-align: center;
+    animation: fbctEnter .7s both;
+  }
+
+  .fbct-header h1 {
+    margin: 20px 0 0;
+    font-size: clamp(55px, 8.5vw, 120px);
+    font-weight: 500;
+    line-height: .98;
+    letter-spacing: -.075em;
+  }
+
+  .fbct-header h1 span {
+    display: block;
+    color: var(--brass);
+  }
+
+  .fbct-intro {
+    max-width: 450px;
+    margin: 25px auto 15px;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .fbct-jump {
+    display: inline-flex;
+    align-items: center;
+    gap: 20px;
+    min-height: 44px;
+    border-bottom: 1px solid var(--forest);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .fbct-jump svg {
+    transition: transform .25s ease;
+  }
+
+  .fbct-jump:hover svg {
+    transform: translate(3px, -3px);
+  }
+
+  .fbct-message-board {
+    width: min(100%, 960px);
+    margin-inline: auto;
+    border: 1px solid var(--forest);
+    background: var(--paper);
+    box-shadow: 12px 12px 0 rgba(23, 63, 54, .1);
+    animation: fbctEnter .7s .1s both;
+  }
+
+  .fbct-board-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    padding: 30px clamp(24px, 4vw, 55px);
+    border-bottom: 1px solid var(--forest);
+    background: var(--pistachio);
+  }
+
+  .fbct-board-top h2 {
+    margin: 10px 0 0;
+    font-size: clamp(32px, 4vw, 47px);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbct-mail-mark {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 76px;
+    height: 76px;
+    border: 1px solid var(--forest);
+    border-radius: 50%;
+    transform: rotate(-10deg);
+    transition: transform .3s ease;
+  }
+
+  .fbct-message-board:hover .fbct-mail-mark {
+    transform: rotate(0);
+  }
+
+  .fbct-message-board form {
+    padding: clamp(25px, 4vw, 55px);
+    scroll-margin-top: 110px;
+  }
+
+  .fbct-message-board fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .fbct-message-board fieldset:disabled {
+    opacity: .65;
+  }
+
+  .fbct-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px 30px;
+  }
+
+  .fbct-field {
+    min-width: 0;
+  }
+
+  .fbct-field-full {
+    grid-column: 1 / -1;
+  }
+
+  .fbct-field label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .fbct-field label > span {
+    color: var(--brass);
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .fbct-field input,
+  .fbct-field textarea {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 52px;
+    padding: 13px 4px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    color: var(--forest);
+    font-size: 16px;
+    transition: border-color .25s ease, background .25s ease;
+  }
+
+  .fbct-field input::placeholder,
+  .fbct-field textarea::placeholder {
+    color: #7b867b;
+    font-size: 13px;
+  }
+
+  .fbct-field input:focus,
+  .fbct-field textarea:focus {
+    border-bottom-color: var(--forest);
+    background: #f5f7ed;
+  }
+
+  .fbct-field textarea {
+    min-height: 170px;
+    resize: vertical;
+    line-height: 1.8;
+  }
+
+  .fbct-message-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .fbct-message-label > span {
+    color: #516b62;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .fbct-form-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 25px;
+    margin-top: 30px;
+  }
+
+  .fbct-form-bottom > p {
+    max-width: 290px;
+    margin: 0;
+    color: #516b62;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .fbct-form-bottom button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 35px;
+    min-height: 56px;
+    padding: 16px 23px;
+    border: 1px solid var(--forest);
+    background: var(--forest);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .25s ease, transform .25s ease;
+  }
+
+  .fbct-form-bottom button:hover:not(:disabled) {
+    background: var(--deep);
+    transform: translateY(-2px);
+  }
+
+  .fbct-form-bottom button:disabled {
+    opacity: .6;
+    cursor: wait;
+  }
+
+  .fbct-form-bottom button svg {
+    flex-shrink: 0;
+  }
+
+  .fbct-feedback {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 18px;
+    border: 1px solid;
+  }
+
+  .fbct-feedback svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .fbct-feedback p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .fbct-feedback.is-success {
+    border-color: #b2c7ad;
+    background: #eaf2e5;
+    color: #245333;
+  }
+
+  .fbct-feedback.is-error {
+    border-color: #dfb5a9;
+    background: #faeee8;
+    color: #8c382b;
+  }
+
+  .fbct-board-signature {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px clamp(24px, 4vw, 55px);
+    border-top: 1px solid var(--line);
+    background: #edf0e4;
+  }
+
+  .fbct-board-signature > span {
+    font-size: 11px;
+  }
+
+  .fbct-board-signature strong {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -.06em;
+  }
+
+  .fbct-contact-strip {
+    margin-top: clamp(65px, 8vw, 110px);
+  }
+
+  .fbct-strip-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 24px;
+  }
+
+  .fbct-strip-heading h2 {
+    margin: 0;
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -.055em;
+  }
+
+  .fbct-contact-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--forest);
+    border-bottom: 1px solid var(--forest);
+  }
+
+  .fbct-contact-cell {
+    min-width: 0;
+    padding: 30px 24px;
+    border-right: 1px solid var(--line);
+    transition: background .25s ease;
+  }
+
+  .fbct-contact-cell:first-child {
+    padding-left: 0;
+  }
+
+  .fbct-contact-cell:last-child {
+    border-right: 0;
+  }
+
+  .fbct-contact-cell:hover {
+    background: #edf0e4;
+  }
+
+  .fbct-contact-cell h3 {
+    margin: 18px 0 12px;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -.035em;
+  }
+
+  .fbct-contact-cell a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+
+  .fbct-contact-cell a svg {
+    flex-shrink: 0;
+  }
+
+  .fbct-contact-cell a:hover {
+    color: var(--brass);
+  }
+
+  .fbct-contact-cell > strong {
+    display: block;
+    padding-top: 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .fbct-contact-cell p,
+  .fbct-contact-cell address {
+    margin: 8px 0 0;
+    color: #516b62;
+    font-size: 11px;
+    font-style: normal;
+    line-height: 1.9;
+    overflow-wrap: anywhere;
+  }
+
+  .fbct-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .fbct-spinner {
+    animation: fbctSpin 1s linear infinite;
+  }
+
+  @keyframes fbctSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes fbctEnter {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 1000px) {
+    .fbct-contact-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fbct-contact-cell {
+      padding: 28px 22px;
+    }
+
+    .fbct-contact-cell:first-child {
+      padding-left: 22px;
+    }
+
+    .fbct-contact-cell:nth-child(2) {
+      border-right: 0;
+    }
+
+    .fbct-contact-cell:nth-child(-n + 2) {
+      border-bottom: 1px solid var(--line);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .fbct-header h1 {
+      font-size: clamp(55px, 15vw, 80px);
+    }
+
+    .fbct-intro {
+      font-size: 14px;
+    }
+
+    .fbct-message-board {
+      box-shadow: 7px 7px 0 rgba(23, 63, 54, .1);
+    }
+
+    .fbct-board-top {
+      padding: 25px 22px;
+      gap: 15px;
+    }
+
+    .fbct-board-top h2 {
+      font-size: 33px;
+    }
+
+    .fbct-mail-mark {
+      width: 54px;
+      height: 54px;
+    }
+
+    .fbct-mail-mark svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    .fbct-fields {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 25px;
+    }
+
+    .fbct-message-board form {
+      padding: 28px 22px;
+    }
+
+    .fbct-form-bottom {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 20px;
+    }
+
+    .fbct-form-bottom > p {
+      max-width: none;
+    }
+
+    .fbct-board-signature {
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 18px 22px;
+    }
+
+    .fbct-contact-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fbct-contact-cell,
+    .fbct-contact-cell:first-child {
+      padding: 25px 16px;
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .fbct-contact-cell:last-child {
+      border-bottom: 0;
+    }
+
+    .fbct-strip-heading {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .fbct-strip-heading h2 {
+      font-size: 37px;
+    }
+
+    .fbct-contact-cell h3 {
+      margin-top: 14px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fbct-page *,
+    .fbct-page *::before,
+    .fbct-page *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+`;
 
 export default Contact;
