@@ -21,14 +21,15 @@ const __dirname = path.dirname(__filename);
 
 const frontendOrigins = (process.env.FRONTEND_URL || "")
   .split(",")
-  .map((url) => url.trim().replace(/\/$/, ""))
+  .map((url) => url.trim().replace(/\/+$/, ""))
   .filter(Boolean);
 
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://localhost:3000",
-  "https://fablebelle.us",
-  "https://www.fablebelle.us",
+  "https://fablebelle.com",
+  "https://www.fablebelle.com",
+  "https://fable-belle-front-end.onrender.com",
   ...frontendOrigins,
 ]);
 
@@ -73,6 +74,7 @@ app.use((req, res, next) => {
       "picture-in-picture=()",
     ].join(", ")
   );
+
   next();
 });
 
@@ -82,11 +84,21 @@ app.use(
       if (!origin || allowedOrigins.has(origin)) {
         return callback(null, true);
       }
+
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    methods: [
+      "GET",
+      "HEAD",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+    ],
     allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 204,
   })
 );
 
@@ -97,7 +109,10 @@ app.use(
   "/uploads",
   express.static(path.join(__dirname, "uploads"), {
     setHeaders: (res) => {
-      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      res.setHeader(
+        "Cross-Origin-Resource-Policy",
+        "cross-origin"
+      );
       res.setHeader("X-Content-Type-Options", "nosniff");
     },
   })
@@ -114,14 +129,14 @@ app.use("/api/orders", orderRoutes);
 app.get("/", (req, res) => {
   return res.json({
     success: true,
-    message: "fablebelle Backend is running",
+    message: "Fable Belle backend is running",
   });
 });
 
 app.get("/api/health", (req, res) => {
   return res.json({
     success: true,
-    message: "fablebelle API is running",
+    message: "Fable Belle API is running",
   });
 });
 
@@ -134,6 +149,10 @@ app.use((req, res) => {
 
 app.use((error, req, res, next) => {
   console.error("Server Error:", error);
+
+  if (res.headersSent) {
+    return next(error);
+  }
 
   if (error.message === "Not allowed by CORS") {
     return res.status(403).json({
@@ -154,5 +173,5 @@ app.use((error, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`fablebelle Backend running on port ${PORT}`);
+  console.log(`Fable Belle backend running on port ${PORT}`);
 });
